@@ -76,11 +76,18 @@ export const rounds = sqliteTable('rounds', {
   notes: text('notes'),
   // Optional human label, e.g. "Medal Final 2026". Null falls back to course/date in the UI.
   name: text('name'),
-  // Self-rated mentality for the round, each 1 (poor) – 5 (excellent); null = not rated.
-  // Validated in src/lib/rounds/details.ts, not by a DB CHECK, to stay Postgres-portable.
+  // Overall mentality/feel for the round, each 1 (poor) – 5 (excellent); null = not rated.
+  // Pia Nilsson's balance / tempo / tension. For tension, 5 = relaxed (low tension), so
+  // every scale reads "higher is better". Validated in src/lib/rounds/details.ts, not by a
+  // DB CHECK, to stay Postgres-portable.
+  mentalBalance: integer('mental_balance'),
+  mentalTempo: integer('mental_tempo'),
+  mentalTension: integer('mental_tension'),
+  // LEGACY: the first mentality design (confidence / focus / composure). No longer shown or
+  // written; kept only so already-saved values aren't destroyed by a migration.
   mentalConfidence: integer('mental_confidence'),
   mentalFocus: integer('mental_focus'),
-  mentalComposure: integer('mental_composure'), // how well you reset after a bad shot
+  mentalComposure: integer('mental_composure'),
 });
 
 export const shots = sqliteTable(
@@ -107,6 +114,12 @@ export const shots = sqliteTable(
     category: text('category'),
     bunkerSubtype: text('bunker_subtype'),
     baselineId: text('baseline_id'),
+
+    // Optional per-shot mentality tags, entered by the user (never derived).
+    // 'INTERNAL' (swing thoughts / mechanics) | 'EXTERNAL' (target / feel); null = not recorded.
+    focus: text('focus'),
+    // 'COMMITTED' (clear decision, fully committed) | 'HESITANT'; null = not recorded.
+    commitment: text('commitment'),
   },
   (table) => ({
     roundHoleShotUnique: uniqueIndex('shots_round_id_hole_no_shot_no_unique').on(

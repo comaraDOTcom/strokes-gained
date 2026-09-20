@@ -29,9 +29,9 @@ export function getRoundDetailsById(): Map<number, RoundDetails> {
         {
           name: r.name,
           notes: r.notes,
-          mentalConfidence: r.mentalConfidence,
-          mentalFocus: r.mentalFocus,
-          mentalComposure: r.mentalComposure,
+          mentalBalance: r.mentalBalance,
+          mentalTempo: r.mentalTempo,
+          mentalTension: r.mentalTension,
         },
       ]),
   );

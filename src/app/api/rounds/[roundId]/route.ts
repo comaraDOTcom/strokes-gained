@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import { rounds } from '@/db/schema';
 import { parseRoundDetailsPatch } from '@/lib/rounds/details';
 
-/** Update a round's name / commentary / mentality. Shots are untouched, so no SG recompute. */
+/** Update a round's name / commentary / mentality / date played. Shots are untouched, so no SG recompute. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ roundId: string }> }) {
   const { roundId: roundIdParam } = await params;
   const roundId = Number(roundIdParam);
@@ -31,8 +31,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ro
   return NextResponse.json({
     name: updated.name,
     notes: updated.notes,
-    mentalConfidence: updated.mentalConfidence,
-    mentalFocus: updated.mentalFocus,
-    mentalComposure: updated.mentalComposure,
+    playedOn: updated.playedOn,
+    mentalBalance: updated.mentalBalance,
+    mentalTempo: updated.mentalTempo,
+    mentalTension: updated.mentalTension,
   });
 }

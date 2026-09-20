@@ -31,17 +31,17 @@ describe('parseRoundDetailsPatch', () => {
 
   it('accepts ratings 1-5 and null', () => {
     for (const n of [1, 2, 3, 4, 5]) {
-      expect(parseRoundDetailsPatch({ mentalFocus: n })).toEqual({ ok: true, patch: { mentalFocus: n } });
+      expect(parseRoundDetailsPatch({ mentalTempo: n })).toEqual({ ok: true, patch: { mentalTempo: n } });
     }
-    expect(parseRoundDetailsPatch({ mentalConfidence: null })).toEqual({
+    expect(parseRoundDetailsPatch({ mentalBalance: null })).toEqual({
       ok: true,
-      patch: { mentalConfidence: null },
+      patch: { mentalBalance: null },
     });
   });
 
   it('rejects out-of-range, fractional and non-numeric ratings', () => {
     for (const bad of [0, 6, -1, 2.5, '3', NaN, true]) {
-      expect(parseRoundDetailsPatch({ mentalComposure: bad }).ok).toBe(false);
+      expect(parseRoundDetailsPatch({ mentalTension: bad }).ok).toBe(false);
     }
   });
 
@@ -51,6 +51,19 @@ describe('parseRoundDetailsPatch', () => {
     expect(parseRoundDetailsPatch(null).ok).toBe(false);
     expect(parseRoundDetailsPatch([]).ok).toBe(false);
     expect(parseRoundDetailsPatch('hi').ok).toBe(false);
+  });
+});
+
+describe('playedOn', () => {
+  it('accepts a real ISO date, including a leap day', () => {
+    expect(parseRoundDetailsPatch({ playedOn: '2026-09-20' })).toEqual({ ok: true, patch: { playedOn: '2026-09-20' } });
+    expect(parseRoundDetailsPatch({ playedOn: '2028-02-29' }).ok).toBe(true);
+  });
+
+  it('rejects impossible, malformed, null and non-string dates', () => {
+    for (const bad of ['2026-02-30', '2027-02-29', '2026-13-01', '20-09-2026', '2026-9-2', '', null, 20260920]) {
+      expect(parseRoundDetailsPatch({ playedOn: bad }).ok).toBe(false);
+    }
   });
 });
 

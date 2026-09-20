@@ -4,30 +4,41 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MAX_NAME_LENGTH, MAX_NOTES_LENGTH, type MentalField, type RoundDetails } from '@/lib/rounds/details';
 
+// Pia Nilsson's balance / tempo / tension. All scales read "higher is better", so for
+// tension 5 = relaxed.
 const RATINGS: { key: MentalField; label: string; hint: string }[] = [
-  { key: 'mentalConfidence', label: 'Confidence', hint: 'trusted your swing and your decisions' },
-  { key: 'mentalFocus', label: 'Focus', hint: 'stayed in the shot, not the score' },
-  { key: 'mentalComposure', label: 'Composure', hint: 'reset quickly after a bad shot' },
+  { key: 'mentalBalance', label: 'Balance', hint: 'stayed balanced through the swing and finish' },
+  { key: 'mentalTempo', label: 'Tempo', hint: 'kept an even, natural rhythm' },
+  { key: 'mentalTension', label: 'Tension', hint: 'stayed relaxed — light grip, free arms (5 = relaxed)' },
 ];
 
-type Draft = { name: string; notes: string } & Pick<RoundDetails, MentalField>;
+type Draft = { name: string; notes: string; playedOn: string } & Pick<RoundDetails, MentalField>;
 
-function toDraft(d: RoundDetails): Draft {
+function toDraft(d: RoundDetails & { playedOn: string }): Draft {
   return {
     name: d.name ?? '',
     notes: d.notes ?? '',
-    mentalConfidence: d.mentalConfidence,
-    mentalFocus: d.mentalFocus,
-    mentalComposure: d.mentalComposure,
+    playedOn: d.playedOn,
+    mentalBalance: d.mentalBalance,
+    mentalTempo: d.mentalTempo,
+    mentalTension: d.mentalTension,
   };
 }
 
 const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 
-export function RoundDetailsForm({ roundId, initial }: { roundId: number; initial: RoundDetails }) {
+export function RoundDetailsForm({
+  roundId,
+  playedOn,
+  initial,
+}: {
+  roundId: number;
+  playedOn: string;
+  initial: RoundDetails;
+}) {
   const router = useRouter();
-  const [saved, setSaved] = useState<Draft>(() => toDraft(initial));
-  const [draft, setDraft] = useState<Draft>(() => toDraft(initial));
+  const [saved, setSaved] = useState<Draft>(() => toDraft({ ...initial, playedOn }));
+  const [draft, setDraft] = useState<Draft>(() => toDraft({ ...initial, playedOn }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -57,9 +68,10 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
         body: JSON.stringify({
           name: draft.name,
           notes: draft.notes,
-          mentalConfidence: draft.mentalConfidence,
-          mentalFocus: draft.mentalFocus,
-          mentalComposure: draft.mentalComposure,
+          playedOn: draft.playedOn,
+          mentalBalance: draft.mentalBalance,
+          mentalTempo: draft.mentalTempo,
+          mentalTension: draft.mentalTension,
         }),
       });
       const data = await res.json();
@@ -67,7 +79,7 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
         setError(data.error ?? 'Failed to save');
         return;
       }
-      const next = toDraft(data as RoundDetails);
+      const next = toDraft(data as RoundDetails & { playedOn: string });
       setSaved(next);
       setDraft(next);
       setJustSaved(true);
@@ -85,7 +97,7 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
         <h2 id="round-details-heading" className="font-semibold text-lg">
           Round notes
         </h2>
-        <p className="text-xs text-muted">Name it, write it up, and rate your head. Doesn&apos;t affect strokes gained.</p>
+        <p className="text-xs text-muted">Name it, write it up, and rate how it felt. Doesn&apos;t affect strokes gained. Course and tee are fixed once a round is started — the shots&apos; yardages depend on the tee.</p>
       </div>
 
       <label className="flex flex-col gap-1">
@@ -96,6 +108,16 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
           maxLength={MAX_NAME_LENGTH}
           placeholder="e.g. Medal Final 2026"
           onChange={(e) => update({ name: e.target.value })}
+          className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-base"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="font-mono text-xs uppercase tracking-wide text-muted">Date played</span>
+        <input
+          type="date"
+          value={draft.playedOn}
+          onChange={(e) => e.target.value && update({ playedOn: e.target.value })}
           className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-base"
         />
       </label>
@@ -114,7 +136,7 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
       </label>
 
       <fieldset className="space-y-3">
-        <legend className="font-mono text-xs uppercase tracking-wide text-muted mb-1">Mentality</legend>
+        <legend className="font-mono text-xs uppercase tracking-wide text-muted mb-1">Balance · Tempo · Tension</legend>
         {RATINGS.map(({ key, label, hint }) => (
           <div key={key} className="space-y-1">
             <p className="text-sm">

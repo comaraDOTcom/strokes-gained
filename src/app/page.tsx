@@ -45,9 +45,9 @@ export default async function Home({
             const t = r.traditional;
             const d = detailsById.get(r.roundId);
             const ratings = [
-              ['Conf', d?.mentalConfidence],
-              ['Focus', d?.mentalFocus],
-              ['Comp', d?.mentalComposure],
+              ['Balance', d?.mentalBalance],
+              ['Tempo', d?.mentalTempo],
+              ['Tension', d?.mentalTension],
             ].filter((x): x is [string, number] => typeof x[1] === 'number');
             return (
               <li key={r.roundId} className="border rounded-xl bg-card p-3 sm:p-4 space-y-2">

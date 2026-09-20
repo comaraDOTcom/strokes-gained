@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 import { yardsToFeet } from '@/lib/units';
-import { defaultResultLie } from '@/lib/rounds/entry';
+import { defaultResultLie, type Commitment, type Focus } from '@/lib/rounds/entry';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
 
@@ -27,6 +27,8 @@ export type ShotRow = {
   sg: number | null;
   category: string | null;
   bunkerSubtype: string | null;
+  focus: string | null;
+  commitment: string | null;
 };
 
 function displayDistance(lie: Lie, yards: number): number {
@@ -36,6 +38,41 @@ function displayDistance(lie: Lie, yards: number): number {
 
 function unitFor(lie: Lie | null): string {
   return lie === 'GREEN' ? 'ft' : 'y';
+}
+
+/** Optional two-way tag. Tap the selected option again to clear it. */
+function TagRow<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; text: string }[];
+  value: T | null;
+  onChange: (v: T | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2" role="group" aria-label={`${label} (optional)`}>
+      <span className="w-14 shrink-0 font-mono text-xs uppercase tracking-wide text-muted">{label}</span>
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(on ? null : o.value)}
+            className={`flex-1 rounded-lg border px-2 py-1.5 text-sm ${
+              on ? 'bg-accent-soft border-accent text-ink font-medium' : 'bg-paper border-line-strong text-ink-2'
+            }`}
+          >
+            {o.text}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function RoundEntry({
@@ -67,6 +104,9 @@ export function RoundEntry({
   const [distance, setDistance] = useState('');
   const [penaltyOn, setPenaltyOn] = useState(false);
   const [penaltyType, setPenaltyType] = useState<PenaltyType>(null);
+  // Optional per-shot mentality tags. Reset after every shot: they describe *that* shot.
+  const [focus, setFocus] = useState<Focus | null>(null);
+  const [commitment, setCommitment] = useState<Commitment | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,6 +147,8 @@ export function RoundEntry({
    * lie can default to GREEN after a shot that finished on the green. */
   function resetForm(holeShots: readonly ShotRow[]) {
     setSelectedLie(defaultResultLie(holeShots));
+    setFocus(null);
+    setCommitment(null);
     setDistance('');
     setPenaltyOn(false);
     setPenaltyType(null);
@@ -120,10 +162,16 @@ export function RoundEntry({
     setDistance(shot.holed || !shot.endLie ? '' : String(displayDistance(shot.endLie as Lie, shot.endYards)));
     setPenaltyOn(shot.penaltyStrokes > 0);
     setPenaltyType(shot.penaltyType as PenaltyType);
+    setFocus(shot.focus as Focus | null);
+    setCommitment(shot.commitment as Commitment | null);
     setError(null);
   }
 
   async function saveShot(opts: { holed: boolean }) {
+    const laterShots = editingShotNo !== null ? holeShots.filter((s) => s.shotNo > editingShotNo).length : 0;
+    if (opts.holed && laterShots > 0 && !window.confirm(`Marking this shot holed removes the ${laterShots} shot${laterShots === 1 ? '' : 's'} after it. Continue?`)) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -138,6 +186,8 @@ export function RoundEntry({
           holed: opts.holed,
           penaltyStrokes: penaltyOn ? 1 : 0,
           penaltyType: penaltyOn ? penaltyType : null,
+          focus,
+          commitment,
         }),
       });
       const data = await res.json();
@@ -228,6 +278,12 @@ export function RoundEntry({
                 {s.penaltyStrokes > 0 ? ` (+${s.penaltyStrokes} penalty)` : ''}
                 {' · SG '}
                 {(s.sg ?? 0).toFixed(2)}
+                {(s.focus || s.commitment) && (
+                  <span className="font-mono text-xs text-muted">
+                    {' · '}
+                    {[s.focus && s.focus.toLowerCase(), s.commitment && s.commitment.toLowerCase()].filter(Boolean).join(' · ')}
+                  </span>
+                )}
               </span>
               <button className="text-accent underline text-xs" onClick={() => startEdit(s)} disabled={busy}>
                 Edit
@@ -242,7 +298,7 @@ export function RoundEntry({
 
         {editingShotNo !== null && (
           <p className="text-xs text-amber-700">
-            Editing shot {editingShotNo} — saving will replace it and clear any shots after it.{' '}
+            Editing shot {editingShotNo} — later shots keep their results; their starting positions follow this one. (Marking it Holed removes the shots after it.){' '}
             <button className="underline" onClick={() => resetForm(holeShots)}>
               Cancel
             </button>
@@ -299,6 +355,27 @@ export function RoundEntry({
 
             {!isStrokeAndDistance && (
               <>
+                <div className="space-y-1.5">
+                  <TagRow
+                    label="Focus"
+                    options={[
+                      { value: 'INTERNAL', text: 'Internal' },
+                      { value: 'EXTERNAL', text: 'External' },
+                    ]}
+                    value={focus}
+                    onChange={setFocus}
+                  />
+                  <TagRow
+                    label="Commit"
+                    options={[
+                      { value: 'COMMITTED', text: 'Committed' },
+                      { value: 'HESITANT', text: 'Hesitant' },
+                    ]}
+                    value={commitment}
+                    onChange={setCommitment}
+                  />
+                </div>
+
                 <div className="grid grid-cols-3 gap-2">
                   {LIES.map((lie) => (
                     <button

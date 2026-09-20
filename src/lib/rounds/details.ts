@@ -12,19 +12,27 @@ export const MAX_NAME_LENGTH = 80;
 /** Generous on purpose — a transcribed voice note of a whole round is long. */
 export const MAX_NOTES_LENGTH = 50_000;
 
-export const MENTAL_FIELDS = ['mentalConfidence', 'mentalFocus', 'mentalComposure'] as const;
+/**
+ * Pia Nilsson's balance / tempo / tension, rated for the round overall. Every
+ * scale reads "higher is better" — for tension, 5 means relaxed. (Per-shot
+ * focus and commitment tags live in `entry.ts`.)
+ */
+export const MENTAL_FIELDS = ['mentalBalance', 'mentalTempo', 'mentalTension'] as const;
 export type MentalField = (typeof MENTAL_FIELDS)[number];
 
 export type RoundDetails = {
   name: string | null;
   notes: string | null;
-  mentalConfidence: number | null;
-  mentalFocus: number | null;
-  mentalComposure: number | null;
+  mentalBalance: number | null;
+  mentalTempo: number | null;
+  mentalTension: number | null;
 };
 
+/** Everything a round PATCH may change: the human layer plus the date played. */
+export type RoundPatch = Partial<RoundDetails> & { playedOn?: string };
+
 export type ParseResult =
-  | { ok: true; patch: Partial<RoundDetails> }
+  | { ok: true; patch: RoundPatch }
   | { ok: false; error: string };
 
 /**
@@ -37,7 +45,15 @@ export function parseRoundDetailsPatch(body: unknown): ParseResult {
     return { ok: false, error: 'Body must be a JSON object' };
   }
   const input = body as Record<string, unknown>;
-  const patch: Partial<RoundDetails> = {};
+  const patch: RoundPatch = {};
+
+  if ('playedOn' in input) {
+    const v = input.playedOn;
+    if (typeof v !== 'string' || !isRealIsoDate(v)) {
+      return { ok: false, error: 'playedOn must be a real date in YYYY-MM-DD form' };
+    }
+    patch.playedOn = v;
+  }
 
   for (const key of ['name', 'notes'] as const) {
     if (!(key in input)) continue;
@@ -69,6 +85,13 @@ export function parseRoundDetailsPatch(body: unknown): ParseResult {
   }
 
   return { ok: true, patch };
+}
+
+/** YYYY-MM-DD that is also a real calendar date (rejects 2026-02-30). */
+export function isRealIsoDate(v: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
 
 /** What to call a round in lists/headers: its name, else "Course — Tee". */

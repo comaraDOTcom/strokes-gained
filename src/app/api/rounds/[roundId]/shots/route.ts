@@ -5,17 +5,20 @@
  * client. That structurally rules out most broken-chain bugs before they
  * can happen.
  *
- * Editing a past shot re-submits it here with the same (holeNo, shotNo):
- * every shot after it in that hole is deleted first (its start would no
- * longer match), so the user is prompted to re-enter what follows — the
- * same behaviour any scorecard app has when you correct an earlier shot.
+ * Editing a past shot re-submits it here with the same (holeNo, shotNo) and
+ * changes it IN PLACE: later shots keep the results the user entered, and
+ * their starts are re-derived from the edited shot (see `propagateChain`).
+ * The one exception is marking the edited shot HOLED — nothing can follow a
+ * holed shot, so anything after it is removed.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, gt, gte } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { rounds, shots, teeHoles } from '@/db/schema';
 import { recomputeRound } from '@/lib/sg/recompute';
 import { feetToYards } from '@/lib/units';
+import { parseShotTags } from '@/lib/rounds/entry';
+import { propagateChain } from '@/lib/rounds/chain';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 
@@ -28,6 +31,9 @@ type ShotResultBody = {
   holed: boolean;
   penaltyStrokes: number;
   penaltyType: PenaltyType;
+  /** Optional mentality tags; omitted on an edit = leave the stored value alone. */
+  focus?: unknown;
+  commitment?: unknown;
 };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ roundId: string }> }) {
@@ -48,6 +54,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
   if (!holed && penaltyType !== 'STROKE_AND_DISTANCE' && !body.endLie) {
     return NextResponse.json({ error: 'endLie is required unless the shot is holed' }, { status: 400 });
   }
+
+  const tags = parseShotTags({ focus: body.focus, commitment: body.commitment });
+  if (!tags.ok) return NextResponse.json({ error: tags.error }, { status: 400 });
 
   const round = db.select().from(rounds).where(eq(rounds.id, roundId)).get();
   if (!round) return NextResponse.json({ error: 'Round not found' }, { status: 404 });
@@ -101,26 +110,66 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
     finalHoled = false;
   }
 
-  db.transaction((tx) => {
-    // Editing shot N invalidates anything after it in this hole.
-    tx.delete(shots)
-      .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), gte(shots.shotNo, shotNo)))
-      .run();
+  const existing = db
+    .select()
+    .from(shots)
+    .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), eq(shots.shotNo, shotNo)))
+    .get();
 
-    tx.insert(shots)
-      .values({
-        roundId,
-        holeNo,
-        shotNo,
-        startLie,
-        startYards,
-        endLie,
-        endYards,
-        holed: finalHoled,
-        penaltyStrokes: penaltyStrokes ?? 0,
-        penaltyType: penaltyType ?? null,
-      })
-      .run();
+  db.transaction((tx) => {
+    if (!existing) {
+      tx.insert(shots)
+        .values({
+          roundId,
+          holeNo,
+          shotNo,
+          startLie,
+          startYards,
+          endLie,
+          endYards,
+          holed: finalHoled,
+          penaltyStrokes: penaltyStrokes ?? 0,
+          penaltyType: penaltyType ?? null,
+          focus: tags.focus ?? null,
+          commitment: tags.commitment ?? null,
+        })
+        .run();
+      return;
+    }
+
+    // Edit in place. Tags that weren't sent keep their stored value.
+    const updated = {
+      ...existing,
+      startLie,
+      startYards,
+      endLie,
+      endYards,
+      holed: finalHoled,
+      penaltyStrokes: penaltyStrokes ?? 0,
+      penaltyType: penaltyType ?? null,
+      focus: tags.focus === undefined ? existing.focus : tags.focus,
+      commitment: tags.commitment === undefined ? existing.commitment : tags.commitment,
+    };
+    tx.update(shots).set(updated).where(eq(shots.id, existing.id)).run();
+
+    // Re-derive every later shot's start from this one (and drop them if this shot is now holed).
+    const chain = tx
+      .select()
+      .from(shots)
+      .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), gte(shots.shotNo, shotNo)))
+      .orderBy(asc(shots.shotNo))
+      .all();
+    chain[0] = updated;
+    const tail = propagateChain(chain, 0);
+    if (updated.holed) {
+      tx.delete(shots).where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), gt(shots.shotNo, shotNo))).run();
+    }
+    for (const t of tail) {
+      tx.update(shots)
+        .set({ startLie: t.startLie, startYards: t.startYards, endLie: t.endLie, endYards: t.endYards })
+        .where(eq(shots.id, t.id))
+        .run();
+    }
   });
 
   recomputeRound(roundId);

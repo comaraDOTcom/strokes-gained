@@ -15,6 +15,13 @@
       "when": 1789940277731,
       "tag": "0001_glossy_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789942330875,
+      "tag": "0002_safe_mordo",
+      "breakpoints": true
     }
   ]
 }

@@ -26,7 +26,7 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 3 | Round entry (`/rounds/new`, `/rounds/[roundId]`) | ✅ Built. Last full end-to-end validation pass was interrupted mid-way (session teardown) — re-verify against `BUILD.md`'s Phase 3 checklist before trusting it blindly |
 | 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs, course filter | ✅ Built, verified in the browser. Not built: the 18-hole SG heatmap strip from the design mock |
 | 5 | Trends + practice priority, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
-| — | Round notes: name, commentary, mentality ratings | ✅ Built (see below) |
+| — | Round notes, mentality (BTT + per-shot focus/commitment), in-place editing | ✅ Built (see below) |
 
 **Design direction**: two mockups (landing + dashboard) are published at
 <https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB> — analytical/data-tool
@@ -36,16 +36,34 @@ not real app code, but should inform Phase 4's actual implementation. The course
 filter is speced in `BUILD.md` (Phase 4) and implemented on `/` and `/insights`
 via `?course=<id>` (`src/lib/insights/course-filter.ts`, `src/app/course-filter.tsx`).
 
-### Round notes (name, commentary, mentality)
+### Round notes and mentality
 
-Each round can carry a **name** (e.g. "Medal Final 2026"), free-text **commentary**
-(paste a transcribed voice note, or use the keyboard's dictation), and three
-self-rated **mentality** scores, 1–5: confidence, focus, composure (resetting after
-a bad shot). Set the name when starting a round or later; everything is editable on
-the round page under "Round notes" (`PATCH /api/rounds/[roundId]`). None of it feeds
-strokes gained. Stored on `rounds` (`name`, `notes`, `mental_*`), validated in
-`src/lib/rounds/details.ts`. Not built yet: showing mentality against SG on
-`/insights`, which needs more rounds to mean anything.
+**Per round** (edit any time on the round page under "Round notes", `PATCH /api/rounds/[roundId]`):
+a **name** (e.g. "Medal Final 2026"), free-text **commentary** (paste a transcribed
+voice note, or use the keyboard's dictation), the **date played**, and three overall
+1–5 ratings after Pia Nilsson's **balance / tempo / tension** (all "higher is better",
+so for tension 5 = relaxed).
+
+**Per shot, both optional** (two tap-again-to-clear toggles above the lie buttons; they
+reset after every shot): **focus** — internal (swing thoughts) vs external (target) —
+and **commitment** — committed vs hesitant (the "make a clear decision and commit"
+idea from Scott Fawcett's approach). Tap them *before* Save / Holed.
+
+None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
+`mental_balance/tempo/tension`) and `shots` (`focus`, `commitment`); validated in
+`src/lib/rounds/details.ts` and `src/lib/rounds/entry.ts`. The first-draft ratings
+(`mental_confidence/focus/composure`) are no longer shown but their columns are kept so
+saved values aren't destroyed. **Not built yet:** reading focus/commitment/BTT back
+against SG on `/insights` — worth doing once several rounds carry tags.
+
+### Editing a finished round
+
+Any past shot can be edited from its hole (**Edit**). The edit is **in place**: later
+shots keep the results you entered and their starting positions are re-derived from the
+edited shot (`src/lib/rounds/chain.ts` — a stroke-and-distance shot's end follows its
+start). The exception: marking an edited shot **Holed** removes the shots after it.
+The date, name, commentary and ratings are editable on the round page. **Course and tee
+are fixed once a round is started** — every shot's yardages came from that tee.
 
 **Migrations run automatically** on first DB access (`src/db/client.ts`), so pulling
 this and restarting `pnpm dev` adds the new columns to an existing `data/rounds.db`

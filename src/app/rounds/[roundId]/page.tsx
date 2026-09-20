@@ -59,12 +59,13 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
       <div className="mt-6">
         <RoundDetailsForm
           roundId={roundId}
+          playedOn={round.playedOn}
           initial={{
             name: round.name,
             notes: round.notes,
-            mentalConfidence: round.mentalConfidence,
-            mentalFocus: round.mentalFocus,
-            mentalComposure: round.mentalComposure,
+            mentalBalance: round.mentalBalance,
+            mentalTempo: round.mentalTempo,
+            mentalTension: round.mentalTension,
           }}
         />
       </div>
