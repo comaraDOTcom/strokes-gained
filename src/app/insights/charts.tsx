@@ -20,9 +20,22 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { CATEGORICAL, CHROME, DIVERGING, sgColor } from '@/lib/insights/chart-colors';
+import { CATEGORICAL, CHROME, DIVERGING, fmtSg, sgColor } from '@/lib/insights/chart-colors';
 
 const AXIS_STYLE = { fontSize: 11, fill: CHROME.mutedInk };
+
+/**
+ * A named format, not a function — a Server Component page cannot pass a
+ * function prop to a 'use client' component (Next.js App Router serializes
+ * props across that boundary), so formatting choices are threaded through
+ * as plain data instead.
+ */
+type ValueFormat = 'sg' | 'plain' | 'percent';
+
+function formatValue(v: number, format: ValueFormat, suffix?: string): string {
+  const base = format === 'sg' ? fmtSg(v) : format === 'percent' ? `${v}%` : `${v}`;
+  return suffix ? `${base} ${suffix}` : base;
+}
 
 /** A single bar series over categorical/ordinal x, colored by SG sign. */
 export function DivergingBarChart({
@@ -30,13 +43,15 @@ export function DivergingBarChart({
   xKey,
   yKey,
   height = 220,
-  valueFormatter,
+  format = 'sg',
+  suffix,
 }: {
   data: Record<string, unknown>[];
   xKey: string;
   yKey: string;
   height?: number;
-  valueFormatter?: (v: number) => string;
+  format?: ValueFormat;
+  suffix?: string;
 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -45,7 +60,7 @@ export function DivergingBarChart({
         <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
         <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} />
         <Tooltip
-          formatter={(v: number) => (valueFormatter ? valueFormatter(v) : v.toFixed(2))}
+          formatter={(v: number) => formatValue(v, format, suffix)}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
         <Bar dataKey={yKey} radius={[4, 4, 4, 4]} maxBarSize={40}>
@@ -64,22 +79,26 @@ export function GroupedBarChart({
   xKey,
   series,
   height = 240,
-  valueFormatter,
+  format = 'sg',
+  suffix,
+  domain,
 }: {
   data: Record<string, unknown>[];
   xKey: string;
   series: { key: string; label: string; color: string }[];
   height?: number;
-  valueFormatter?: (v: number) => string;
+  format?: ValueFormat;
+  suffix?: string;
+  domain?: [number, number];
 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={CHROME.gridline} />
         <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
-        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} />
+        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={domain} />
         <Tooltip
-          formatter={(v: number) => (valueFormatter ? valueFormatter(v) : v.toFixed(2))}
+          formatter={(v: number) => formatValue(v, format, suffix)}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -99,7 +118,8 @@ export function TrendLineChart({
   rollingKey,
   height = 160,
   domain,
-  valueFormatter,
+  format = 'sg',
+  suffix,
 }: {
   data: Record<string, unknown>[];
   xKey: string;
@@ -107,7 +127,8 @@ export function TrendLineChart({
   rollingKey?: string;
   height?: number;
   domain?: [number, number];
-  valueFormatter?: (v: number) => string;
+  format?: ValueFormat;
+  suffix?: string;
 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -116,7 +137,7 @@ export function TrendLineChart({
         <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
         <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={domain} />
         <Tooltip
-          formatter={(v: number) => (valueFormatter ? valueFormatter(v) : v.toFixed(2))}
+          formatter={(v: number) => formatValue(v, format, suffix)}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
         <Line

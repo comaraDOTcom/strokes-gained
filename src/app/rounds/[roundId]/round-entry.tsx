@@ -39,6 +39,7 @@ function unitFor(lie: Lie | null): string {
 
 export function RoundEntry({
   roundId,
+  roundName,
   courseName,
   teeName,
   playedOn,
@@ -47,6 +48,7 @@ export function RoundEntry({
   initialHoleNo,
 }: {
   roundId: number;
+  roundName: string | null;
   courseName: string;
   teeName: string;
   playedOn: string;
@@ -175,10 +177,9 @@ export function RoundEntry({
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-lg font-semibold">
-          {courseName} — {teeName}
-        </h1>
-        <p className="text-xs text-gray-500">
+        <h1 className="text-lg font-semibold">{roundName ?? `${courseName} — ${teeName}`}</h1>
+        <p className="text-xs text-muted font-mono">
+          {roundName ? `${courseName} — ${teeName} · ` : ''}
           {playedOn} · Round score so far: {roundTotals.grossScore} · SG {roundTotals.sg.toFixed(2)}
         </p>
       </header>
@@ -196,8 +197,8 @@ export function RoundEntry({
               }}
               className={[
                 'shrink-0 w-9 h-9 rounded text-sm font-medium border',
-                h.holeNo === currentHoleNo ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300',
-                done && h.holeNo !== currentHoleNo ? 'bg-green-100 border-green-400' : '',
+                h.holeNo === currentHoleNo ? 'border-ink bg-ink text-white' : 'border-line-strong',
+                done && h.holeNo !== currentHoleNo ? 'bg-pos-soft border-pos' : '',
                 started && !done && h.holeNo !== currentHoleNo ? 'bg-yellow-50 border-yellow-400' : '',
               ].join(' ')}
             >
@@ -207,7 +208,7 @@ export function RoundEntry({
         })}
       </nav>
 
-      <section className="border rounded p-3 space-y-3">
+      <section className="border rounded-xl bg-card p-3 space-y-3">
         <h2 className="font-semibold">
           Hole {hole.holeNo} · Par {hole.par} · {hole.yards}y
           {hole.strokeIndex !== null ? ` · SI ${hole.strokeIndex}` : ''}
@@ -223,7 +224,7 @@ export function RoundEntry({
                 {' · SG '}
                 {(s.sg ?? 0).toFixed(2)}
               </span>
-              <button className="text-blue-600 underline text-xs" onClick={() => startEdit(s)} disabled={busy}>
+              <button className="text-accent underline text-xs" onClick={() => startEdit(s)} disabled={busy}>
                 Edit
               </button>
             </li>
@@ -244,12 +245,12 @@ export function RoundEntry({
         )}
 
         {holeDone && editingShotNo === null ? (
-          <p className="text-green-700 text-sm">Hole complete.</p>
+          <p className="text-pos text-sm">Hole complete.</p>
         ) : start === null ? (
-          <p className="text-red-600 text-sm">Can&apos;t enter this shot — the previous shot hasn&apos;t been saved.</p>
+          <p className="text-neg text-sm">Can&apos;t enter this shot — the previous shot hasn&apos;t been saved.</p>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-2">
               Shot {nextShotNo} from {start.lie} {displayDistance(start.lie, start.yards)}
               {unitFor(start.lie)}
             </p>
@@ -301,7 +302,7 @@ export function RoundEntry({
                       onClick={() => setSelectedLie(lie)}
                       className={[
                         'border rounded py-3 text-sm font-medium',
-                        selectedLie === lie ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300',
+                        selectedLie === lie ? 'bg-ink text-white border-ink' : 'border-line-strong',
                       ].join(' ')}
                     >
                       {lie}
@@ -311,15 +312,17 @@ export function RoundEntry({
                     type="button"
                     onClick={() => void saveShot({ holed: true })}
                     disabled={busy}
-                    className="col-span-3 border rounded py-3 text-sm font-semibold bg-green-600 text-white border-green-600 disabled:opacity-50"
+                    className="col-span-3 border rounded py-3 text-sm font-semibold bg-pos text-white border-pos disabled:opacity-50"
                   >
                     Holed
                   </button>
                 </div>
 
-                {selectedLie === 'RECOVERY' && (
-                  <p className="text-xs text-gray-500 italic">{RECOVERY_DEFINITION}</p>
-                )}
+                {/* Always visible, not only once RECOVERY is picked: consistency of this
+                    label over time matters more than any other input (BUILD.md Phase 3). */}
+                <p className={`text-xs italic ${selectedLie === 'RECOVERY' ? 'text-ink' : 'text-muted'}`}>
+                  <span className="font-semibold not-italic">RECOVERY</span> = {RECOVERY_DEFINITION}
+                </p>
 
                 {selectedLie && (
                   <label className="flex flex-col gap-1 text-sm">
@@ -336,13 +339,13 @@ export function RoundEntry({
               </>
             )}
 
-            {error && <p className="text-red-600 text-sm">{error}</p>}
+            {error && <p className="text-neg text-sm">{error}</p>}
 
             <button
               type="button"
               disabled={busy || (!isStrokeAndDistance && !canSaveResult)}
               onClick={() => void saveShot({ holed: false })}
-              className="w-full bg-blue-600 text-white rounded py-3 text-base font-medium disabled:opacity-50"
+              className="w-full bg-ink text-white rounded py-3 text-base font-medium disabled:opacity-50"
             >
               Save shot
             </button>
@@ -352,7 +355,7 @@ export function RoundEntry({
                 type="button"
                 disabled={busy}
                 onClick={() => void deleteFrom(holeShots[holeShots.length - 1]!.shotNo)}
-                className="w-full text-red-600 text-sm underline"
+                className="w-full text-neg text-sm underline"
               >
                 Undo last shot
               </button>

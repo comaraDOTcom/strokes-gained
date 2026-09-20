@@ -24,16 +24,40 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 1 | SG engine (baseline, interpolation, categorisation, compute) | ✅ Done, full test suite green |
 | 2 | Schema, course seed, `.xlsx` import, `/courses` editor | ✅ Done |
 | 3 | Round entry (`/rounds/new`, `/rounds/[roundId]`) | ✅ Built. Last full end-to-end validation pass was interrupted mid-way (session teardown) — re-verify against `BUILD.md`'s Phase 3 checklist before trusting it blindly |
-| 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs | 🔄 In progress at time of last handoff |
-| 5 | Trends + practice priority, cross-course difficulty caveat | 🔄 In progress at time of last handoff |
+| 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs, course filter | ✅ Built, verified in the browser. Not built: the 18-hole SG heatmap strip from the design mock |
+| 5 | Trends + practice priority, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
+| — | Round notes: name, commentary, mentality ratings | ✅ Built (see below) |
 
 **Design direction**: two mockups (landing + dashboard) are published at
 <https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB> — analytical/data-tool
-aesthetic (IBM Plex Sans + Plex Mono, steel-blue accent, sharp corners, an
+aesthetic (IBM Plex Sans + Plex Mono, steel-blue accent, rounded cards, an
 18-hole SG heatmap strip, a Portmarnock/Elm Park course filter). Static HTML,
-not real app code, but should inform Phase 4's actual implementation — including
-the course filter, which isn't yet speced into `BUILD.md` and should be added to
-Phase 4 if not already there.
+not real app code, but should inform Phase 4's actual implementation. The course
+filter is speced in `BUILD.md` (Phase 4) and implemented on `/` and `/insights`
+via `?course=<id>` (`src/lib/insights/course-filter.ts`, `src/app/course-filter.tsx`).
+
+### Round notes (name, commentary, mentality)
+
+Each round can carry a **name** (e.g. "Medal Final 2026"), free-text **commentary**
+(paste a transcribed voice note, or use the keyboard's dictation), and three
+self-rated **mentality** scores, 1–5: confidence, focus, composure (resetting after
+a bad shot). Set the name when starting a round or later; everything is editable on
+the round page under "Round notes" (`PATCH /api/rounds/[roundId]`). None of it feeds
+strokes gained. Stored on `rounds` (`name`, `notes`, `mental_*`), validated in
+`src/lib/rounds/details.ts`. Not built yet: showing mentality against SG on
+`/insights`, which needs more rounds to mean anything.
+
+**Migrations run automatically** on first DB access (`src/db/client.ts`), so pulling
+this and restarting `pnpm dev` adds the new columns to an existing `data/rounds.db`
+(nullable, no data touched). Still, back the file up before schema changes.
+
+### Design system
+
+Tokens live in `src/app/globals.css` (`@theme`): warm paper background, near-black
+ink, terracotta = strokes lost, green = strokes gained, steel-blue selected state;
+IBM Plex Sans for text, Plex Mono for numbers/labels. Use the semantic classes
+(`bg-paper`, `text-neg`, `font-mono`…), not raw Tailwind palette colours. Charts use
+the same pair via `src/lib/insights/chart-colors.ts`.
 
 ### Known issues already fixed (don't reintroduce)
 

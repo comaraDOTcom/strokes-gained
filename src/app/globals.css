@@ -1,1 +1,42 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens, taken from the published design mock (landing + dashboard):
+ * warm paper background, near-black ink, terracotta for strokes lost, green for
+ * strokes gained, and a steel-blue selected state. IBM Plex Sans for text, Plex
+ * Mono for numbers/labels. Use these semantic names (bg-paper, text-neg,
+ * font-mono …) rather than raw Tailwind palette colours.
+ */
+@theme {
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --color-paper: #f3f2ea;
+  --color-paper-2: #e9e8dc;
+  --color-card: #faf9f4;
+  --color-line: #dedcce;
+  --color-line-strong: #c3c2b7;
+
+  --color-ink: #16221c;
+  --color-ink-2: #4a5049;
+  --color-muted: #6b6f66;
+  --color-faint: #9a9d92;
+
+  --color-pos: #2d7a4f;
+  --color-pos-soft: #dcefe3;
+  --color-neg: #b5432b;
+  --color-neg-soft: #f6dfd8;
+  --color-accent: #3b5b8c;
+  --color-accent-soft: #e3e9f2;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+}

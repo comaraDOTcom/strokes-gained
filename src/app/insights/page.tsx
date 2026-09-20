@@ -1,4 +1,6 @@
-import { getAllEnrichedShots, getRoundCount } from '@/lib/insights/queries';
+import Link from 'next/link';
+import { getAllEnrichedShots, getCourseOptions } from '@/lib/insights/queries';
+import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import {
   categorySeries,
   latestVsPriorMean,
@@ -15,6 +17,7 @@ import {
   upAndDownVsSandSaveTrend,
 } from '@/lib/insights/aggregate';
 import { fmtPct, fmtSg, CATEGORICAL } from '@/lib/insights/chart-colors';
+import { CourseFilter } from '../course-filter';
 import { DivergingBarChart, GroupedBarChart, TrendLineChart } from './charts';
 
 export const dynamic = 'force-dynamic';
@@ -28,27 +31,49 @@ const CATEGORY_LABEL: Record<string, string> = {
   RECOVERY: 'Recovery',
 };
 
+function ChartOrEmpty({ data, children }: { data: unknown[]; children: React.ReactNode }) {
+  if (data.length === 0) {
+    return <p className="text-sm text-faint py-4">No shots in this category yet.</p>;
+  }
+  return <>{children}</>;
+}
+
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="border rounded p-4 space-y-3">
+    <section className="border rounded-xl bg-card p-4 space-y-3">
       <div>
         <h2 className="font-semibold text-lg">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
       </div>
       {children}
     </section>
   );
 }
 
-export default function InsightsPage() {
-  const roundCount = getRoundCount();
-  const shots = getAllEnrichedShots();
+export default async function InsightsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ course?: string | string[] }>;
+}) {
+  const { course } = await searchParams;
+  const options = getCourseOptions();
+  const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
+  const selected = options.find((o) => o.courseId === selectedCourseId);
+  const roundCount = selected?.roundCount ?? 0;
+  const shots = selectedCourseId === null ? [] : getAllEnrichedShots(selectedCourseId);
 
   if (roundCount === 0) {
     return (
-      <main className="max-w-3xl mx-auto p-4 sm:p-6">
-        <h1 className="text-2xl font-semibold mb-2">Insights</h1>
-        <p className="text-gray-600">No rounds logged yet — nothing to break down.</p>
+      <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
+        <h1 className="text-2xl font-semibold">Insights</h1>
+        <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/insights" />
+        <p className="text-ink-2">
+          No rounds logged yet{selected ? ` at ${selected.name}` : ''}.{' '}
+          <Link className="underline" href="/rounds/new">
+            Log a round
+          </Link>
+          .
+        </p>
       </main>
     );
   }
@@ -76,13 +101,14 @@ export default function InsightsPage() {
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Insights</h1>
-      <p className="text-sm text-gray-500">
-        {roundCount} round{roundCount === 1 ? '' : 's'} logged.
+      <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/insights" />
+      <p className="text-sm text-muted">
+        {roundCount} round{roundCount === 1 ? '' : 's'} logged at {selected?.name}.
       </p>
 
       <Section title="SG by category" subtitle="Latest round vs. mean of the prior 3 rounds">
         {comparison.length === 0 ? (
-          <p className="text-sm text-gray-500">Needs at least 2 rounds in the same category to compare.</p>
+          <p className="text-sm text-muted">Needs at least 2 rounds in the same category to compare.</p>
         ) : (
           <GroupedBarChart
             data={comparison.map((c) => ({
@@ -95,7 +121,6 @@ export default function InsightsPage() {
               { key: 'Prior 3 avg', label: 'Prior 3 avg', color: CATEGORICAL[2] },
               { key: 'Latest', label: 'Latest round', color: CATEGORICAL[0] },
             ]}
-            valueFormatter={(v) => fmtSg(v)}
           />
         )}
       </Section>
@@ -111,7 +136,6 @@ export default function InsightsPage() {
                 valueKey="sg"
                 rollingKey="rolling"
                 height={140}
-                valueFormatter={(v) => fmtSg(v)}
               />
             </div>
           ))}
@@ -119,7 +143,7 @@ export default function InsightsPage() {
       </Section>
 
       <Section title="Putting" subtitle="SG and make% by distance band, vs. an implied baseline make%">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           The baseline table only encodes expected strokes, not a make-percentage table, so "baseline" here is
           <em> implied</em> from it (2 − expected strokes, i.e. the make rate a hole-or-2-putt model implies) — a
           derived comparator, not a separately sourced statistic.
@@ -128,11 +152,11 @@ export default function InsightsPage() {
           data={puttingBands.map((b) => ({ band: b.band, sgPerPutt: Number(b.sgPerPutt.toFixed(3)) }))}
           xKey="band"
           yKey="sgPerPutt"
-          valueFormatter={(v) => `${fmtSg(v)} / putt`}
+          suffix="/ putt"
         />
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-gray-400 text-xs">
+            <tr className="text-left text-faint text-xs">
               <th className="py-1">Band</th>
               <th className="py-1">Attempts</th>
               <th className="py-1">Make%</th>
@@ -145,7 +169,7 @@ export default function InsightsPage() {
                 <td className="py-1">{b.band}</td>
                 <td className="py-1">{b.attempts}</td>
                 <td className="py-1">{fmtPct(b.makePct)}</td>
-                <td className="py-1 text-gray-500">{fmtPct(b.impliedBaselineMakePct)}</td>
+                <td className="py-1 text-muted">{fmtPct(b.impliedBaselineMakePct)}</td>
               </tr>
             ))}
           </tbody>
@@ -156,57 +180,67 @@ export default function InsightsPage() {
           xKey="round"
           valueKey="putts"
           height={140}
-          valueFormatter={(v) => `${v}`}
+          format="plain"
         />
       </Section>
 
       <Section title="Short game" subtitle="Shots ≤30y, not on the green, not sand — by band and by lie">
         <p className="text-sm font-medium mb-1">By band</p>
-        <DivergingBarChart
-          data={shortGameBands.map((b) => ({ band: b.band, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
-          xKey="band"
-          yKey="sgPerShot"
-          valueFormatter={(v) => `${fmtSg(v)} / shot`}
-          height={180}
-        />
+        <ChartOrEmpty data={shortGameBands}>
+          <DivergingBarChart
+            data={shortGameBands.map((b) => ({ band: b.band, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
+            xKey="band"
+            yKey="sgPerShot"
+            suffix="/ shot"
+            height={180}
+          />
+        </ChartOrEmpty>
         <p className="text-sm font-medium mb-1 mt-3">By lie</p>
-        <DivergingBarChart
-          data={shortGameLies.map((l) => ({ lie: l.lie, sgPerShot: Number(l.sgPerShot.toFixed(3)) }))}
-          xKey="lie"
-          yKey="sgPerShot"
-          valueFormatter={(v) => `${fmtSg(v)} / shot`}
-          height={180}
-        />
+        <ChartOrEmpty data={shortGameLies}>
+          <DivergingBarChart
+            data={shortGameLies.map((l) => ({ lie: l.lie, sgPerShot: Number(l.sgPerShot.toFixed(3)) }))}
+            xKey="lie"
+            yKey="sgPerShot"
+            suffix="/ shot"
+            height={180}
+          />
+        </ChartOrEmpty>
       </Section>
 
       <Section title="Bunker" subtitle="Greenside (≤30y) vs. fairway (>30y) — deliberately its own category, not folded into approach">
-        <DivergingBarChart
-          data={bunker.map((b) => ({ subtype: b.subtype, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
-          xKey="subtype"
-          yKey="sgPerShot"
-          valueFormatter={(v) => `${fmtSg(v)} / shot`}
-          height={180}
-        />
-        <p className="text-sm text-gray-600">Sand save %: see the up-and-down/sand-save trend below.</p>
+        <ChartOrEmpty data={bunker}>
+          <DivergingBarChart
+            data={bunker.map((b) => ({ subtype: b.subtype, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
+            xKey="subtype"
+            yKey="sgPerShot"
+            suffix="/ shot"
+            height={180}
+          />
+        </ChartOrEmpty>
+        <p className="text-sm text-ink-2">Sand save %: see the up-and-down/sand-save trend below.</p>
       </Section>
 
       <Section title="Approach" subtitle="By band and by starting lie, plus GIR% and fairways-hit% trend">
         <p className="text-sm font-medium mb-1">By band</p>
-        <DivergingBarChart
-          data={approachBands.map((b) => ({ band: b.band, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
-          xKey="band"
-          yKey="sgPerShot"
-          valueFormatter={(v) => `${fmtSg(v)} / shot`}
-          height={180}
-        />
+        <ChartOrEmpty data={approachBands}>
+          <DivergingBarChart
+            data={approachBands.map((b) => ({ band: b.band, sgPerShot: Number(b.sgPerShot.toFixed(3)) }))}
+            xKey="band"
+            yKey="sgPerShot"
+            suffix="/ shot"
+            height={180}
+          />
+        </ChartOrEmpty>
         <p className="text-sm font-medium mb-1 mt-3">By start lie</p>
-        <DivergingBarChart
-          data={approachLies.map((l) => ({ lie: l.lie, sgPerShot: Number(l.sgPerShot.toFixed(3)) }))}
-          xKey="lie"
-          yKey="sgPerShot"
-          valueFormatter={(v) => `${fmtSg(v)} / shot`}
-          height={180}
-        />
+        <ChartOrEmpty data={approachLies}>
+          <DivergingBarChart
+            data={approachLies.map((l) => ({ lie: l.lie, sgPerShot: Number(l.sgPerShot.toFixed(3)) }))}
+            xKey="lie"
+            yKey="sgPerShot"
+            suffix="/ shot"
+            height={180}
+          />
+        </ChartOrEmpty>
         <p className="text-sm font-medium mb-1 mt-3">GIR% and fairways-hit% trend</p>
         <GroupedBarChart
           data={girFairwayTrend.map((t) => ({
@@ -219,22 +253,23 @@ export default function InsightsPage() {
             { key: 'GIR%', label: 'GIR%', color: CATEGORICAL[0] },
             { key: 'Fairways%', label: 'Fairways%', color: CATEGORICAL[1] },
           ]}
-          valueFormatter={(v) => `${v}%`}
+          format="percent"
+          domain={[0, 100]}
           height={180}
         />
       </Section>
 
       <Section title="Strokes lost to penalties and recovery" subtitle="By hole">
         {holeLosses.length === 0 ? (
-          <p className="text-sm text-gray-500">No penalties or recovery shots logged yet.</p>
+          <p className="text-sm text-muted">No penalties or recovery shots logged yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-400 text-xs">
+              <tr className="text-left text-faint text-xs">
                 <th className="py-1">Hole</th>
                 <th className="py-1">Course</th>
                 <th className="py-1">Penalty strokes</th>
-                <th className="py-1">SG lost to recovery</th>
+                <th className="py-1">SG on recovery shots</th>
               </tr>
             </thead>
             <tbody>
@@ -242,8 +277,8 @@ export default function InsightsPage() {
                 <tr key={`${h.courseName}-${h.holeNo}`} className="border-t">
                   <td className="py-1">{h.holeNo}</td>
                   <td className="py-1">{h.courseName}</td>
-                  <td className="py-1 text-red-600">{h.penaltyStrokes > 0 ? h.penaltyStrokes : '—'}</td>
-                  <td className="py-1 text-red-600">
+                  <td className="py-1 text-neg">{h.penaltyStrokes > 0 ? h.penaltyStrokes : '—'}</td>
+                  <td className={`py-1 ${h.recoverySgLost < 0 ? 'text-neg' : 'text-pos'}`}>
                     {h.recoveryShotCount > 0 ? `${fmtSg(h.recoverySgLost)} (${h.recoveryShotCount} shot${h.recoveryShotCount === 1 ? '' : 's'})` : '—'}
                   </td>
                 </tr>
@@ -265,7 +300,8 @@ export default function InsightsPage() {
             { key: 'Up & down %', label: 'Up & down %', color: CATEGORICAL[0] },
             { key: 'Sand save %', label: 'Sand save %', color: CATEGORICAL[6] },
           ]}
-          valueFormatter={(v) => `${v}%`}
+          format="percent"
+          domain={[0, 100]}
         />
       </Section>
     </main>

@@ -21,13 +21,13 @@ export const CATEGORICAL = [
 
 /** Diverging pair for SG (polarity: gained vs. lost), neutral midpoint for ~0. */
 export const DIVERGING = {
-  positive: '#2a78d6', // blue
-  negative: '#e34948', // red
+  positive: '#2d7a4f', // green (design mock)
+  negative: '#b5432b', // terracotta (design mock)
   neutral: '#c3c2b7',
 } as const;
 
 export const CHROME = {
-  surface: '#fcfcfb',
+  surface: '#faf9f4',
   primaryInk: '#0b0b0b',
   secondaryInk: '#52514e',
   mutedInk: '#898781',

@@ -1,6 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
+
+const plexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-sans',
+});
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-plex-mono',
+});
 
 export const metadata: Metadata = {
   title: 'Strokes Gained',
@@ -11,7 +23,6 @@ const NAV_LINKS = [
   { href: '/', label: 'Rounds' },
   { href: '/insights', label: 'Insights' },
   { href: '/trends', label: 'Trends' },
-  { href: '/rounds/new', label: 'New round' },
   { href: '/courses', label: 'Courses' },
 ];
 
@@ -19,17 +30,29 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className="text-gray-900">
-        <nav className="border-b bg-white sticky top-0 z-10 overflow-x-auto">
-          <ul className="flex gap-4 px-3 py-2 max-w-3xl mx-auto text-sm font-medium whitespace-nowrap">
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+      <body className="font-sans text-ink">
+        <nav className="border-b bg-card sticky top-0 z-10 overflow-x-auto">
+          <ul className="flex items-center gap-3 sm:gap-4 px-3 py-2 max-w-3xl mx-auto text-sm font-medium whitespace-nowrap">
+            <li className="flex items-center gap-2 mr-auto">
+              <Link href="/" className="flex items-center gap-2" aria-label="Strokes Gained home">
+                <span className="bg-ink text-paper font-mono text-xs font-medium rounded-md px-1.5 py-1">SG</span>
+                <span className="font-semibold hidden sm:inline">Strokes Gained</span>
+              </Link>
+            </li>
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <Link className="text-blue-700 hover:underline" href={link.href}>
+                <Link className="text-ink-2 hover:text-ink underline-offset-4 hover:underline" href={link.href}>
                   {link.label}
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/rounds/new" className="bg-ink text-paper rounded-lg px-3 py-1.5 font-medium">
+                <span className="sm:hidden">+ Log</span>
+                <span className="hidden sm:inline">Log a round</span>
+              </Link>
+            </li>
           </ul>
         </nav>
         {children}

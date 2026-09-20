@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/db/client';
 import { rounds, courses, tees, teeHoles, shots } from '@/db/schema';
 import { RoundEntry } from './round-entry';
+import { RoundDetailsForm } from './round-details';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
     <main className="max-w-lg mx-auto p-3 sm:p-6">
       <RoundEntry
         roundId={roundId}
+        roundName={round.name}
         courseName={course?.name ?? 'Unknown course'}
         teeName={tee?.name ?? ''}
         playedOn={round.playedOn}
@@ -54,6 +56,18 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
         initialShotsByHole={shotsByHole}
         initialHoleNo={resumeHole}
       />
+      <div className="mt-6">
+        <RoundDetailsForm
+          roundId={roundId}
+          initial={{
+            name: round.name,
+            notes: round.notes,
+            mentalConfidence: round.mentalConfidence,
+            mentalFocus: round.mentalFocus,
+            mentalComposure: round.mentalComposure,
+          }}
+        />
+      </div>
     </main>
   );
 }

@@ -30,13 +30,13 @@ export function DifficultyToggle({ rounds }: { rounds: AdjustableRound[] }) {
         <input type="checkbox" checked={applied} onChange={(e) => setApplied(e.target.checked)} />
         Apply cross-course difficulty adjustment (off by default)
       </label>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         Adjustment = (course rating − Σ E(TEE, hole yardage)) / 18, added back per hole. Needs a course rating on
         file; rounds on a tee with none are shown unadjusted regardless of this toggle.
       </p>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-gray-400 text-xs">
+          <tr className="text-left text-faint text-xs">
             <th className="py-1">Round</th>
             <th className="py-1">Course — tee</th>
             <th className="py-1">SG {applied ? '(adjusted)' : '(raw)'}</th>
@@ -55,7 +55,7 @@ export function DifficultyToggle({ rounds }: { rounds: AdjustableRound[] }) {
                     <span className="text-amber-600 text-xs block">no course rating on file — shown unadjusted</span>
                   )}
                 </td>
-                <td className={`py-1 font-medium ${shown >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{fmtSg(shown)}</td>
+                <td className={`py-1 font-medium ${shown >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(shown)}</td>
               </tr>
             );
           })}

@@ -11,6 +11,7 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
   const [courseId, setCourseId] = useState<number | ''>(courses[0]?.id ?? '');
   const [teeId, setTeeId] = useState<number | ''>('');
   const [playedOn, setPlayedOn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +29,7 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
       const res = await fetch('/api/rounds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, teeId, playedOn }),
+        body: JSON.stringify({ courseId, teeId, playedOn, name }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -43,6 +44,20 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
 
   return (
     <form onSubmit={onSubmit} className="space-y-4 max-w-sm">
+      <label className="flex flex-col gap-1">
+        <span className="text-sm font-medium">
+          Round name <span className="text-muted font-normal">(optional)</span>
+        </span>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 text-base"
+          placeholder="e.g. St Georges Cup Rd 1"
+          maxLength={80}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </label>
+
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Course</span>
         <select
@@ -87,12 +102,12 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
         />
       </label>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-neg text-sm">{error}</p>}
 
       <button
         type="submit"
         disabled={busy}
-        className="w-full bg-blue-600 text-white rounded py-3 text-base font-medium disabled:opacity-50"
+        className="w-full bg-ink text-white rounded py-3 text-base font-medium disabled:opacity-50"
       >
         Start round
       </button>

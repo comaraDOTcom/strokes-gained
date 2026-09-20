@@ -19,12 +19,12 @@ export default async function CoursesPage() {
         </Link>
       </p>
 
-      {allCourses.length === 0 && <p className="text-gray-600">No courses yet. Run `pnpm db:seed` or import one.</p>}
+      {allCourses.length === 0 && <p className="text-ink-2">No courses yet. Run `pnpm db:seed` or import one.</p>}
 
       {allCourses.map((course) => (
         <section key={course.id} className="space-y-1">
           <h2 className="text-lg font-semibold">{course.name}</h2>
-          <p className="text-sm text-gray-600">{course.location}</p>
+          <p className="text-sm text-ink-2">{course.location}</p>
           <ul className="list-disc pl-5">
             {allTees
               .filter((t) => t.courseId === course.id)

@@ -13,10 +13,63 @@ import type { Lie } from '../sg/baseline-scratch';
 import type { Category, BunkerSubtype } from '../sg/categorise';
 import type { PenaltyType } from '../sg/compute';
 import type { EnrichedShot } from './aggregate';
+import type { CourseOption } from './course-filter';
+import type { RoundDetails } from '../rounds/details';
 
-/** All shots across all rounds, enriched with course/tee/hole context. */
-export function getAllEnrichedShots(): EnrichedShot[] {
+/** Name / commentary / mentality per round — kept out of `EnrichedShot` (which is
+ * shot-level and SG-only) and joined in by round id where a screen needs it. */
+export function getRoundDetailsById(): Map<number, RoundDetails> {
+  return new Map(
+    db
+      .select()
+      .from(rounds)
+      .all()
+      .map((r) => [
+        r.id,
+        {
+          name: r.name,
+          notes: r.notes,
+          mentalConfidence: r.mentalConfidence,
+          mentalFocus: r.mentalFocus,
+          mentalComposure: r.mentalComposure,
+        },
+      ]),
+  );
+}
+
+/** Every course (including ones with no rounds yet) with its round count and
+ * most recent round — the course filter's options. Ordered by course id so the
+ * button order is stable regardless of which course was played last. */
+export function getCourseOptions(): CourseOption[] {
   const allRounds = db.select().from(rounds).all();
+  return db
+    .select()
+    .from(courses)
+    .all()
+    .sort((a, b) => a.id - b.id)
+    .map((c) => {
+      const mine = allRounds.filter((r) => r.courseId === c.id);
+      const last = mine.reduce<(typeof mine)[number] | null>(
+        (best, r) => (!best || r.playedOn > best.playedOn || (r.playedOn === best.playedOn && r.id > best.id) ? r : best),
+        null,
+      );
+      return {
+        courseId: c.id,
+        name: c.name,
+        roundCount: mine.length,
+        lastRound: last ? { playedOn: last.playedOn, roundId: last.id } : null,
+      };
+    });
+}
+
+/** Shots across all rounds (or just one course's, when `courseId` is given),
+ * enriched with course/tee/hole context. */
+export function getAllEnrichedShots(courseId?: number): EnrichedShot[] {
+  const allRounds = (
+    courseId === undefined
+      ? db.select().from(rounds)
+      : db.select().from(rounds).where(eq(rounds.courseId, courseId))
+  ).all();
   if (allRounds.length === 0) return [];
 
   const allCourses = new Map(db.select().from(courses).all().map((c) => [c.id, c]));

@@ -22,9 +22,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 const SIGNAL_STYLE: Record<string, string> = {
-  signal: 'bg-blue-100 text-blue-800',
+  signal: 'bg-accent-soft text-accent',
   limited: 'bg-amber-100 text-amber-800',
-  noise: 'bg-gray-100 text-gray-600',
+  noise: 'bg-paper-2 text-ink-2',
 };
 
 const SIGNAL_LABEL: Record<string, string> = {
@@ -43,7 +43,7 @@ export default function TrendsPage() {
     return (
       <main className="max-w-3xl mx-auto p-4 sm:p-6">
         <h1 className="text-2xl font-semibold mb-2">Trends &amp; practice focus</h1>
-        <p className="text-gray-600">No rounds logged yet — nothing to trend.</p>
+        <p className="text-ink-2">No rounds logged yet — nothing to trend.</p>
       </main>
     );
   }
@@ -74,7 +74,7 @@ export default function TrendsPage() {
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Trends &amp; practice focus</h1>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-2">
         {roundCount} round{roundCount === 1 ? '' : 's'} logged
         {courses.length > 1 && (
           <span className="text-amber-700">
@@ -86,27 +86,27 @@ export default function TrendsPage() {
         .
       </p>
 
-      <section className="border rounded p-4 space-y-3">
+      <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Trend — latest round vs. mean of prior 3</h2>
         {roundCount < MIN_ROUNDS_FOR_TREND ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-2">
             Only {roundCount} round{roundCount === 1 ? '' : 's'} in the DB — trend comparisons need at least{' '}
             {MIN_ROUNDS_FOR_TREND} to be meaningful. Not drawing a trend line yet; log more rounds.
           </p>
         ) : trends.length === 0 ? (
-          <p className="text-sm text-gray-600">No category has enough history yet to compare.</p>
+          <p className="text-sm text-ink-2">No category has enough history yet to compare.</p>
         ) : (
           <ul className="space-y-2">
             {trends.map((t) => (
               <li key={t.category} className="flex items-center justify-between gap-3 text-sm border-t pt-2 first:border-t-0 first:pt-0">
                 <div>
                   <p className="font-medium">{CATEGORY_LABEL[t.category] ?? t.category}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     latest {fmtSg(t.latestSg)} ({t.latestShotCount} shots) vs. prior-3 avg {fmtSg(t.priorMeanSg)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className={`font-semibold ${t.delta >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{fmtSg(t.delta)}</p>
+                  <p className={`font-semibold ${t.delta >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(t.delta)}</p>
                   <span className={`text-xs px-2 py-0.5 rounded ${SIGNAL_STYLE[t.signal]}`}>{SIGNAL_LABEL[t.signal]}</span>
                 </div>
               </li>
@@ -115,14 +115,14 @@ export default function TrendsPage() {
         )}
       </section>
 
-      <section className="border rounded p-4 space-y-3">
+      <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Practice priority</h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           Ranked by cumulative SG lost over the last 4 rounds, drilled down to the band — a stable signal worth
           acting on, independent of whether the trend above happens to be moving right now.
         </p>
         {priorities.length === 0 ? (
-          <p className="text-sm text-gray-600">No net-negative band in the last {Math.min(4, roundCount)} round(s) — nothing to flag.</p>
+          <p className="text-sm text-ink-2">No net-negative band in the last {Math.min(4, roundCount)} round(s) — nothing to flag.</p>
         ) : (
           <ol className="space-y-1 text-sm">
             {priorities.slice(0, 8).map((p, i) => (
@@ -130,8 +130,8 @@ export default function TrendsPage() {
                 <span>
                   {i + 1}. {p.label}
                 </span>
-                <span className="text-red-600 font-medium">
-                  {fmtSg(p.sgLost)} over {p.roundsCovered} round{p.roundsCovered === 1 ? '' : 's'} ({p.attempts} attempts)
+                <span className="text-neg font-medium">
+                  {fmtSg(p.sgLost)} over {p.roundsCovered} round{p.roundsCovered === 1 ? '' : 's'} ({p.attempts} attempt{p.attempts === 1 ? '' : 's'})
                 </span>
               </li>
             ))}
@@ -139,9 +139,9 @@ export default function TrendsPage() {
         )}
       </section>
 
-      <section className="border rounded p-4 space-y-3">
+      <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Cross-course difficulty adjustment</h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           The baseline is length-only — it calibrates within ~0.25 strokes at Elm Park but understates a hard
           links course like Portmarnock by several shots, so raw SG there reads worse for identical golf. Off by
           default.

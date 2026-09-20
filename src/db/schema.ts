@@ -72,7 +72,15 @@ export const rounds = sqliteTable('rounds', {
     .references(() => tees.id),
   playedOn: text('played_on').notNull(), // ISO date (YYYY-MM-DD) — portable, sortable as text
   weather: text('weather'),
+  // Free-text round commentary (typed, or a dictated/transcribed voice note).
   notes: text('notes'),
+  // Optional human label, e.g. "Medal Final 2026". Null falls back to course/date in the UI.
+  name: text('name'),
+  // Self-rated mentality for the round, each 1 (poor) – 5 (excellent); null = not rated.
+  // Validated in src/lib/rounds/details.ts, not by a DB CHECK, to stay Postgres-portable.
+  mentalConfidence: integer('mental_confidence'),
+  mentalFocus: integer('mental_focus'),
+  mentalComposure: integer('mental_composure'), // how well you reset after a bad shot
 });
 
 export const shots = sqliteTable(

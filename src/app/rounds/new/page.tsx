@@ -12,7 +12,7 @@ export default async function NewRoundPage() {
     <main className="max-w-sm mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-semibold">New round</h1>
       {allCourses.length === 0 ? (
-        <p className="text-gray-600">
+        <p className="text-ink-2">
           No courses yet — <a className="underline" href="/import">import one</a> or run{' '}
           <code>pnpm db:seed</code> first.
         </p>

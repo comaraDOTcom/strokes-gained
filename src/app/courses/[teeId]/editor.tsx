@@ -112,12 +112,12 @@ export function CourseHoleEditor({
       <div className="text-sm space-y-1">
         <p>
           Out: {outYards}y / par {outPar} — In: {inYards}y / par {inPar} — Total:{' '}
-          <strong className={yardsMismatch || parMismatch ? 'text-red-600' : ''}>
+          <strong className={yardsMismatch || parMismatch ? 'text-neg' : ''}>
             {totalYards}y / par {totalPar}
           </strong>
         </p>
         {expectedTotalYards != null && (
-          <p className={yardsMismatch || parMismatch ? 'text-red-600' : 'text-green-700'}>
+          <p className={yardsMismatch || parMismatch ? 'text-neg' : 'text-pos'}>
             Card total: {expectedTotalYards}y / par {expectedPar}.{' '}
             {yardsMismatch || parMismatch ? 'Does not match — check for a typo above.' : 'Matches.'}
           </p>
@@ -125,16 +125,16 @@ export function CourseHoleEditor({
       </div>
 
       {errors && (
-        <ul className="list-disc pl-5 text-sm text-red-700">
+        <ul className="list-disc pl-5 text-sm text-neg">
           {errors.map((e, i) => (
             <li key={i}>{e}</li>
           ))}
         </ul>
       )}
-      {message && <p className="text-green-700 text-sm">{message}</p>}
+      {message && <p className="text-pos text-sm">{message}</p>}
 
       <button
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50"
         disabled={saving}
         onClick={onSave}
       >

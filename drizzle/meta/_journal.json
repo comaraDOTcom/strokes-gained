@@ -8,6 +8,13 @@
       "when": 1789918460216,
       "tag": "0000_fine_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789940277731,
+      "tag": "0001_glossy_shotgun",
+      "breakpoints": true
     }
   ]
 }

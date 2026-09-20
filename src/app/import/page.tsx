@@ -115,7 +115,7 @@ export default function ImportPage() {
   return (
     <main className="max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Import a course</h1>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-2">
         Upload a .xlsx or .csv course card. Both layouts are supported: one column per tee
         (<code>hole | white tees | greens tees | par</code>), or one row per hole/tee pair
         (<code>hole | tee | yards | par | stroke index</code>).
@@ -125,7 +125,7 @@ export default function ImportPage() {
         <input type="file" accept=".xlsx,.csv" onChange={onFileChange} disabled={busy} />
       </div>
 
-      {parseError && <p className="text-red-600">{parseError}</p>}
+      {parseError && <p className="text-neg">{parseError}</p>}
 
       {parsed && (
         <section className="space-y-4">
@@ -136,11 +136,11 @@ export default function ImportPage() {
           </p>
 
           {parsed.errors.length > 0 && (
-            <div className="border border-red-400 bg-red-50 p-3 rounded">
-              <p className="font-semibold text-red-700">
+            <div className="border border-neg bg-neg-soft p-3 rounded">
+              <p className="font-semibold text-neg">
                 {parsed.errors.length} problem(s) found — fix the sheet and re-upload:
               </p>
-              <ul className="list-disc pl-5 text-sm text-red-700">
+              <ul className="list-disc pl-5 text-sm text-neg">
                 {parsed.errors.map((e, i) => (
                   <li key={i}>
                     Row {e.row}: {e.message}
@@ -155,7 +155,7 @@ export default function ImportPage() {
               <thead>
                 <tr>
                   {parsed.preview.headers.map((h, i) => (
-                    <th key={i} className="border px-2 py-1 text-left bg-gray-100">
+                    <th key={i} className="border px-2 py-1 text-left bg-paper-2">
                       {h}
                     </th>
                   ))}
@@ -195,7 +195,7 @@ export default function ImportPage() {
               </label>
             </div>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-2">
               Confirm each tee&apos;s totals against the physical card — this is the checksum
               the import is rejected on if it doesn&apos;t match the holes above (parsed total par:{' '}
               {totalPar}).
@@ -258,14 +258,14 @@ export default function ImportPage() {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Parsed sum: {totalYardsByTee.get(tee.name) ?? 0} yards, par {totalPar}.
                 </p>
               </fieldset>
             ))}
 
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50"
               disabled={busy || hasBlockingErrors || !courseName.trim() || teeForms.length === 0}
               onClick={onImport}
             >
@@ -273,7 +273,7 @@ export default function ImportPage() {
             </button>
 
             {commitErrors && (
-              <div className="border border-red-400 bg-red-50 p-3 rounded text-sm text-red-700">
+              <div className="border border-neg bg-neg-soft p-3 rounded text-sm text-neg">
                 {typeof commitErrors === 'string' ? (
                   <p>{commitErrors}</p>
                 ) : (
@@ -289,7 +289,7 @@ export default function ImportPage() {
             )}
 
             {committedCourseId !== null && (
-              <p className="text-green-700">
+              <p className="text-pos">
                 Imported as course #{committedCourseId}. <a className="underline" href="/courses">Go to the course editor</a>.
               </p>
             )}
