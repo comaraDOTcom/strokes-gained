@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import { CourseFilter } from './course-filter';
+import { ExpandableText } from './expandable-text';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
 
@@ -108,7 +109,7 @@ export default async function Home({
 
                 {(d?.notes || ratings.length > 0) && (
                   <div className="border-t pt-2 space-y-1">
-                    {d?.notes && <p className="text-sm text-ink-2 line-clamp-2">{d.notes}</p>}
+                    {d?.notes && <ExpandableText text={d.notes} className="text-sm text-ink-2" />}
                     {ratings.length > 0 && (
                       <p className="font-mono text-xs text-muted">
                         {ratings.map(([label, v]) => `${label} ${v}/5`).join(' · ')}

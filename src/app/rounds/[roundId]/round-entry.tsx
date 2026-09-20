@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 import { yardsToFeet } from '@/lib/units';
+import { defaultResultLie } from '@/lib/rounds/entry';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
 
@@ -60,7 +61,9 @@ export function RoundEntry({
   const [shotsByHole, setShotsByHole] = useState<Record<number, ShotRow[]>>(initialShotsByHole);
   const [editingShotNo, setEditingShotNo] = useState<number | null>(null);
 
-  const [selectedLie, setSelectedLie] = useState<Lie | null>(null);
+  const [selectedLie, setSelectedLie] = useState<Lie | null>(() =>
+    defaultResultLie(initialShotsByHole[initialHoleNo] ?? []),
+  );
   const [distance, setDistance] = useState('');
   const [penaltyOn, setPenaltyOn] = useState(false);
   const [penaltyType, setPenaltyType] = useState<PenaltyType>(null);
@@ -100,8 +103,10 @@ export function RoundEntry({
     return { grossScore: holeShots.length + penalties, sg };
   }, [holeShots]);
 
-  function resetForm() {
-    setSelectedLie(null);
+  /** `holeShots` = the shots now on the hole the form will point at, so the result
+   * lie can default to GREEN after a shot that finished on the green. */
+  function resetForm(holeShots: readonly ShotRow[]) {
+    setSelectedLie(defaultResultLie(holeShots));
     setDistance('');
     setPenaltyOn(false);
     setPenaltyType(null);
@@ -141,7 +146,7 @@ export function RoundEntry({
         return;
       }
       setShotsByHole((prev) => ({ ...prev, [currentHoleNo]: data.shots }));
-      resetForm();
+      resetForm(data.shots);
       if (opts.holed && currentHoleNo < 18) {
         setCurrentHoleNo(currentHoleNo + 1);
       }
@@ -165,7 +170,7 @@ export function RoundEntry({
         return;
       }
       setShotsByHole((prev) => ({ ...prev, [currentHoleNo]: data.shots }));
-      resetForm();
+      resetForm(data.shots);
     } finally {
       setBusy(false);
     }
@@ -193,7 +198,7 @@ export function RoundEntry({
               key={h.holeNo}
               onClick={() => {
                 setCurrentHoleNo(h.holeNo);
-                resetForm();
+                resetForm(shotsByHole[h.holeNo] ?? []);
               }}
               className={[
                 'shrink-0 w-9 h-9 rounded text-sm font-medium border',
@@ -238,7 +243,7 @@ export function RoundEntry({
         {editingShotNo !== null && (
           <p className="text-xs text-amber-700">
             Editing shot {editingShotNo} — saving will replace it and clear any shots after it.{' '}
-            <button className="underline" onClick={resetForm}>
+            <button className="underline" onClick={() => resetForm(holeShots)}>
               Cancel
             </button>
           </p>
