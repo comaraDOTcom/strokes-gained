@@ -153,10 +153,10 @@ export function RoundDetailsForm({ roundId, initial }: { roundId: number; initia
           disabled={busy || !dirty}
           className="bg-ink text-paper rounded-lg px-5 py-3 text-base font-medium disabled:opacity-40"
         >
-          {busy ? 'Saving…' : 'Save notes'}
+          {busy ? 'Saving…' : !dirty && justSaved ? 'Saved ✓' : 'Save notes'}
         </button>
-        <span className="text-sm text-muted" aria-live="polite">
-          {dirty ? 'Unsaved changes' : justSaved ? 'Saved' : ''}
+        <span className={`text-sm ${dirty ? 'text-neg' : justSaved ? 'text-pos' : 'text-muted'}`} aria-live="polite">
+          {dirty ? 'Unsaved changes' : justSaved ? 'Stored in your database' : 'Up to date'}
         </span>
       </div>
     </section>
