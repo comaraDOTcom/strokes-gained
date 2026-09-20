@@ -191,6 +191,17 @@ Round and multi-round aggregates (GIR%, putts/round, fairways hit %, sand save %
 up-and-down %) are plain averages over these per-hole booleans/counts — no new DB
 columns, computed on read alongside the SG aggregates.
 
+### Course filter
+
+`/` and `/insights` both need a course filter — a control switching between
+Conor's courses (Portmarnock Championship, Elm Park), since "vs prior 3" and the
+rolling-average chart only make sense within one course (see the cross-course
+caveat in Phase 5). Default to the course of the most recent round. A course with
+zero rounds shows a plain empty state ("No rounds logged yet" + a log-round CTA),
+not an error or a hidden tab. See the design mock's course-filter row
+(https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB, Dashboard screen) for the
+intended shape — two named buttons with a round count, not a generic dropdown.
+
 ### Dashboard views
 
 `/` round list + SG summary, with the traditional stats above showing as a compact
