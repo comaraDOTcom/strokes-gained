@@ -4,6 +4,26 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.15 — 2026-09-21
+
+### Eclectic scores (Insights, per course)
+- Every round you've played at the chosen course, **hole by hole**, colour-coded against par, with
+  **Low score** and **High score** rows — the best and worst you've made on each hole — and your
+  **eclectic total** (the round you'd shoot if you matched your best on every hole) once every hole
+  has been finished at least once. Part-played rounds show "–" for holes not played.
+- On a phone the 18 columns scroll inside the table's own box (the round name stays pinned); the
+  page itself never scrolls sideways. Tap a round to open its scorecard.
+
+### Scorecard view
+- **A proper card for every round** (`View scorecard` on the round card and round page, or from the
+  eclectic table): date, course, tee, course/slope rating, player; front nine / back nine with hole,
+  par, stroke index, colour-coded score, and **strokes gained per hole**; gross and SG totals.
+- New optional **Playing handicap** in the round's notes. With it — and a full set of stroke indexes
+  on the tee — the card adds **net score and Stableford points** per hole and in total (WHS stroke
+  allocation, plus handicaps supported). Without a full set of indexes it says so rather than guess.
+- Score colours follow the rest of the app (green good, terracotta bad) instead of the printed-card
+  convention of red for birdies, so a colour never means two things. A legend is shown.
+
 ## 0.0.14 — 2026-09-21
 
 ### The story, up front

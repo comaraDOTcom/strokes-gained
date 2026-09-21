@@ -172,6 +172,10 @@ export const rounds = pgTable(
     // Pia Nilsson's balance / tempo / tension. For tension, 5 = relaxed (low tension), so
     // every scale reads "higher is better". Validated in src/lib/rounds/details.ts, not by a
     // DB CHECK. Owner-only, like `notes`.
+    // Optional playing handicap for this round (what the card was played off). With it — and a
+    // full set of stroke indexes on the tee — the scorecard shows net score and Stableford points.
+    // Negative = a plus handicap. Validated in src/lib/rounds/details.ts.
+    playingHandicap: integer('playing_handicap'),
     // Chosen when the round is started: does the player want the mentality inputs (per-shot
     // focus/commitment, and balance/tempo/tension) open by default? False = collapsed but still
     // expandable. Defaults to true so rounds from before this option keep their inputs open.

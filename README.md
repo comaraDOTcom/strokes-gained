@@ -59,6 +59,15 @@ first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `no
 saved values aren't destroyed. **Not built yet:** reading focus/commitment/BTT back
 against SG on `/insights` — worth doing once several rounds carry tags.
 
+### Scorecards and eclectics
+
+`src/lib/insights/scorecard.ts` (pure, tested): `buildRoundCard` (gross per finished hole, SG per
+hole, and — given `rounds.playing_handicap` plus a stroke index on every hole — net and Stableford
+via `strokesReceived`/`stablefordPoints`) and `buildEclectic` (rounds × holes, low/high per hole,
+eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and the "Eclectic
+scores" section of `/insights` (per course, since hole numbers only mean something within one).
+Score colours are in `src/app/score-cell.tsx`.
+
 ### Editing a finished round
 
 Any past shot can be edited from its hole (**Edit**). The edit is **in place**: later

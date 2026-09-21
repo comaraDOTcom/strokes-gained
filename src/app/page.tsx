@@ -132,6 +132,12 @@ export default async function Home({
                     >
                       <ReelIcon size={18} /> Watch the round recap
                     </Link>
+                    <Link
+                      href={`/rounds/${r.roundId}/scorecard`}
+                      className="block text-center text-sm underline underline-offset-2 text-ink-2"
+                    >
+                      View scorecard
+                    </Link>
                   </div>
                 )}
 

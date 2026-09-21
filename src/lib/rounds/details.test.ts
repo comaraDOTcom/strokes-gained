@@ -67,6 +67,20 @@ describe('playedOn', () => {
   });
 });
 
+describe('playingHandicap', () => {
+  it('accepts whole numbers in range (incl. plus handicaps) and null', () => {
+    for (const ok of [0, 9, 54, -3, -10]) {
+      expect(parseRoundDetailsPatch({ playingHandicap: ok })).toEqual({ ok: true, patch: { playingHandicap: ok } });
+    }
+    expect(parseRoundDetailsPatch({ playingHandicap: null })).toEqual({ ok: true, patch: { playingHandicap: null } });
+  });
+  it('rejects fractions, out-of-range and non-numbers', () => {
+    for (const bad of [6.1, 55, -11, '9', NaN, true]) {
+      expect(parseRoundDetailsPatch({ playingHandicap: bad }).ok).toBe(false);
+    }
+  });
+});
+
 describe('trackMentality', () => {
   it('accepts booleans only', () => {
     expect(parseRoundDetailsPatch({ trackMentality: false })).toEqual({ ok: true, patch: { trackMentality: false } });

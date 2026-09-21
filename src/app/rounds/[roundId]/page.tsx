@@ -81,6 +81,13 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           <span aria-hidden="true">›</span>
         </Link>
       )}
+      {holesDone > 0 && (
+        <p className="mb-3 text-sm">
+          <Link className="underline underline-offset-2" href={`/rounds/${roundId}/scorecard`}>
+            View scorecard
+          </Link>
+        </p>
+      )}
       <RoundEntry
         roundId={roundId}
         roundName={round.name}
@@ -96,6 +103,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
         <RoundDetailsForm
           roundId={roundId}
           playedOn={round.playedOn}
+          playingHandicap={round.playingHandicap}
           trackMentality={round.trackMentality}
           initial={{
             name: round.name,

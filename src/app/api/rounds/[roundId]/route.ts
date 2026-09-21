@@ -37,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ro
       name: updated.name,
       notes: updated.notes,
       playedOn: updated.playedOn,
+      playingHandicap: updated.playingHandicap,
       mentalBalance: updated.mentalBalance,
       mentalTempo: updated.mentalTempo,
       mentalTension: updated.mentalTension,

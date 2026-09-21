@@ -209,3 +209,17 @@ export async function getPlayers(): Promise<{ userId: string; name: string; roun
     .map((u) => ({ userId: u.id, name: u.name, roundCount: counts.get(u.id) ?? 0 }))
     .sort((a, b) => b.roundCount - a.roundCount || a.name.localeCompare(b.name));
 }
+
+/** Par and stroke index for every hole of the given tees (course data is a shared library). */
+export async function getTeeHoleMeta(
+  teeIds: readonly number[],
+): Promise<Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>> {
+  const out = new Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>();
+  if (teeIds.length === 0) return out;
+  const rows = await db.select().from(teeHoles).where(inArray(teeHoles.teeId, [...new Set(teeIds)]));
+  for (const h of rows) {
+    (out.get(h.teeId) ?? out.set(h.teeId, []).get(h.teeId)!).push({ holeNo: h.holeNo, par: h.par, strokeIndex: h.strokeIndex });
+  }
+  for (const list of out.values()) list.sort((a, b) => a.holeNo - b.holeNo);
+  return out;
+}

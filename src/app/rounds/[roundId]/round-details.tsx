@@ -12,13 +12,14 @@ const RATINGS: { key: MentalField; label: string; hint: string }[] = [
   { key: 'mentalTension', label: 'Tension', hint: 'stayed relaxed — light grip, free arms (5 = relaxed)' },
 ];
 
-type Draft = { name: string; notes: string; playedOn: string } & Pick<RoundDetails, MentalField>;
+type Draft = { name: string; notes: string; playedOn: string; playingHandicap: string } & Pick<RoundDetails, MentalField>;
 
-function toDraft(d: RoundDetails & { playedOn: string }): Draft {
+function toDraft(d: RoundDetails & { playedOn: string; playingHandicap: number | null }): Draft {
   return {
     name: d.name ?? '',
     notes: d.notes ?? '',
     playedOn: d.playedOn,
+    playingHandicap: d.playingHandicap === null ? '' : String(d.playingHandicap),
     mentalBalance: d.mentalBalance,
     mentalTempo: d.mentalTempo,
     mentalTension: d.mentalTension,
@@ -30,9 +31,11 @@ const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 export function RoundDetailsForm({
   roundId,
   playedOn,
+  playingHandicap,
   trackMentality,
   initial,
 }: {
+  playingHandicap: number | null;
   roundId: number;
   playedOn: string;
   /** Round setting: show balance / tempo / tension open by default? */
@@ -40,8 +43,8 @@ export function RoundDetailsForm({
   initial: RoundDetails;
 }) {
   const router = useRouter();
-  const [saved, setSaved] = useState<Draft>(() => toDraft({ ...initial, playedOn }));
-  const [draft, setDraft] = useState<Draft>(() => toDraft({ ...initial, playedOn }));
+  const [saved, setSaved] = useState<Draft>(() => toDraft({ ...initial, playedOn, playingHandicap }));
+  const [draft, setDraft] = useState<Draft>(() => toDraft({ ...initial, playedOn, playingHandicap }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -76,6 +79,7 @@ export function RoundDetailsForm({
           name: draft.name,
           notes: draft.notes,
           playedOn: draft.playedOn,
+          playingHandicap: draft.playingHandicap.trim() === '' ? null : Number(draft.playingHandicap),
           mentalBalance: draft.mentalBalance,
           mentalTempo: draft.mentalTempo,
           mentalTension: draft.mentalTension,
@@ -86,7 +90,7 @@ export function RoundDetailsForm({
         setError(data.error ?? 'Failed to save');
         return;
       }
-      const next = toDraft(data as RoundDetails & { playedOn: string });
+      const next = toDraft(data as RoundDetails & { playedOn: string; playingHandicap: number | null });
       setSaved(next);
       setDraft(next);
       setJustSaved(true);
@@ -127,6 +131,22 @@ export function RoundDetailsForm({
           onChange={(e) => e.target.value && update({ playedOn: e.target.value })}
           className="border border-line-strong bg-paper rounded-lg px-3 py-2 text-base"
         />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="font-mono text-xs uppercase tracking-wide text-muted">Playing handicap (optional)</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          step={1}
+          min={-10}
+          max={54}
+          value={draft.playingHandicap}
+          placeholder="e.g. 9"
+          onChange={(e) => update({ playingHandicap: e.target.value })}
+          className="w-28 border border-line-strong bg-paper rounded-lg px-3 py-2 text-base placeholder:text-faint"
+        />
+        <span className="text-xs text-muted">Adds net score and Stableford points to the scorecard.</span>
       </label>
 
       <label className="flex flex-col gap-1">

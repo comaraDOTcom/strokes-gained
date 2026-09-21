@@ -29,7 +29,14 @@ export type RoundDetails = {
 };
 
 /** Everything a round PATCH may change: the human layer plus the date played. */
-export type RoundPatch = Partial<RoundDetails> & { playedOn?: string; trackMentality?: boolean };
+export type RoundPatch = Partial<RoundDetails> & {
+  playedOn?: string;
+  trackMentality?: boolean;
+  playingHandicap?: number | null;
+};
+
+export const MIN_PLAYING_HANDICAP = -10;
+export const MAX_PLAYING_HANDICAP = 54;
 
 export type ParseResult =
   | { ok: true; patch: RoundPatch }
@@ -53,6 +60,19 @@ export function parseRoundDetailsPatch(body: unknown): ParseResult {
       return { ok: false, error: 'playedOn must be a real date in YYYY-MM-DD form' };
     }
     patch.playedOn = v;
+  }
+
+  if ('playingHandicap' in input) {
+    const v = input.playingHandicap;
+    if (v === null) patch.playingHandicap = null;
+    else if (typeof v === 'number' && Number.isInteger(v) && v >= MIN_PLAYING_HANDICAP && v <= MAX_PLAYING_HANDICAP) {
+      patch.playingHandicap = v;
+    } else {
+      return {
+        ok: false,
+        error: `playingHandicap must be a whole number from ${MIN_PLAYING_HANDICAP} to ${MAX_PLAYING_HANDICAP}, or null`,
+      };
+    }
   }
 
   if ('trackMentality' in input) {

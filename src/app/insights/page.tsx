@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
+import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleMeta } from '@/lib/insights/queries';
+import { buildEclectic, buildRoundCard } from '@/lib/insights/scorecard';
+import { EclecticTable } from './eclectic-table';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
 import { buildCourseStory } from '@/lib/insights/recap';
@@ -86,10 +88,21 @@ export default async function InsightsPage({
 
   const series = categorySeries(shots);
   const story = buildCourseStory(shots);
-  const sgTable = buildSgTable(
-    roundSummaries(shots),
-    new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name])),
+
+  // Eclectic: each round's card against its own tee; par header from the latest round's tee.
+  const summaries = roundSummaries(shots);
+  const roundNames = new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name]));
+  const teeMeta = await getTeeHoleMeta(summaries.map((r) => r.teeId));
+  const eclectic = buildEclectic(
+    (teeMeta.get(summaries[0]?.teeId ?? -1) ?? []).map(({ holeNo, par }) => ({ holeNo, par })),
+    summaries.map((r) => ({
+      roundId: r.roundId,
+      title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
+      playedOn: r.playedOn,
+      card: buildRoundCard(teeMeta.get(r.teeId) ?? [], shots.filter((s) => s.roundId === r.roundId)),
+    })),
   );
+  const sgTable = buildSgTable(summaries, roundNames);
   const rolling = rollingAverageByCategory(series, 3);
 
   const puttingBands = puttingBandStats(shots);
@@ -155,6 +168,10 @@ export default async function InsightsPage({
             <ShotGroupsBody groups={story.worstShots} showDate={story.rounds > 1} />
           </div>
         </div>
+      </Section>
+
+      <Section title="Eclectic scores" subtitle="Every round here, hole by hole — and the best and worst you've made on each. Tap a round for its scorecard.">
+        <EclecticTable eclectic={eclectic} />
       </Section>
 
       <Section
