@@ -27,27 +27,29 @@ export default async function LoginPage({
   const message = messageFor(error);
 
   return (
-    <main className="max-w-sm mx-auto p-6 pt-16 space-y-6">
-      <div className="space-y-3">
-        <Logo size={44} />
-        <h1 className="text-3xl font-semibold leading-tight">Every shot, scored against a scratch baseline.</h1>
-        <p className="text-ink-2">
-          Log your rounds shot by shot and see where practice actually pays off.
+    <main className="golf-scene flex-1 px-4 pt-10 sm:pt-16 pb-72">
+      <div className="max-w-sm mx-auto space-y-6 rounded-2xl border bg-card/95 backdrop-blur-sm p-6 shadow-sm">
+        <div className="space-y-3">
+          <Logo size={44} />
+          <h1 className="text-3xl font-semibold leading-tight">Every shot, scored against a scratch baseline.</h1>
+          <p className="text-ink-2">
+            Log your rounds shot by shot and see where practice actually pays off.
+          </p>
+        </div>
+
+        {invited && (
+          <p className="text-sm rounded-lg bg-pos-soft text-pos px-3 py-2">You’re invited — sign in with Google to join.</p>
+        )}
+        {message && <p className="text-sm rounded-lg bg-neg-soft text-neg px-3 py-2">{message}</p>}
+
+        <GoogleButton label={invited ? 'Join with Google' : 'Continue with Google'} />
+        {testMode && <TestLoginForm />}
+
+        <p className="text-xs text-muted">
+          Alpha, invite-only. Your rounds are private to you; other players can see your scores and strokes gained, but
+          never your notes.
         </p>
       </div>
-
-      {invited && (
-        <p className="text-sm rounded-lg bg-pos-soft text-pos px-3 py-2">You’re invited — sign in with Google to join.</p>
-      )}
-      {message && <p className="text-sm rounded-lg bg-neg-soft text-neg px-3 py-2">{message}</p>}
-
-      <GoogleButton label={invited ? 'Join with Google' : 'Continue with Google'} />
-      {testMode && <TestLoginForm />}
-
-      <p className="text-xs text-muted">
-        Alpha, invite-only. Your rounds are private to you; other players can see your scores and strokes gained, but
-        never your notes.
-      </p>
     </main>
   );
 }

@@ -36,7 +36,7 @@ export default async function RootLayout({
   const user = await getSessionUser();
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
-      <body className="font-sans text-ink">
+      <body className="font-sans text-ink min-h-screen flex flex-col">
         <nav className="border-b bg-card sticky top-0 z-10 overflow-x-auto">
           <ul className="flex items-center gap-3 sm:gap-4 px-3 py-2 max-w-3xl mx-auto text-sm font-medium whitespace-nowrap">
             <li className="flex items-center gap-2 mr-auto">
@@ -70,7 +70,14 @@ export default async function RootLayout({
             )}
           </ul>
         </nav>
-        {children}
+        <div className="flex-1 flex flex-col">{children}</div>
+        {user && (
+          // Decorative footer; its edges fade into the page (see .golf-scene-strip).
+          <div
+            aria-hidden="true"
+            className="golf-scene golf-scene-strip h-56 sm:h-80 mt-10 shrink-0 w-full max-w-5xl mx-auto"
+          />
+        )}
       </body>
     </html>
   );
