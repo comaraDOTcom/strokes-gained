@@ -228,7 +228,25 @@ export const shots = pgTable(
   }),
 );
 
+/** "Please add my course" — raised by any player, worked through by the admin. */
+export const courseRequests = pgTable(
+  'course_requests',
+  {
+    id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    courseName: text('course_name').notNull(),
+    // Free text: where it is, which tees they play, a scorecard link — anything that helps.
+    details: text('details'),
+    status: text('status').notNull().default('open'), // 'open' | 'done'
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({ statusIdx: index('course_requests_status_idx').on(t.status) }),
+);
+
 export type User = typeof user.$inferSelect;
+export type CourseRequest = typeof courseRequests.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type NewCourse = typeof courses.$inferInsert;
 export type Tee = typeof tees.$inferSelect;

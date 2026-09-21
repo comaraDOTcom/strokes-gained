@@ -10,14 +10,17 @@ export function NewRoundForm({
   courses,
   tees,
   defaultTrackMentality,
+  initialCourseId,
 }: {
+  /** From `/rounds/new?course=<id>` (the Courses page's "Log a round here"). */
+  initialCourseId: number | null;
   courses: CourseOption[];
   tees: TeeOption[];
   /** The player's choice on their most recent round, so they don't have to re-tick it. */
   defaultTrackMentality: boolean;
 }) {
   const router = useRouter();
-  const [courseId, setCourseId] = useState<number | ''>(courses[0]?.id ?? '');
+  const [courseId, setCourseId] = useState<number | ''>(initialCourseId ?? courses[0]?.id ?? '');
   const [teeId, setTeeId] = useState<number | ''>('');
   const [playedOn, setPlayedOn] = useState(() => new Date().toISOString().slice(0, 10));
   const [name, setName] = useState('');

@@ -184,6 +184,13 @@ apply to a new deployment, so redeploy after adding them. Runtime logs:
 Backups are now Neon's (point-in-time restore on the free tier is short — export
 occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).
 
+## Course requests
+
+Players ask for a course from the Courses page (`course_requests` table, `POST /api/course-requests`,
+validated in `src/lib/courses/requests.ts`, max 5 open per player). Open requests show in an
+admin-only inbox at the top of `/courses`; **Mark done** closes one. `src/lib/notify.ts` also emails
+the admin when `RESEND_API_KEY` is set — it never throws, so a mail failure can't lose a request.
+
 ## Adding courses from GolfCourseAPI
 
 ```bash

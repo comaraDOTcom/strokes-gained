@@ -6,7 +6,13 @@ import { NewRoundForm } from './new-round-form';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewRoundPage() {
+export default async function NewRoundPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ course?: string | string[] }>;
+}) {
+  const { course: courseParam } = await searchParams;
+  const rawCourse = Array.isArray(courseParam) ? courseParam[0] : courseParam;
   const user = await requirePageUser();
   const [allCourses, allTees, [lastRound]] = await Promise.all([
     db.select().from(courses),
@@ -33,6 +39,11 @@ export default async function NewRoundPage() {
           tees={allTees.map((t) => ({ id: t.id, courseId: t.courseId, name: t.name }))}
           // First round ever: off — a new player sees the simplest screen.
           defaultTrackMentality={lastRound?.trackMentality ?? false}
+          initialCourseId={
+            rawCourse && /^\d+$/.test(rawCourse) && allCourses.some((c) => c.id === Number(rawCourse))
+              ? Number(rawCourse)
+              : null
+          }
         />
       )}
     </main>

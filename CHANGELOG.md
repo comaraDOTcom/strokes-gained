@@ -4,6 +4,27 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.8 — 2026-09-21
+
+### Courses page
+- **Pick a course, then see your options.** A searchable course list; choosing one shows its tees
+  (yardage, par, course/slope rating), **Log a round here** (opens the new-round form with the course
+  already chosen), a link to your rounds there, and View/Edit holes per tee.
+- **Request a course.** "Can't find your course?" — any player can ask for one (name plus anything
+  helpful). Their pending requests show on the page; up to 5 can be waiting at once.
+- **Admin inbox.** Open requests appear at the top of the admin's Courses page (who asked, when, their
+  notes) with **Mark done**. If `RESEND_API_KEY` is set, each request also emails the admin; without
+  it nothing is lost — the inbox is the source of truth.
+
+### Admin-only, clearly marked
+- Pages and sections only the admin can see now carry an **Admin only** badge (the Players pages, the
+  request inbox), and the Players nav link is tagged "admin".
+
+### Dev
+- Local PGlite closes cleanly on Ctrl-C / SIGTERM (a hard kill could corrupt `data/pglite`).
+- In `AUTH_TEST_MODE` (never in production) the configured `ADMIN_EMAIL` counts as admin without a
+  verified email, so admin screens can be exercised locally.
+
 ## 0.0.7 — 2026-09-21
 
 ### Privacy: rounds are now private

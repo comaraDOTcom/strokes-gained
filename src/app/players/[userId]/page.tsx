@@ -7,6 +7,7 @@ import { requirePageUser } from '@/lib/auth/session';
 import { getAllEnrichedShots } from '@/lib/insights/queries';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
+import { AdminBadge } from '../../admin-badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ userId:
             Players
           </Link>
         </p>
-        <h1 className="text-2xl font-semibold">{player.name}</h1>
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          {player.name} <AdminBadge />
+        </h1>
       </div>
 
       {rounds.length === 0 ? (

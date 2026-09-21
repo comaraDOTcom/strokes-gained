@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { auth } from './auth';
 import { isAdminEmail } from './config';
 
+const TEST_MODE = process.env.AUTH_TEST_MODE === '1' && process.env.NODE_ENV !== 'production';
+
 export type SessionUser = {
   id: string;
   name: string;
@@ -22,7 +24,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     name: u.name,
     email: u.email,
     image: u.image ?? null,
-    isAdmin: Boolean(u.emailVerified) && isAdminEmail(u.email),
+    // Test mode's email sign-up can't verify an address, so let it stand in there — it is
+    // hard-disabled in production, where only a Google-verified ADMIN_EMAIL is the admin.
+    isAdmin: (Boolean(u.emailVerified) || TEST_MODE) && isAdminEmail(u.email),
   };
 }
 

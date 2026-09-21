@@ -41,6 +41,15 @@ function createDb(): { db: Db; close: () => Promise<void> } {
 
   const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), 'data', 'pglite');
   const client = new PGlite(dir);
+  // PGlite's on-disk files don't survive a hard kill mid-write. Close cleanly on Ctrl-C / SIGTERM
+  // so stopping `pnpm dev` doesn't corrupt data/pglite. (A SIGKILL still can — it's a dev database.)
+  if (!dir.startsWith('memory://')) {
+    for (const sig of ['SIGINT', 'SIGTERM'] as const) {
+      process.once(sig, () => {
+        void client.close().finally(() => process.exit(0));
+      });
+    }
+  }
   return {
     db: drizzlePglite(client, { schema }) as unknown as Db,
     close: () => client.close(),

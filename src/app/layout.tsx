@@ -52,6 +52,9 @@ export default async function RootLayout({
                     <li key={link.href}>
                       <Link className="text-ink-2 hover:text-ink underline-offset-4 hover:underline" href={link.href}>
                         {link.label}
+                        {link.adminOnly && (
+                          <span className="ml-1 align-middle font-mono text-[9px] uppercase tracking-wide text-accent">admin</span>
+                        )}
                       </Link>
                     </li>
                   ))}

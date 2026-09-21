@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requirePageUser } from '@/lib/auth/session';
 import { getPlayers } from '@/lib/insights/queries';
+import { AdminBadge } from '../admin-badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,9 @@ export default async function PlayersPage() {
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Players</h1>
+      <h1 className="text-2xl font-semibold flex items-center gap-2">
+        Players <AdminBadge />
+      </h1>
       <p className="text-sm text-ink-2">
         Admin only. Everyone who has joined; you can open their rounds read-only (scores and strokes gained —
         never their notes or ratings). Players can&apos;t see each other.

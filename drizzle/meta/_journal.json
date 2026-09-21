@@ -15,6 +15,13 @@
       "when": 1790023548734,
       "tag": "0001_parallel_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790025310305,
+      "tag": "0002_square_gateway",
+      "breakpoints": true
     }
   ]
 }
