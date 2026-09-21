@@ -1,6 +1,6 @@
 {
   "name": "strokes-gained",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,8 @@
     "sg:recompute": "tsx src/lib/sg/recompute-cli.ts",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "vercel-build": "tsx scripts/db-migrate.ts && next build",
-    "db:import-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts"
+    "db:import-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts",
+    "courses:api": "tsx scripts/import-golfcourseapi.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

@@ -184,6 +184,19 @@ apply to a new deployment, so redeploy after adding them. Runtime logs:
 Backups are now Neon's (point-in-time restore on the free tier is short — export
 occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).
 
+## Adding courses from GolfCourseAPI
+
+```bash
+set -a; . ./.env.local; set +a                      # GOLFCOURSEAPI_KEY (+ NEON_DATABASE_URL)
+pnpm courses:api search "stackstown"                # find ids (1 request; free tier = 35/day)
+DATABASE_URL="$NEON_DATABASE_URL" ADMIN_EMAIL=you@gmail.com pnpm courses:api add <id> <id>            # dry run
+DATABASE_URL="$NEON_DATABASE_URL" ADMIN_EMAIL=you@gmail.com pnpm courses:api add <id> <id> --commit   # insert
+```
+
+Mapping lives in `src/lib/import/golfcourseapi.ts` (pure, tested) and feeds the usual
+`validateCourseChecksums` → `insertCourse` path. Coverage of Irish clubs is patchy (The Island,
+Donabate is missing; stroke indexes are often absent) — fall back to `/import` for those.
+
 ## Stack
 
 Next.js 15 (App Router) + TypeScript · Postgres (Neon in production, PGlite locally

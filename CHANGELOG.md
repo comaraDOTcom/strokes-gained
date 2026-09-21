@@ -4,6 +4,19 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.6 — 2026-09-21
+
+### Course library
+- **Stackstown Golf Club** added: the **Cottage** (par 71) and **Gate** (par 72) courses, each with
+  men's White and Green tees and ladies' Red, with course and slope ratings. (No stroke indexes — the
+  source doesn't have them; they don't affect strokes gained and can be added in the course editor.)
+- New admin tool to add courses from GolfCourseAPI: `pnpm courses:api search "<name>"`, then
+  `pnpm courses:api add <id>… [--mens] [--commit]` (a dry run unless `--commit`). API data goes
+  through the same checksum validation as spreadsheet imports, and the mapper refuses — rather than
+  guesses — when tees disagree on a hole's par, a tee isn't 18 holes, or a yardage is missing.
+- Coverage note: GolfCourseAPI has Stackstown, Donabate GC and Corballis Links, but **not The Island
+  (Donabate)** — that one needs the spreadsheet import or a scorecard.
+
 ## 0.0.5 — 2026-09-21
 
 ### Swipe between holes
