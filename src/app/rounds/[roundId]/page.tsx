@@ -45,6 +45,8 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
   const shotsByHole: Record<number, typeof allShots> = {};
   for (const shot of allShots) (shotsByHole[shot.holeNo] ??= []).push(shot);
 
+  const holesDone = Object.values(shotsByHole).filter((hs) => hs.some((s) => s.holed)).length;
+
   if (!isOwner) {
     // Read-only view for other players: scores, shots and SG — never the owner's notes or ratings.
     const [owner] = round.userId
@@ -55,6 +57,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
         title={round.name ?? `${course?.name ?? 'Unknown course'} — ${tee?.name ?? ''}`}
         subtitle={`${owner?.name ?? 'Unknown player'} · ${course?.name ?? ''} — ${tee?.name ?? ''} · ${round.playedOn}`}
         ownerId={round.userId}
+        roundId={roundId}
         holes={holes}
         shotsByHole={shotsByHole}
       />
@@ -63,6 +66,17 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
 
   return (
     <main className="max-w-lg mx-auto p-3 sm:p-6">
+      {holesDone > 0 && (
+        <Link
+          href={`/rounds/${roundId}/recap`}
+          className={`mb-3 flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
+            holesDone === 18 ? 'bg-ink text-paper border-ink' : 'bg-card'
+          }`}
+        >
+          <span className="font-medium">{holesDone === 18 ? 'Round complete — see your recap' : 'Round recap so far'}</span>
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
       <RoundEntry
         roundId={roundId}
         roundName={round.name}
@@ -96,12 +110,14 @@ function ReadOnlyRound({
   title,
   subtitle,
   ownerId,
+  roundId,
   holes,
   shotsByHole,
 }: {
   title: string;
   subtitle: string;
   ownerId: string | null;
+  roundId: number;
   holes: { holeNo: number; par: number }[];
   shotsByHole: Record<number, { holed: boolean; penaltyStrokes: number; sg: number | null }[]>;
 }) {
@@ -121,6 +137,10 @@ function ReadOnlyRound({
         <p className="text-xs text-muted font-mono">{subtitle}</p>
         <p className="text-xs text-muted mt-1">
           Read-only.{' '}
+          <Link className="underline" href={`/rounds/${roundId}/recap`}>
+            Round recap
+          </Link>
+          {' · '}
           {ownerId && (
             <Link className="underline" href={`/players/${ownerId}`}>
               More from this player

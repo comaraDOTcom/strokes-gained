@@ -4,6 +4,20 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.11 — 2026-09-21
+
+### Round recap
+- A quick, story-style **click-through of any round**: tap (right = next, left = back), swipe, use
+  the arrow keys or the buttons; progress segments along the top jump to any slide; **Skip** exits.
+- Six slides: the **headline** (score, to par, strokes gained vs scratch), your **best 3 holes**, your
+  **worst 3 holes** (and what share of your lost strokes they account for), your **best 5 shots**,
+  your **worst 5 shots**, and the takeaway — **strongest area / area to work on**, with SG per shot.
+- Shots are described in plain English — "347y off the tee to 180y in trouble", "30ft putt, holed".
+- Best and worst never overlap, shrink sensibly for short or part-played rounds, and ties go in
+  round order. Only finished holes count as holes; every logged shot counts as a shot.
+- Open it from the round page ("Round complete — see your recap" once all 18 are in, "Round recap so
+  far" before that) or the **Recap** link on each round in your list. Private like the round itself.
+
 ## 0.0.10 — 2026-09-21
 
 ### Insights: strokes gained, round by round

@@ -61,6 +61,10 @@ export default async function Home({
                     <p className="text-xs text-muted font-mono">
                       {d?.name ? `${r.courseName} — ${r.teeName} · ` : ''}
                       {r.playedOn}
+                      {' · '}
+                      <Link href={`/rounds/${r.roundId}/recap`} className="underline underline-offset-2">
+                        Recap
+                      </Link>
                     </p>
                   </div>
                   <div className="text-right">
