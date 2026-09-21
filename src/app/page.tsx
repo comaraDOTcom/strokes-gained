@@ -3,7 +3,9 @@ import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/li
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import { CourseFilter } from './course-filter';
 import { ExpandableText } from './expandable-text';
-import { RecapIconLink } from './recap-icon';
+import { ReelIcon } from './recap-icon';
+import { buildRoundRecap } from '@/lib/insights/recap';
+import { sgClass } from './recap-parts';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
@@ -47,6 +49,9 @@ export default async function Home({
           {rounds.map((r) => {
             const t = r.traditional;
             const d = detailsById.get(r.roundId);
+            const story = buildRoundRecap(shots.filter((s) => s.roundId === r.roundId));
+            const bestHole = story.bestHoles[0];
+            const worstHole = story.worstHoles[0];
             const ratings = [
               ['Balance', d?.mentalBalance],
               ['Tempo', d?.mentalTempo],
@@ -56,7 +61,6 @@ export default async function Home({
               <li key={r.roundId} className="border rounded-xl bg-card p-3 sm:p-4 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
-                    <RecapIconLink roundId={r.roundId} />
                     <div className="min-w-0">
                     <Link href={`/rounds/${r.roundId}`} className="font-semibold hover:underline">
                       {d?.name ?? `${r.courseName} — ${r.teeName}`}
@@ -80,6 +84,56 @@ export default async function Home({
                     </p>
                   </div>
                 </div>
+
+                {/* The round's story at a glance — the full click-through is one tap away. */}
+                {story.holesPlayed > 0 && (
+                  <div className="rounded-xl border bg-paper p-3 space-y-2">
+                    <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                      {story.strongArea && (
+                        <div>
+                          <dt className="font-mono text-[10px] uppercase tracking-wide text-muted">Strongest</dt>
+                          <dd>
+                            {story.strongArea.label}{' '}
+                            <span className={`font-mono ${sgClass(story.strongArea.sg)}`}>{fmtSg(story.strongArea.sg)}</span>
+                          </dd>
+                        </div>
+                      )}
+                      {story.weakArea && (
+                        <div>
+                          <dt className="font-mono text-[10px] uppercase tracking-wide text-muted">Work on</dt>
+                          <dd>
+                            {story.weakArea.label}{' '}
+                            <span className={`font-mono ${sgClass(story.weakArea.sg)}`}>{fmtSg(story.weakArea.sg)}</span>
+                          </dd>
+                        </div>
+                      )}
+                      {bestHole && (
+                        <div>
+                          <dt className="font-mono text-[10px] uppercase tracking-wide text-muted">Best hole</dt>
+                          <dd>
+                            {bestHole.holeNo} · {bestHole.result}{' '}
+                            <span className={`font-mono ${sgClass(bestHole.sg)}`}>{fmtSg(bestHole.sg)}</span>
+                          </dd>
+                        </div>
+                      )}
+                      {worstHole && (
+                        <div>
+                          <dt className="font-mono text-[10px] uppercase tracking-wide text-muted">Worst hole</dt>
+                          <dd>
+                            {worstHole.holeNo} · {worstHole.result}{' '}
+                            <span className={`font-mono ${sgClass(worstHole.sg)}`}>{fmtSg(worstHole.sg)}</span>
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                    <Link
+                      href={`/rounds/${r.roundId}/recap`}
+                      className="flex items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-medium text-paper"
+                    >
+                      <ReelIcon size={18} /> Watch the round recap
+                    </Link>
+                  </div>
+                )}
 
                 {/* Traditional scorecard stats — derived from the shots above, never a separate input. */}
                 <dl className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-xs text-ink-2 border-t pt-2">

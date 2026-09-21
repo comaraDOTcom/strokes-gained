@@ -24,7 +24,17 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 };
 
 export type RecapHole = { holeNo: number; par: number; score: number; toPar: number; result: string; sg: number };
-export type RecapShot = { holeNo: number; shotNo: number; par: number; category: Category; sg: number; text: string; penalty: boolean };
+export type RecapShot = {
+  roundId: number;
+  playedOn: string;
+  holeNo: number;
+  shotNo: number;
+  par: number;
+  category: Category;
+  sg: number;
+  text: string;
+  penalty: boolean;
+};
 export type ShotGroups = { longGame: RecapShot[]; putts: RecapShot[] };
 export type RecapArea = { category: Category; label: string; sg: number; shots: number; perShot: number };
 
@@ -37,6 +47,8 @@ export type RoundRecap = {
   shotCount: number;
   bestHoles: RecapHole[];
   worstHoles: RecapHole[];
+  /** Finished holes in neither list (so best + worst + other = every finished hole). */
+  otherHoles: RecapHole[];
   /** Up to 3 each. `longGame` = every non-putt (tee shots, approaches, short game, bunker, recovery). */
   bestShots: ShotGroups;
   worstShots: ShotGroups;
@@ -118,7 +130,7 @@ export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
   const allShots: RecapShot[] = [...shots]
     .sort((a, b) => a.holeNo - b.holeNo || a.shotNo - b.shotNo) // round order
     .map((s) => ({
-      holeNo: s.holeNo, shotNo: s.shotNo, par: s.par, category: s.category, sg: s.sg,
+      roundId: s.roundId, playedOn: s.playedOn, holeNo: s.holeNo, shotNo: s.shotNo, par: s.par, category: s.category, sg: s.sg,
       text: describeShot(s), penalty: s.penaltyStrokes > 0,
     }));
   const long = bestAndWorst(allShots.filter((s) => s.category !== 'PUTTING'), 3);
@@ -146,8 +158,71 @@ export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
     shotCount: shots.length,
     bestHoles: h.best,
     worstHoles: h.worst,
+    otherHoles: holes.filter((x) => !h.best.includes(x) && !h.worst.includes(x)),
     bestShots: { longGame: long.best, putts: putts.best },
     worstShots: { longGame: long.worst, putts: putts.worst },
+    strongArea: areas.length >= 2 ? areas[0]! : null,
+    weakArea: areas.length >= 2 ? areas[areas.length - 1]! : null,
+    areas,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The story across MANY rounds (the Insights page) — same ideas, averaged.
+// Meant for one course at a time, so "hole 13" means the same hole every round.
+// ---------------------------------------------------------------------------
+
+export type StoryHole = { holeNo: number; par: number; plays: number; avgSg: number; avgToPar: number; sg: number };
+/** `per18` = strokes gained per 18 holes played — fair to part-played rounds, unlike "per round". */
+export type StoryArea = RecapArea & { per18: number };
+
+export type CourseStory = {
+  rounds: number;
+  holesPlayed: number;
+  sgPer18: number;
+  /** By average SG per play; only holes finished at least once. Non-overlapping, up to 3 each. */
+  bestHoles: StoryHole[];
+  worstHoles: StoryHole[];
+  bestShots: ShotGroups;
+  worstShots: ShotGroups;
+  strongArea: StoryArea | null;
+  weakArea: StoryArea | null;
+  areas: StoryArea[];
+};
+
+export function buildCourseStory(shots: readonly EnrichedShot[]): CourseStory {
+  const roundIds = [...new Set(shots.map((s) => s.roundId))];
+  const perRound = roundIds.map((id) => buildRoundRecap(shots.filter((s) => s.roundId === id)));
+
+  // Holes: every finished play of each hole, across rounds.
+  const plays = new Map<number, { par: number; sg: number[]; toPar: number[] }>();
+  for (const r of perRound) {
+    for (const h of [...r.bestHoles, ...r.worstHoles, ...r.otherHoles]) {
+      const p = plays.get(h.holeNo) ?? { par: h.par, sg: [], toPar: [] };
+      p.sg.push(h.sg);
+      p.toPar.push(h.toPar);
+      plays.set(h.holeNo, p);
+    }
+  }
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const holes = [...plays.entries()]
+    .map(([holeNo, p]) => ({ holeNo, par: p.par, plays: p.sg.length, avgSg: mean(p.sg), avgToPar: mean(p.toPar), sg: mean(p.sg) }))
+    .sort((a, b) => a.holeNo - b.holeNo);
+  const h = bestAndWorst(holes, 3);
+
+  const all = buildRoundRecap(shots); // shots + areas are fine pooled; only its hole lists are per-round
+  const holesPlayed = perRound.reduce((a, r) => a + r.holesPlayed, 0);
+  const to18 = holesPlayed > 0 ? 18 / holesPlayed : 0;
+  const areas: StoryArea[] = all.areas.map((a) => ({ ...a, per18: a.sg * to18 }));
+
+  return {
+    rounds: roundIds.length,
+    holesPlayed,
+    sgPer18: all.sgTotal * to18,
+    bestHoles: h.best,
+    worstHoles: h.worst,
+    bestShots: all.bestShots,
+    worstShots: all.worstShots,
     strongArea: areas.length >= 2 ? areas[0]! : null,
     weakArea: areas.length >= 2 ? areas[areas.length - 1]! : null,
     areas,

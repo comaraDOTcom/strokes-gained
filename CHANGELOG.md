@@ -4,6 +4,19 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.14 — 2026-09-21
+
+### The story, up front
+- **Rounds list:** every round card now shows its story at a glance — **strongest area, area to work
+  on, best hole and worst hole** — with a full-width **Watch the round recap** button, so the recap
+  is one tap from the list instead of hidden inside the round (it replaces the small reel icon).
+- **Insights: "Your story so far"** at the top of the page, across all your rounds at the chosen
+  course: strongest area and the one to work on, the **three holes you play best and the three that
+  cost you most** (average strokes gained and score to par per play), and your **best and worst
+  shots ever** there — tee to green and on the green, each with its date.
+- Multi-round numbers are **per 18 holes played**, not per round, so a part-played round doesn't
+  skew them.
+
 ## 0.0.13 — 2026-09-21
 
 ### Round recap

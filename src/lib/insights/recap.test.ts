@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRoundRecap, describeShot, holeResult } from './recap';
+import { buildCourseStory, buildRoundRecap, describeShot, holeResult } from './recap';
 import type { EnrichedShot } from './aggregate';
 
 const shot = (o: Partial<EnrichedShot> & { holeNo: number; shotNo: number; sg: number }): EnrichedShot => ({
@@ -107,5 +107,37 @@ describe('buildRoundRecap', () => {
 
   it('handles an empty round', () => {
     expect(buildRoundRecap([])).toMatchObject({ holesPlayed: 0, score: 0, shotCount: 0, bestHoles: [], worstShots: { longGame: [], putts: [] }, strongArea: null });
+  });
+});
+
+describe('buildCourseStory', () => {
+  const r = (roundId: number, playedOn: string, shots: EnrichedShot[]) => shots.map((s) => ({ ...s, roundId, playedOn }));
+  const two = [
+    ...r(1, '2026-09-01', [...hole(1, 4, [0.5, 0.5]), ...hole(2, 4, [-1, -1]), ...hole(3, 3, [0.2, 0.2], 'PUTTING'), ...hole(4, 4, [-0.1, -0.1])]),
+    ...r(2, '2026-09-08', [...hole(1, 4, [0.1, 0.1]), ...hole(2, 4, [-2, -1]), ...hole(3, 3, [0.4, 0.4], 'PUTTING'), ...hole(4, 4, [0, 0])]),
+  ];
+
+  it('averages each hole across rounds and ranks them', () => {
+    const s = buildCourseStory(two);
+    expect(s.rounds).toBe(2);
+    expect(s.holesPlayed).toBe(8);
+    expect(s.bestHoles.map((h) => [h.holeNo, h.plays])).toEqual([[1, 2], [3, 2]]);
+    expect(s.bestHoles[0]!.avgSg).toBeCloseTo(0.6);
+    expect(s.worstHoles.map((h) => h.holeNo)).toEqual([2, 4]);
+    expect(s.worstHoles[0]!.avgSg).toBeCloseTo(-2.5);
+    expect(s.worstHoles[0]!.avgToPar).toBe(-2); // two shots on a par 4 in this fixture
+  });
+
+  it('reports areas per round, and the best/worst shots carry their round', () => {
+    const s = buildCourseStory(two);
+    expect(s.sgPer18).toBeCloseTo((two.reduce((a, x) => a + x.sg, 0) / 8) * 18); // 8 holes played
+    expect(s.strongArea).toMatchObject({ category: 'PUTTING' });
+    expect(s.strongArea!.per18).toBeCloseTo((1.2 / 8) * 18);
+    expect(s.weakArea).toMatchObject({ category: 'APPROACH' });
+    expect(s.worstShots.longGame[0]).toMatchObject({ roundId: 2, playedOn: '2026-09-08', holeNo: 2, sg: -2 });
+  });
+
+  it('handles no shots', () => {
+    expect(buildCourseStory([])).toMatchObject({ rounds: 0, bestHoles: [], strongArea: null, sgPer18: 0 });
   });
 });

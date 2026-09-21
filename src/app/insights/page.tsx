@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
+import { buildCourseStory } from '@/lib/insights/recap';
+import { AreaCard, ShotGroupsBody, StoryHoleRow } from '../recap-parts';
 import { requirePageUser } from '@/lib/auth/session';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import {
@@ -83,6 +85,7 @@ export default async function InsightsPage({
   }
 
   const series = categorySeries(shots);
+  const story = buildCourseStory(shots);
   const sgTable = buildSgTable(
     roundSummaries(shots),
     new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name])),
@@ -112,6 +115,47 @@ export default async function InsightsPage({
       <p className="text-sm text-muted">
         {roundCount} round{roundCount === 1 ? '' : 's'} logged at {selected?.name}.
       </p>
+
+      <Section
+        title="Your story so far"
+        subtitle={`Across ${story.rounds} round${story.rounds === 1 ? '' : 's'} (${story.holesPlayed} holes) here — ${fmtSg(story.sgPer18)} strokes gained per 18 holes vs. a scratch golfer.`}
+      >
+        {story.strongArea && story.weakArea && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AreaCard
+              a={story.strongArea}
+              per18={story.strongArea.per18}
+              tone={story.strongArea.sg >= 0 ? 'pos' : 'neg'}
+              kicker={story.strongArea.sg >= 0 ? 'Strongest area' : 'Holding up best'}
+            />
+            <AreaCard a={story.weakArea} per18={story.weakArea.per18} tone="neg" kicker="Work on this" />
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Holes you play best</h3>
+            <ul className="space-y-2">{story.bestHoles.map((h) => <StoryHoleRow key={h.holeNo} h={h} />)}</ul>
+          </div>
+          {story.worstHoles.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-semibold">Holes that cost you most</h3>
+              <ul className="space-y-2">{story.worstHoles.map((h) => <StoryHoleRow key={h.holeNo} h={h} />)}</ul>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Best shots</h3>
+            <ShotGroupsBody groups={story.bestShots} showDate={story.rounds > 1} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Worst shots</h3>
+            <ShotGroupsBody groups={story.worstShots} showDate={story.rounds > 1} />
+          </div>
+        </div>
+      </Section>
 
       <Section
         title="Strokes gained, round by round"

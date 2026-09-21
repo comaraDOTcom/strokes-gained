@@ -2,77 +2,10 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RecapArea, RecapHole, RecapShot, RoundRecap, ShotGroups } from '@/lib/insights/recap';
-import { CATEGORY_LABEL } from '@/lib/insights/recap';
+import type { RoundRecap } from '@/lib/insights/recap';
+import { AreaCard, HoleRow, ShotGroupsBody, sgClass } from '@/app/recap-parts';
 import { swipeToHoleDelta } from '@/lib/rounds/entry';
 import { fmtSg } from '@/lib/insights/chart-colors';
-
-const sgClass = (v: number) => (v >= 0 ? 'text-pos' : 'text-neg');
-
-function HoleRow({ h }: { h: RecapHole }) {
-  return (
-    <li className="flex items-center justify-between gap-3 rounded-xl border bg-paper px-4 py-3">
-      <div>
-        <p className="font-semibold">
-          Hole {h.holeNo} <span className="font-normal text-muted">· par {h.par}</span>
-        </p>
-        <p className="text-sm text-ink-2">
-          {h.result} <span className="font-mono text-xs text-muted">({h.score})</span>
-        </p>
-      </div>
-      <p className={`font-mono text-lg font-medium ${sgClass(h.sg)}`}>{fmtSg(h.sg)}</p>
-    </li>
-  );
-}
-
-function ShotRow({ s, rank }: { s: RecapShot; rank: number }) {
-  return (
-    <li className="flex items-start justify-between gap-3 rounded-xl border bg-paper px-4 py-3">
-      <div className="min-w-0">
-        <p className="font-mono text-xs uppercase tracking-wide text-muted">
-          {rank}. Hole {s.holeNo} · shot {s.shotNo} · {CATEGORY_LABEL[s.category]}
-        </p>
-        <p className="text-sm">{s.text}</p>
-      </div>
-      <p className={`shrink-0 font-mono font-medium ${sgClass(s.sg)}`}>{fmtSg(s.sg)}</p>
-    </li>
-  );
-}
-
-function AreaCard({ a, tone, kicker }: { a: RecapArea; tone: 'pos' | 'neg'; kicker: string }) {
-  return (
-    <div className={`rounded-xl border p-4 ${tone === 'pos' ? 'bg-pos-soft border-pos/40' : 'bg-neg-soft border-neg/40'}`}>
-      <p className="font-mono text-xs uppercase tracking-wide text-ink-2">{kicker}</p>
-      <p className="text-2xl font-semibold">{a.label}</p>
-      <p className="text-sm text-ink-2">
-        <span className={`font-mono font-medium ${sgClass(a.sg)}`}>{fmtSg(a.sg)}</span> over {a.shots} shot
-        {a.shots === 1 ? '' : 's'} <span className="text-muted">({fmtSg(a.perShot)} per shot)</span>
-      </p>
-    </div>
-  );
-}
-
-/** Tee-to-green and putts ranked separately — a holed putt would otherwise own every list. */
-function ShotGroupsBody({ groups }: { groups: ShotGroups }) {
-  const sections = [
-    { label: 'Tee to green', shots: groups.longGame },
-    { label: 'On the green', shots: groups.putts },
-  ].filter((g) => g.shots.length > 0);
-  return (
-    <div className="space-y-4">
-      {sections.map((g) => (
-        <div key={g.label} className="space-y-2">
-          <h2 className="font-mono text-xs uppercase tracking-wide text-ink-2">{g.label}</h2>
-          <ul className="space-y-2">
-            {g.shots.map((s, i) => (
-              <ShotRow key={`${s.holeNo}-${s.shotNo}`} s={s} rank={i + 1} />
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 type Slide = { key: string; kicker: string; heading: string; body: React.ReactNode };
 
