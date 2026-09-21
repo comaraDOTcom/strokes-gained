@@ -4,6 +4,20 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.10 — 2026-09-21
+
+### Insights: strokes gained, round by round
+- The "latest vs prior 3" grouped bar chart at the top of Insights is replaced by a **round-by-round
+  table** (in the style Data Golf uses for player pages): one row per round, one column per SG
+  category, each cell a small bar growing right in green for strokes gained or left in red for
+  strokes lost, with a highlighted Total column.
+- **Every category bar shares one scale**, so the longest red bar on the page is your biggest leak,
+  and a pattern that repeats round after round is visible at a glance. Total has its own scale.
+- An **Average** row appears once you have two full rounds (partial rounds are flagged with their
+  hole count and left out of the average). A category with no shots shows "—", not a 0.00 bar.
+- A real grid on large screens; on phones and tablets each round is a card with the categories
+  stacked, so nothing scrolls sideways. The Insights page is wider on desktop to fit it.
+
 ## 0.0.9 — 2026-09-21
 
 ### Fixed

@@ -1,10 +1,12 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions } from '@/lib/insights/queries';
+import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
+import { buildSgTable } from '@/lib/insights/sg-table';
+import { SgRoundTable } from './sg-round-table';
 import { requirePageUser } from '@/lib/auth/session';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import {
   categorySeries,
-  latestVsPriorMean,
+  roundSummaries,
   rollingAverageByCategory,
   puttingBandStats,
   puttsPerRound,
@@ -81,7 +83,10 @@ export default async function InsightsPage({
   }
 
   const series = categorySeries(shots);
-  const comparison = latestVsPriorMean(series, 3);
+  const sgTable = buildSgTable(
+    roundSummaries(shots),
+    new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name])),
+  );
   const rolling = rollingAverageByCategory(series, 3);
 
   const puttingBands = puttingBandStats(shots);
@@ -101,30 +106,18 @@ export default async function InsightsPage({
     .filter((c) => c.points.length > 0);
 
   return (
-    <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
+    <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Insights</h1>
       <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/insights" />
       <p className="text-sm text-muted">
         {roundCount} round{roundCount === 1 ? '' : 's'} logged at {selected?.name}.
       </p>
 
-      <Section title="SG by category" subtitle="Latest round vs. mean of the prior 3 rounds">
-        {comparison.length === 0 ? (
-          <p className="text-sm text-muted">Needs at least 2 rounds in the same category to compare.</p>
-        ) : (
-          <GroupedBarChart
-            data={comparison.map((c) => ({
-              category: CATEGORY_LABEL[c.category] ?? c.category,
-              'Prior 3 avg': Number(c.priorMeanSg.toFixed(3)),
-              Latest: Number(c.latestSg.toFixed(3)),
-            }))}
-            xKey="category"
-            series={[
-              { key: 'Prior 3 avg', label: 'Prior 3 avg', color: CATEGORICAL[2] },
-              { key: 'Latest', label: 'Latest round', color: CATEGORICAL[0] },
-            ]}
-          />
-        )}
+      <Section
+        title="Strokes gained, round by round"
+        subtitle="Green = strokes gained, red = strokes lost vs. a scratch golfer. Every category bar is on the same scale, so the longest red bar is your biggest leak."
+      >
+        <SgRoundTable table={sgTable} />
       </Section>
 
       <Section title="SG per round over time" subtitle="3-round rolling average, per category">

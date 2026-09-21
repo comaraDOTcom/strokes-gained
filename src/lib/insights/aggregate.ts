@@ -71,6 +71,8 @@ export type RoundSummary = {
   courseName: string;
   teeId: number;
   teeName: string;
+  /** Holes with at least one shot logged — 18 for a full round; fewer = a partial round. */
+  holesPlayed: number;
   grossScore: number;
   par: number;
   sgTotal: number;
@@ -116,6 +118,7 @@ export function roundSummaries(shots: EnrichedShot[]): RoundSummary[] {
       courseName: first.courseName,
       teeId: first.teeId,
       teeName: first.teeName,
+      holesPlayed: holeGroups.size,
       grossScore: sum(holeStats.map((h) => h.grossScore)),
       par,
       sgTotal: sum(Object.values(sgByCategory)),
