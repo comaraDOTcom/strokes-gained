@@ -4,6 +4,46 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.2 — 2026-09-21
+
+Multiplayer. The app now runs on the web (Vercel + Neon Postgres) with Google sign-in, so a
+small group can each log their own rounds and see each other's.
+
+### Accounts and sharing
+- Google sign-in. Sign-up is **invite-only**: a secret link (`/join/<token>`) lets a new person
+  create an account; without it a new account is refused. The admin (`ADMIN_EMAIL`) can always
+  sign up and inherits the rounds imported from the single-user version.
+- Every round belongs to its owner: only they can add, edit or delete its shots, or change its
+  notes. Other players can open it **read-only** (scores, shots, strokes gained) from a new
+  **Players** page. Commentary and mentality ratings are never shown to anyone else.
+- One shared course library. Anyone can add a course; only its creator or the admin can edit it,
+  and once another player has a round on a tee only the admin can.
+- Home, Insights and Trends show only your own rounds.
+
+### App icon
+- New app icon (a flag on the green) for the browser tab and the iPhone home screen, used for the
+  logo in the nav and on the sign-in page.
+
+### Fixed
+- Editing a course's yardages used to make SG un-recomputable for every existing round on that
+  tee. Edits now re-base the affected rounds and recompute them in one transaction.
+- Starting a round now checks that the tee belongs to the chosen course, and importing a course
+  whose name already exists is refused.
+
+### Changed
+- Database moved from a local SQLite file to Postgres (Neon in production, PGlite locally and in
+  tests). All float columns are double precision so fractional-yard green distances stay exact.
+- Migrations are run with `pnpm db:migrate`, not on startup. `pnpm db:import-sqlite` copies an old
+  `data/rounds.db` across and refuses to finish unless every round's score and SG match exactly.
+- Local development needs `pnpm db:migrate` first, and `AUTH_TEST_MODE=1` to sign in without Google.
+  The single-user SQLite version stays available at tag `v0.0.1`.
+
+### Known limitations
+- Sessions are cached in a signed cookie for 5 minutes, so removing a user takes up to 5 minutes
+  to take effect.
+- No way to delete a round yet, and no in-app feedback box.
+- Portmarnock still has no course rating on file.
+
 ## 0.0.1 — 2026-09-21
 
 First release. A personal, single-user strokes-gained app that runs locally

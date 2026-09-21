@@ -27,7 +27,7 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs, course filter | ✅ Built, verified in the browser. Not built: the 18-hole SG heatmap strip from the design mock |
 | 5 | Trends + practice priority, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
 | — | Round notes, mentality (BTT + per-shot focus/commitment), in-place editing | ✅ Built (see below) |
-| 6 | Postgres + accounts + invite-only multiplayer (Google sign-in, shared course library, read-only friends' rounds) | ✅ Built and tested locally; **not deployed yet** — see "Deploying" below |
+| 6 | Postgres + accounts + invite-only multiplayer (Google sign-in, shared course library, read-only friends' rounds) | ✅ Live on Vercel + Neon (v0.0.2); see "Deploying" below |
 
 **Design direction**: two mockups (landing + dashboard) are published at
 <https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB> — analytical/data-tool
@@ -166,6 +166,11 @@ aborts unless every round's score and SG total match SQLite exactly).
    SQLite data, run `db:migrate` then `db:seed` instead.)
 5. **Sign in yourself first** (Google). You become admin and inherit your rounds.
 6. Send friends `https://<app>/join/<INVITE_TOKEN>` on WhatsApp.
+
+If `/login` returns a 500 with "You are using the default secret", `BETTER_AUTH_SECRET` isn't set
+in Vercel's **Production** environment (all seven variables above must be). Env changes only
+apply to a new deployment, so redeploy after adding them. Runtime logs:
+`vercel logs --environment production --level error --no-follow --expand`.
 
 Backups are now Neon's (point-in-time restore on the free tier is short — export
 occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).

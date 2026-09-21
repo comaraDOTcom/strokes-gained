@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { GoogleButton, TestLoginForm } from './login-forms';
+import { Logo } from '../logo';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export default async function LoginPage({
   return (
     <main className="max-w-sm mx-auto p-6 pt-16 space-y-6">
       <div className="space-y-3">
-        <span className="inline-block bg-ink text-paper font-mono text-sm font-medium rounded-md px-2 py-1">SG</span>
+        <Logo size={44} />
         <h1 className="text-3xl font-semibold leading-tight">Every shot, scored against a scratch baseline.</h1>
         <p className="text-ink-2">
           Log your rounds shot by shot and see where practice actually pays off.

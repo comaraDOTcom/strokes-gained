@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { getSessionUser } from '@/lib/auth/session';
 import { SignOutButton } from './sign-out-button';
+import { Logo } from './logo';
 import './globals.css';
 
 const plexSans = IBM_Plex_Sans({
@@ -40,7 +41,7 @@ export default async function RootLayout({
           <ul className="flex items-center gap-3 sm:gap-4 px-3 py-2 max-w-3xl mx-auto text-sm font-medium whitespace-nowrap">
             <li className="flex items-center gap-2 mr-auto">
               <Link href="/" className="flex items-center gap-2" aria-label="Strokes Gained home">
-                <span className="bg-ink text-paper font-mono text-xs font-medium rounded-md px-1.5 py-1">SG</span>
+                <Logo size={28} />
                 <span className="font-semibold hidden sm:inline">Strokes Gained</span>
               </Link>
             </li>
