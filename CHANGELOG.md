@@ -1,8 +1,21 @@
 # Changelog
 
 Each shipped feature or fix gets its own release: bump `version` in `package.json`, add an
-entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
+entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publishes the GitHub
+release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
+
+## 0.0.16 — 2026-09-22
+
+### Dev: automated checks
+- **CI on every push to `main` and every pull request**: typecheck, tests, production build.
+  `main` deploys straight to production, so this is now the gate.
+- **Migration check**: fails if `src/db/schema.ts` changed without its migration, and applies every
+  migration to a fresh Postgres — catching the one mistake that would break the live database.
+- **Secret scan** (TruffleHog) on every push, so a key can't slip into this public repo unnoticed.
+- **Releases are automatic**: pushing a `vX.Y.Z` tag publishes the release from this changelog, and
+  refuses if `package.json` or the changelog entry doesn't match. (This release is its first run.)
+- **Dependabot**: weekly dependency and GitHub Actions updates, minor/patch grouped into one PR.
 
 ## 0.0.15 — 2026-09-21
 
