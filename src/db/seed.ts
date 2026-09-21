@@ -10,13 +10,13 @@
  * logged against it).
  */
 import { eq } from 'drizzle-orm';
-import { db } from './client';
+import { db, closeDb } from './client';
 import { courses } from './schema';
 import { SEED_COURSES } from './seed-courses';
 import { validateCourseChecksums } from './checksum';
 import { insertCourse } from './insert-course';
 
-function main() {
+async function main() {
   const allErrors = SEED_COURSES.flatMap((course) => validateCourseChecksums(course));
   if (allErrors.length > 0) {
     console.error(`[db:seed] FAILED — ${allErrors.length} checksum error(s). No rows were written.\n`);
@@ -30,13 +30,13 @@ function main() {
   let inserted = 0;
   let skipped = 0;
   for (const course of SEED_COURSES) {
-    const existing = db.select().from(courses).where(eq(courses.name, course.name)).get();
+    const [existing] = await db.select().from(courses).where(eq(courses.name, course.name));
     if (existing) {
       console.log(`[db:seed] Skipping "${course.name}" — already seeded (course id ${existing.id}).`);
       skipped++;
       continue;
     }
-    insertCourse(course);
+    await insertCourse(course);
     console.log(`[db:seed] Seeded "${course.name}" (${course.tees.length} tee(s), ${course.holes.length} holes).`);
     inserted++;
   }
@@ -44,6 +44,11 @@ function main() {
   console.log(`[db:seed] Done. ${inserted} course(s) inserted, ${skipped} skipped (already present).`);
 }
 
-main();
+main()
+  .then(() => closeDb())
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 
 export {};

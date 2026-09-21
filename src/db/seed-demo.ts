@@ -2,7 +2,7 @@
  * `pnpm db:seed:demo` — BUILD.md Verification step 3.
  *
  * Builds one synthetic, fully hand-worked 18-hole round on Elm Park Blue in
- * a throwaway temp DB (never touches `data/rounds.db`), writes it through
+ * a throwaway in-memory Postgres (PGlite — never touches your real DB), writes it through
  * the exact same code path the app uses (insertCourse -> insert shots ->
  * recomputeRound), then asserts the Phase 4 dashboard aggregates
  * (`src/lib/insights`) match the hand-computed totals below. Exits
@@ -16,13 +16,11 @@
  * involved at all — so the assertions cross-check the DB/query pipeline
  * against the pure engine, not just against itself.
  */
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import type { ShotInput } from '../lib/sg/compute';
 
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-seed-demo-'));
-process.env.SG_DB_PATH = path.join(tmpDir, 'demo.db');
+// Must be set before ./client is first imported (it is, dynamically, in main()).
+process.env.PGLITE_DIR = 'memory://';
+delete process.env.DATABASE_URL;
 
 type Outcome = {
   endLie: 'TEE' | 'FAIRWAY' | 'ROUGH' | 'SAND' | 'RECOVERY' | 'GREEN' | null;
@@ -188,7 +186,8 @@ function assertEqual(label: string, actual: unknown, expected: unknown, toleranc
 
 async function main() {
   const { feetToYards, yardsToFeet } = await import('../lib/units');
-  const { db } = await import('./client');
+  const { db, closeDb } = await import('./client');
+  const { runMigrations } = await import('./migrate');
   const schema = await import('./schema');
   const { eq } = await import('drizzle-orm');
   const { ELM_PARK } = await import('./seed-courses');
@@ -198,19 +197,28 @@ async function main() {
   const { roundSummaries } = await import('../lib/insights/aggregate');
   const { getAllEnrichedShots } = await import('../lib/insights/queries');
 
-  const courseId = insertCourse(ELM_PARK);
-  const blueTee = db
-    .select()
-    .from(schema.tees)
-    .where(eq(schema.tees.courseId, courseId))
-    .all()
-    .find((t) => t.name === 'Blue')!;
+  await runMigrations();
 
-  const round = db
+  const [demoUser] = await db
+    .insert(schema.user)
+    .values({ id: 'demo-user', name: 'Demo', email: 'demo@example.com', emailVerified: true })
+    .returning();
+  const courseId = await insertCourse(ELM_PARK);
+  const blueTee = (await db.select().from(schema.tees).where(eq(schema.tees.courseId, courseId))).find(
+    (t) => t.name === 'Blue',
+  )!;
+
+  const [round] = await db
     .insert(schema.rounds)
-    .values({ courseId, teeId: blueTee.id, playedOn: '2026-01-01', notes: 'db:seed:demo synthetic round' })
-    .returning()
-    .get();
+    .values({
+      userId: demoUser!.id,
+      courseId,
+      teeId: blueTee.id,
+      playedOn: '2026-01-01',
+      notes: 'db:seed:demo synthetic round',
+    })
+    .returning();
+  if (!round) throw new Error('failed to insert demo round');
 
   // Build DB rows AND the pure-engine ShotInput[] from the same HOLES spec.
   let handGrossTotal = 0;
@@ -276,7 +284,7 @@ async function main() {
       curYards = endYards;
     });
 
-    db.insert(schema.shots).values(dbRows).run();
+    await db.insert(schema.shots).values(dbRows);
 
     // Independent cross-check: run the pure engine directly on the same
     // shot chain, with no DB involved, and accumulate its totals.
@@ -291,9 +299,9 @@ async function main() {
     handParTotal += hole.par;
   }
 
-  recomputeRound(round.id);
+  await recomputeRound(round.id);
 
-  const shots = getAllEnrichedShots();
+  const shots = await getAllEnrichedShots(demoUser!.id);
   const [summary] = roundSummaries(shots);
   if (!summary) {
     console.error('[db:seed:demo] FAIL: roundSummaries returned nothing for the seeded round.');
@@ -341,9 +349,12 @@ async function main() {
     console.log('[db:seed:demo] All dashboard aggregates match the hand-computed totals.');
   }
 
-  fs.rmSync(tmpDir, { recursive: true, force: true });
+  await closeDb();
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
 
 export {};

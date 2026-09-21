@@ -5,6 +5,7 @@ import { CourseFilter } from './course-filter';
 import { ExpandableText } from './expandable-text';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
+import { requirePageUser } from '@/lib/auth/session';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -14,14 +15,15 @@ export default async function Home({
 }: {
   searchParams: Promise<{ course?: string | string[] }>;
 }) {
+  const user = await requirePageUser();
   const { course } = await searchParams;
-  const options = getCourseOptions();
+  const options = await getCourseOptions(user.id);
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
   const roundCount = selected?.roundCount ?? 0;
-  const shots = selectedCourseId === null ? [] : getAllEnrichedShots(selectedCourseId);
+  const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
   const rounds = roundSummaries(shots);
-  const detailsById = getRoundDetailsById();
+  const detailsById = await getRoundDetailsById(user.id);
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">

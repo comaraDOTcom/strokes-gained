@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1789918460216,
-      "tag": "0000_fine_riptide",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1789940277731,
-      "tag": "0001_glossy_shotgun",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1789942330875,
-      "tag": "0002_safe_mordo",
+      "version": "7",
+      "when": 1789983445277,
+      "tag": "0000_wide_captain_flint",
       "breakpoints": true
     }
   ]

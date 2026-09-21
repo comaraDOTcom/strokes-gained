@@ -1,0 +1,52 @@
+import { redirect } from 'next/navigation';
+import { getSessionUser } from '@/lib/auth/session';
+import { GoogleButton, TestLoginForm } from './login-forms';
+
+export const dynamic = 'force-dynamic';
+
+const testMode = process.env.AUTH_TEST_MODE === '1' && process.env.NODE_ENV !== 'production';
+
+function messageFor(error: string | undefined): string | null {
+  if (!error) return null;
+  if (error === 'bad_invite') return 'That invite link isn’t valid any more. Ask Conor for a fresh one.';
+  // Better Auth reports a rejected sign-up (our invite gate) as a user-creation failure.
+  if (/create|signup|sign_up|forbidden/i.test(error)) {
+    return 'You need an invite link to join. Ask Conor to send you one, then open it and sign in again.';
+  }
+  return 'Sign-in didn’t work. Try again.';
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; invited?: string }>;
+}) {
+  if (await getSessionUser()) redirect('/');
+  const { error, invited } = await searchParams;
+  const message = messageFor(error);
+
+  return (
+    <main className="max-w-sm mx-auto p-6 pt-16 space-y-6">
+      <div className="space-y-3">
+        <span className="inline-block bg-ink text-paper font-mono text-sm font-medium rounded-md px-2 py-1">SG</span>
+        <h1 className="text-3xl font-semibold leading-tight">Every shot, scored against a scratch baseline.</h1>
+        <p className="text-ink-2">
+          Log your rounds shot by shot and see where practice actually pays off.
+        </p>
+      </div>
+
+      {invited && (
+        <p className="text-sm rounded-lg bg-pos-soft text-pos px-3 py-2">You’re invited — sign in with Google to join.</p>
+      )}
+      {message && <p className="text-sm rounded-lg bg-neg-soft text-neg px-3 py-2">{message}</p>}
+
+      <GoogleButton label={invited ? 'Join with Google' : 'Continue with Google'} />
+      {testMode && <TestLoginForm />}
+
+      <p className="text-xs text-muted">
+        Alpha, invite-only. Your rounds are private to you; other players can see your scores and strokes gained, but
+        never your notes.
+      </p>
+    </main>
+  );
+}

@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { parseCourseSheet, type RawSheet } from '@/lib/import/parse-course-sheet';
 import { validateParsedStructure } from '@/lib/import/validate-parsed-sheet';
+import { requireApiUser, toErrorResponse } from '@/lib/auth/guards';
 
 export async function POST(req: NextRequest) {
+  try {
+    await requireApiUser();
+  } catch (e) {
+    return toErrorResponse(e);
+  }
   const formData = await req.formData();
   const file = formData.get('file');
   if (!(file instanceof File)) {

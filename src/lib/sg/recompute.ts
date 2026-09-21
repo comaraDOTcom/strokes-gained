@@ -5,7 +5,7 @@
  * are written — never set directly by a form handler.
  */
 import { eq } from 'drizzle-orm';
-import { db } from '../../db/client';
+import { db, type DbOrTx } from '../../db/client';
 import { rounds, shots, teeHoles, type Shot } from '../../db/schema';
 import { computeHole, type ShotInput, type PenaltyType } from './compute';
 import { yardsToFeet } from '../units';
@@ -27,14 +27,28 @@ function toShotInput(shot: Shot): ShotInput {
   };
 }
 
-export function recomputeRound(roundId: number): void {
-  const round = db.select().from(rounds).where(eq(rounds.id, roundId)).get();
+/**
+ * Recompute one round. Pass `conn` (a transaction) to make the recompute part of
+ * the caller's transaction — the shot-save routes do, so a shot and its SG commit
+ * atomically. Without `conn` it opens its own transaction, so its reads and writes
+ * are one consistent snapshot.
+ *
+ * Only rows whose derived values actually changed are written: a whole-round
+ * recompute on every shot save would otherwise be ~100 network round trips.
+ */
+export async function recomputeRound(roundId: number, conn?: DbOrTx): Promise<void> {
+  if (conn) return recomputeWith(conn, roundId);
+  await db.transaction((tx) => recomputeWith(tx, roundId));
+}
+
+async function recomputeWith(conn: DbOrTx, roundId: number): Promise<void> {
+  const [round] = await conn.select().from(rounds).where(eq(rounds.id, roundId));
   if (!round) throw new Error(`recomputeRound: round ${roundId} not found`);
 
-  const holes = db.select().from(teeHoles).where(eq(teeHoles.teeId, round.teeId)).all();
+  const holes = await conn.select().from(teeHoles).where(eq(teeHoles.teeId, round.teeId));
   const holesByNo = new Map(holes.map((h) => [h.holeNo, h]));
 
-  const allShots = db.select().from(shots).where(eq(shots.roundId, roundId)).all();
+  const allShots = await conn.select().from(shots).where(eq(shots.roundId, roundId));
   const byHole = new Map<number, Shot[]>();
   for (const shot of allShots) {
     const list = byHole.get(shot.holeNo) ?? [];
@@ -42,39 +56,45 @@ export function recomputeRound(roundId: number): void {
     byHole.set(shot.holeNo, list);
   }
 
-  db.transaction((tx) => {
-    for (const [holeNo, holeShots] of byHole) {
-      const teeHole = holesByNo.get(holeNo);
-      if (!teeHole) {
-        throw new Error(
-          `recomputeRound: no tee_holes row for hole ${holeNo} on tee ${round.teeId} (round ${roundId})`,
-        );
-      }
-
-      const sorted = [...holeShots].sort((a, b) => a.shotNo - b.shotNo);
-      const results = computeHole(sorted.map(toShotInput), teeHole.yards, teeHole.par);
-
-      for (const result of results) {
-        const original = sorted.find((s) => s.shotNo === result.shotNo);
-        if (!original) continue;
-        tx.update(shots)
-          .set({
-            sg: result.sg,
-            category: result.category,
-            bunkerSubtype: result.bunkerSubtype,
-            baselineId: BASELINE_ID,
-          })
-          .where(eq(shots.id, original.id))
-          .run();
-      }
+  for (const [holeNo, holeShots] of byHole) {
+    const teeHole = holesByNo.get(holeNo);
+    if (!teeHole) {
+      throw new Error(
+        `recomputeRound: no tee_holes row for hole ${holeNo} on tee ${round.teeId} (round ${roundId})`,
+      );
     }
-  });
+
+    const sorted = [...holeShots].sort((a, b) => a.shotNo - b.shotNo);
+    const results = computeHole(sorted.map(toShotInput), teeHole.yards, teeHole.par);
+
+    for (const result of results) {
+      const original = sorted.find((s) => s.shotNo === result.shotNo);
+      if (!original) continue;
+      if (
+        original.sg === result.sg &&
+        original.category === result.category &&
+        original.bunkerSubtype === result.bunkerSubtype &&
+        original.baselineId === BASELINE_ID
+      ) {
+        continue;
+      }
+      await conn
+        .update(shots)
+        .set({
+          sg: result.sg,
+          category: result.category,
+          bunkerSubtype: result.bunkerSubtype,
+          baselineId: BASELINE_ID,
+        })
+        .where(eq(shots.id, original.id));
+    }
+  }
 }
 
-export function recomputeAllRounds(): number {
-  const allRounds = db.select().from(rounds).all();
+export async function recomputeAllRounds(): Promise<number> {
+  const allRounds = await db.select({ id: rounds.id }).from(rounds);
   for (const round of allRounds) {
-    recomputeRound(round.id);
+    await recomputeRound(round.id);
   }
   return allRounds.length;
 }

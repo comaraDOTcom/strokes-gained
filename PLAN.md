@@ -262,5 +262,5 @@ This keeps the app honest instead of telling you you've fixed your bunker play b
 
 ## Out of scope for MVP
 
-Multi-user/auth, GPS shot tracking, cloud deploy, handicap calculation, course maps, offline PWA sync.
+GPS shot tracking, handicap calculation, course maps, offline PWA sync. (Multi-user/auth and cloud deploy were originally out of scope; see BUILD.md Phase 6.)
 The schema and the baseline abstraction leave room for all of them.

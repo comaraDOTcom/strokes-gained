@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getAllEnrichedShots, getCourseOptions } from '@/lib/insights/queries';
+import { requirePageUser } from '@/lib/auth/session';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import {
   categorySeries,
@@ -55,12 +56,13 @@ export default async function InsightsPage({
 }: {
   searchParams: Promise<{ course?: string | string[] }>;
 }) {
+  const user = await requirePageUser();
   const { course } = await searchParams;
-  const options = getCourseOptions();
+  const options = await getCourseOptions(user.id);
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
   const roundCount = selected?.roundCount ?? 0;
-  const shots = selectedCourseId === null ? [] : getAllEnrichedShots(selectedCourseId);
+  const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
 
   if (roundCount === 0) {
     return (

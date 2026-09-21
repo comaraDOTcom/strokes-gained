@@ -9,7 +9,10 @@ export function CourseHoleEditor({
   expectedTotalYards,
   expectedPar,
   initialHoles,
+  readOnlyReason,
 }: {
+  /** When set, the grid is view-only and this explains why. */
+  readOnlyReason?: string | null;
   teeId: number;
   expectedTotalYards: number | null;
   expectedPar: number | null;
@@ -82,6 +85,7 @@ export function CourseHoleEditor({
                 <input
                   className="w-12 border px-1"
                   type="number"
+                  disabled={Boolean(readOnlyReason)}
                   value={h.par}
                   onChange={(e) => updateHole(h.holeNo, { par: Number(e.target.value) })}
                 />
@@ -90,6 +94,7 @@ export function CourseHoleEditor({
                 <input
                   className="w-12 border px-1"
                   type="number"
+                  disabled={Boolean(readOnlyReason)}
                   value={h.strokeIndex ?? ''}
                   onChange={(e) =>
                     updateHole(h.holeNo, { strokeIndex: e.target.value === '' ? null : Number(e.target.value) })
@@ -100,6 +105,7 @@ export function CourseHoleEditor({
                 <input
                   className="w-20 border px-1"
                   type="number"
+                  disabled={Boolean(readOnlyReason)}
                   value={h.yards}
                   onChange={(e) => updateHole(h.holeNo, { yards: Number(e.target.value) })}
                 />
@@ -133,13 +139,13 @@ export function CourseHoleEditor({
       )}
       {message && <p className="text-pos text-sm">{message}</p>}
 
-      <button
-        className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={saving}
-        onClick={onSave}
-      >
-        Save
-      </button>
+      {readOnlyReason ? (
+        <p className="text-sm text-muted">{readOnlyReason}</p>
+      ) : (
+        <button className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50" disabled={saving} onClick={onSave}>
+          Save
+        </button>
+      )}
     </div>
   );
 }

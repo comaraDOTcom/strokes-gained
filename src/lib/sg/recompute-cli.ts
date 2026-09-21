@@ -5,12 +5,13 @@
  * every shot mutation).
  */
 import { recomputeRound, recomputeAllRounds } from './recompute';
+import { closeDb } from '../../db/client';
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.includes('--all')) {
-    const count = recomputeAllRounds();
+    const count = await recomputeAllRounds();
     console.log(`[sg:recompute] Recomputed ${count} round(s).`);
     return;
   }
@@ -29,10 +30,15 @@ function main() {
     return;
   }
 
-  recomputeRound(roundId);
+  await recomputeRound(roundId);
   console.log(`[sg:recompute] Recomputed round ${roundId}.`);
 }
 
-main();
+main()
+  .then(() => closeDb())
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 
 export {};

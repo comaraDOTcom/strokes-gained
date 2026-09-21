@@ -250,6 +250,19 @@ group trends by course, or warn when a comparison mixes courses.
 
 ---
 
+## Phase 6 — Postgres, accounts, invite-only multiplayer
+
+**Goal:** friends sign in from a WhatsApp link, log their own rounds, share a course library and see each other's scores. Hosting: Vercel Hobby + Neon Postgres, $0.
+
+- **Database:** Postgres via Drizzle `pg-core`. Production = Neon serverless **Pool** (interactive transactions; not the HTTP driver). Local and tests = PGlite. Every float is `doublePrecision` (pg `real` is float4 and corrupts fractional-yard green distances). All queries are async; `recomputeRound(roundId, tx?)` joins the caller's transaction so a shot save and its SG commit atomically. Migrations are `pnpm db:migrate` (run by `vercel-build`), never on import.
+- **Auth:** Better Auth, Google only. Tables `user/session/account/verification`. Sessions cookie-cached 5 minutes.
+- **Invite gate:** `/join/<INVITE_TOKEN>` sets an HttpOnly, SameSite=Lax, one-day cookie; the `user.create.before` hook calls `mayCreateAccount` and returns `false` unless the cookie matches or the verified admin is signing up. Unset `INVITE_TOKEN` closes sign-up.
+- **Ownership:** `rounds.user_id` and `courses.created_by_user_id` (both nullable — null = legacy/seeded). `claimLegacyData` gives ownerless rounds to the admin at first sign-in.
+- **Authorization:** one module, `src/lib/auth/guards.ts`, built on the pure rules in `permissions.ts`. Rounds: owner writes; any signed-in user reads (read-only, no notes/ratings); ownerless rounds are admin-only. Courses/tees: creator or admin, locked to admin once another player has a round on the tee. Non-owner → 403; missing (or hidden) → 404. Every insights query takes a `userId`.
+- **Yardage edits:** `applyTeeHoleEdits` re-bases shot 1 (and re-derives each hole's chain via `propagateChain`) for every round on the tee, then recomputes them, in one transaction. Previously an edit made every existing round on the tee unrecomputable (`computeHole` throws if shot 1's start ≠ the hole's yardage).
+- **Data migration:** `scripts/migrate-sqlite-to-pg.ts` — one transaction, preserves ids, resets identity sequences, recomputes SG and asserts each round's gross score and SG total equal the SQLite values or rolls everything back.
+- **Tests required:** golden SG values unchanged on Postgres; invite gate through the real Better Auth sign-up path (stranger rejected, invited accepted, unverified "admin" not admin, fails closed with no token); guard matrix (owner / other player / admin / ownerless / missing); tee-edit cascade incl. stroke-and-distance and rollback; `claimLegacyData` idempotent.
+
 ## Verification
 
 1. `pnpm test` — all Phase 1 tests green, including the invariant property test.
@@ -263,4 +276,4 @@ group trends by course, or warn when a comparison mixes courses.
 
 ## Out of scope
 
-Auth, GPS tracking, cloud deploy, handicap calculation, course maps, offline PWA sync.
+GPS tracking, handicap calculation, course maps, offline PWA sync. (Auth and cloud deploy were out of scope for Phases 1–5 and are the subject of Phase 6.)

@@ -8,6 +8,7 @@ import {
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { categoryTrends, practicePriority, difficultyAdjustment } from '@/lib/insights/trends';
 import { fmtSg } from '@/lib/insights/chart-colors';
+import { requirePageUser } from '@/lib/auth/session';
 import { DifficultyToggle, type AdjustableRound } from './difficulty-toggle';
 
 export const dynamic = 'force-dynamic';
@@ -35,9 +36,10 @@ const SIGNAL_LABEL: Record<string, string> = {
 
 const MIN_ROUNDS_FOR_TREND = 4;
 
-export default function TrendsPage() {
-  const roundCount = getRoundCount();
-  const shots = getAllEnrichedShots();
+export default async function TrendsPage() {
+  const user = await requirePageUser();
+  const roundCount = await getRoundCount(user.id);
+  const shots = await getAllEnrichedShots(user.id);
 
   if (roundCount === 0) {
     return (
@@ -51,13 +53,21 @@ export default function TrendsPage() {
   const trends = roundCount >= MIN_ROUNDS_FOR_TREND ? categoryTrends(shots, 3) : [];
   const priorities = practicePriority(shots, 4);
 
-  const courses = getCoursesWithRounds();
-  const tees = getTeesWithRounds();
+  const [courses, tees] = await Promise.all([getCoursesWithRounds(user.id), getTeesWithRounds(user.id)]);
   const summaries = roundSummaries(shots);
+
+  // One yardage query per distinct tee, not per round.
+  const yardsByTee = new Map(
+    await Promise.all(
+      [...new Set(summaries.map((r) => r.teeId))].map(
+        async (teeId) => [teeId, (await getTeeHoleYardages(teeId)).map((h) => h.yards)] as const,
+      ),
+    ),
+  );
 
   const adjustableRounds: AdjustableRound[] = summaries.map((r) => {
     const tee = tees.find((t) => t.teeId === r.teeId);
-    const holeYards = getTeeHoleYardages(r.teeId).map((h) => h.yards);
+    const holeYards = yardsByTee.get(r.teeId) ?? [];
     const adj = tee ? difficultyAdjustment(r.teeId, tee.courseRating, holeYards) : { perHoleAdjustment: null };
     const holesPlayed = new Set(shots.filter((s) => s.roundId === r.roundId).map((s) => s.holeNo)).size;
     return {

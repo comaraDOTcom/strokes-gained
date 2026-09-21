@@ -27,6 +27,7 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs, course filter | ✅ Built, verified in the browser. Not built: the 18-hole SG heatmap strip from the design mock |
 | 5 | Trends + practice priority, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
 | — | Round notes, mentality (BTT + per-shot focus/commitment), in-place editing | ✅ Built (see below) |
+| 6 | Postgres + accounts + invite-only multiplayer (Google sign-in, shared course library, read-only friends' rounds) | ✅ Built and tested locally; **not deployed yet** — see "Deploying" below |
 
 **Design direction**: two mockups (landing + dashboard) are published at
 <https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB> — analytical/data-tool
@@ -65,10 +66,6 @@ start). The exception: marking an edited shot **Holed** removes the shots after 
 The date, name, commentary and ratings are editable on the round page. **Course and tee
 are fixed once a round is started** — every shot's yardages came from that tee.
 
-**Migrations run automatically** on first DB access (`src/db/client.ts`), so pulling
-this and restarting `pnpm dev` adds the new columns to an existing `data/rounds.db`
-(nullable, no data touched). Still, back the file up before schema changes.
-
 ### Design system
 
 Tokens live in `src/app/globals.css` (`@theme`): warm paper background, near-black
@@ -93,26 +90,84 @@ the same pair via `src/lib/insights/chart-colors.ts`.
 - Portmarnock has no course rating on file (only Elm Park does), so the
   cross-course `difficultyAdjustment` in Phase 5 has nothing to calibrate
   against yet and must stay off/labelled until Conor supplies it.
-- The dev DB (`data/rounds.db*`) is gitignored and not in this repo — a fresh
-  clone needs `pnpm db:seed` to repopulate courses/tees before anything else
-  works.
+- A fresh database needs `pnpm db:migrate` and then `pnpm db:seed` to load the
+  seeded courses (Elm Park, Portmarnock).
+- Sessions are cached in a signed cookie for 5 minutes (`session.cookieCache` in
+  `src/lib/auth/auth.ts`, to avoid a database hit on every navigation), so removing
+  a user takes up to 5 minutes to take effect.
+- Round commentary and mentality ratings are private to the round's owner; friends
+  see scores, stats and SG only.
 
-## Running it
+## Accounts, invites and who can do what
+
+Sign-in is Google only (Better Auth; sessions live in our Postgres). **Sign-up is
+invite-only**: `/join/<INVITE_TOKEN>` sets a one-day cookie and sends the person to
+Google; creating a *new* account without that cookie is refused (`mayCreateAccount`
+in `src/lib/auth/config.ts`, enforced in the `user.create.before` hook). Existing
+members sign in freely. The admin (`ADMIN_EMAIL`, verified) can always sign up.
+Rotating `INVITE_TOKEN` kills the old link.
+
+- **Rounds:** private to write — only the owner can add/edit/delete shots or change
+  notes. Other signed-in players can open a round **read-only** (scores, shots, SG;
+  never notes or ratings) via `/players`.
+- **Courses:** one shared library. Anyone can add a course; only its creator or the
+  admin can edit it, and once another player has a round on a tee only the admin can
+  (`canEditCourse` in `src/lib/auth/permissions.ts`) — a yardage edit changes everyone's
+  SG on that tee, so `applyTeeHoleEdits` (`src/lib/rounds/tee-edit.ts`) re-bases every
+  affected round and recomputes it in the same transaction.
+- **Legacy rounds** imported from the single-user era have no owner until the admin
+  first signs in, then they inherit them (`claimLegacyData`). Until then they're
+  invisible to everyone else.
+- **Enforcement** lives in `src/lib/auth/guards.ts` (`requireRoundOwner`,
+  `requireTeeEditor`, …); every route and page that takes an id goes through it, and
+  every insights query takes a `userId`. `src/middleware.ts` is only an optimistic
+  redirect — never the real check.
+
+## Running it locally
+
+Local dev uses **PGlite** (Postgres compiled to WASM, stored in `data/pglite`), so you
+don't need to install Postgres.
 
 ```bash
 pnpm install
-pnpm db:seed        # loads Elm Park + Portmarnock from src/db/seed-courses.ts, fails loudly on any checksum mismatch
-pnpm test           # engine + import tests
+cp .env.example .env.local   # set BETTER_AUTH_SECRET; add AUTH_TEST_MODE=1 to skip Google locally
+pnpm db:migrate              # create the tables
+pnpm db:seed                 # Elm Park + Portmarnock, fails loudly on any checksum mismatch
+pnpm test
 pnpm tsc --noEmit
-pnpm dev            # next dev -H 0.0.0.0, reachable from a phone on the same wifi
+pnpm dev                     # http://localhost:3000
 ```
+
+Bringing over data from the old SQLite file (`data/rounds.db`): `pnpm db:import-sqlite`
+(read-only on the SQLite file; refuses to run on a non-empty target; recomputes SG and
+aborts unless every round's score and SG total match SQLite exactly).
+
+## Deploying (Vercel + Neon + Google, $0)
+
+1. **Neon** — create a project, copy the *pooled* connection string → `DATABASE_URL`.
+2. **Google** — Cloud Console → OAuth consent screen (External; **publish it to
+   "In production"** so friends aren't blocked by the test-user list) → OAuth client
+   (Web application), redirect URI `https://<app>.vercel.app/api/auth/callback/google`.
+3. **Vercel** — import the GitHub repo; set the env vars from `.env.example`
+   (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID/SECRET`,
+   `ADMIN_EMAIL`, `INVITE_TOKEN`). The `vercel-build` script runs `db:migrate` then
+   `next build`. Give Preview deployments a *different* `DATABASE_URL` (a Neon branch)
+   so a preview build can never migrate production.
+4. **Load courses + your rounds** into Neon, from your machine:
+   `DATABASE_URL=… pnpm db:migrate && DATABASE_URL=… pnpm db:seed` then
+   `DATABASE_URL=… ADMIN_EMAIL=… pnpm db:import-sqlite`.
+5. **Sign in yourself first** (Google). You become admin and inherit your rounds.
+6. Send friends `https://<app>/join/<INVITE_TOKEN>` on WhatsApp.
+
+Backups are now Neon's (point-in-time restore on the free tier is short — export
+occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).
 
 ## Stack
 
-Next.js 15 (App Router) + TypeScript · SQLite (`better-sqlite3`) + Drizzle ORM ·
-Tailwind v4 · Recharts · Vitest. DB is a single file at `data/rounds.db`, not
-committed — back it up yourself, or migrate to hosted Postgres later (schema is
-written to be portable).
+Next.js 15 (App Router) + TypeScript · Postgres (Neon in production, PGlite locally
+and in tests) + Drizzle ORM · Better Auth (Google) · Tailwind v4 · Recharts · Vitest.
+The old single-user SQLite version lives in git history (commit `50addd3`); its data
+file is `data/rounds.db` (gitignored) and is only read by the one-off importer.
 
 ## Data provenance
 

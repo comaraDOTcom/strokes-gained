@@ -4,24 +4,31 @@
  * already run `validateCourseChecksums` and confirmed zero errors — this
  * function does not re-validate, it just writes.
  */
-import { db } from './client';
+import { db, type DbOrTx } from './client';
 import { courses, tees, teeHoles } from './schema';
 import type { SeedCourse } from './seed-courses';
 
-export function insertCourse(course: SeedCourse): number {
-  return db.transaction((tx) => {
-    const insertedCourse = tx
+/**
+ * Returns the new course id. `createdByUserId` records who may edit it (null =
+ * seeded / admin-owned). Pass `conn` to join an existing transaction.
+ */
+export async function insertCourse(
+  course: SeedCourse,
+  createdByUserId: string | null = null,
+  conn?: DbOrTx,
+): Promise<number> {
+  const run = async (tx: DbOrTx): Promise<number> => {
+    const [insertedCourse] = await tx
       .insert(courses)
-      .values({ name: course.name, location: course.location })
-      .returning()
-      .get();
+      .values({ name: course.name, location: course.location, createdByUserId })
+      .returning();
     if (!insertedCourse) throw new Error(`Failed to insert course ${course.name}`);
 
     for (const tee of course.tees) {
       const totalYards = course.holes.reduce((sum, hole) => sum + (hole.yards[tee.name] ?? 0), 0);
       const totalPar = course.holes.reduce((sum, hole) => sum + hole.par, 0);
 
-      const insertedTee = tx
+      const [insertedTee] = await tx
         .insert(tees)
         .values({
           courseId: insertedCourse.id,
@@ -33,27 +40,20 @@ export function insertCourse(course: SeedCourse): number {
           expectedTotalYards: tee.expectedTotalYards ?? totalYards,
           expectedPar: tee.expectedPar ?? totalPar,
         })
-        .returning()
-        .get();
+        .returning();
       if (!insertedTee) throw new Error(`Failed to insert tee ${tee.name} for ${course.name}`);
 
-      for (const hole of course.holes) {
+      const holeRows = course.holes.map((hole) => {
         const yards = hole.yards[tee.name];
         if (typeof yards !== 'number') {
           throw new Error(`${course.name} hole ${hole.holeNo} has no yardage for tee ${tee.name}`);
         }
-        tx.insert(teeHoles)
-          .values({
-            teeId: insertedTee.id,
-            holeNo: hole.holeNo,
-            par: hole.par,
-            strokeIndex: hole.strokeIndex,
-            yards,
-          })
-          .run();
-      }
+        return { teeId: insertedTee.id, holeNo: hole.holeNo, par: hole.par, strokeIndex: hole.strokeIndex, yards };
+      });
+      await tx.insert(teeHoles).values(holeRows);
     }
 
     return insertedCourse.id;
-  });
+  };
+  return conn ? run(conn) : db.transaction((tx) => run(tx));
 }

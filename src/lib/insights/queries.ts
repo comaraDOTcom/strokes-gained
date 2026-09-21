@@ -1,13 +1,18 @@
 /**
- * The only file in `src/lib/insights` that touches the DB. Reads every shot
- * across every round, joins in the course/tee/hole context each aggregate
+ * The only file in `src/lib/insights` that touches the DB. Reads a user's shots
+ * across their rounds, joins in the course/tee/hole context each aggregate
  * function in `aggregate.ts` needs, and converts stored yards to display
  * units (feet on GREEN) — the one conversion point rule from
  * `src/lib/units.ts` applies here too.
+ *
+ * EVERY function that reads rounds/shots takes a `userId` and reads only that
+ * user's rounds. Nothing here returns another user's data unless the caller
+ * deliberately passes that user's id (the read-only `/players/[id]` view does,
+ * and it strips the private fields itself).
  */
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/client';
-import { rounds, courses, tees, teeHoles, shots as shotsTable } from '../../db/schema';
+import { rounds, courses, tees, teeHoles, shots as shotsTable, user } from '../../db/schema';
 import { yardsToFeet } from '../units';
 import type { Lie } from '../sg/baseline-scratch';
 import type { Category, BunkerSubtype } from '../sg/categorise';
@@ -16,39 +21,36 @@ import type { EnrichedShot } from './aggregate';
 import type { CourseOption } from './course-filter';
 import type { RoundDetails } from '../rounds/details';
 
-/** Name / commentary / mentality per round — kept out of `EnrichedShot` (which is
- * shot-level and SG-only) and joined in by round id where a screen needs it. */
-export function getRoundDetailsById(): Map<number, RoundDetails> {
+/** Name / commentary / mentality per round for one user — kept out of `EnrichedShot`
+ * (which is shot-level and SG-only) and joined in by round id where a screen needs it. */
+export async function getRoundDetailsById(userId: string): Promise<Map<number, RoundDetails>> {
+  const rows = await db.select().from(rounds).where(eq(rounds.userId, userId));
   return new Map(
-    db
-      .select()
-      .from(rounds)
-      .all()
-      .map((r) => [
-        r.id,
-        {
-          name: r.name,
-          notes: r.notes,
-          mentalBalance: r.mentalBalance,
-          mentalTempo: r.mentalTempo,
-          mentalTension: r.mentalTension,
-        },
-      ]),
+    rows.map((r) => [
+      r.id,
+      {
+        name: r.name,
+        notes: r.notes,
+        mentalBalance: r.mentalBalance,
+        mentalTempo: r.mentalTempo,
+        mentalTension: r.mentalTension,
+      },
+    ]),
   );
 }
 
-/** Every course (including ones with no rounds yet) with its round count and
- * most recent round — the course filter's options. Ordered by course id so the
- * button order is stable regardless of which course was played last. */
-export function getCourseOptions(): CourseOption[] {
-  const allRounds = db.select().from(rounds).all();
-  return db
-    .select()
-    .from(courses)
-    .all()
+/** Every course (including ones the user hasn't played) with THEIR round count and
+ * most recent round — the course filter's options. Courses are a shared library;
+ * round counts are the viewer's own. Ordered by id so button order is stable. */
+export async function getCourseOptions(userId: string): Promise<CourseOption[]> {
+  const [allCourses, myRounds] = await Promise.all([
+    db.select().from(courses),
+    db.select().from(rounds).where(eq(rounds.userId, userId)),
+  ]);
+  return allCourses
     .sort((a, b) => a.id - b.id)
     .map((c) => {
-      const mine = allRounds.filter((r) => r.courseId === c.id);
+      const mine = myRounds.filter((r) => r.courseId === c.id);
       const last = mine.reduce<(typeof mine)[number] | null>(
         (best, r) => (!best || r.playedOn > best.playedOn || (r.playedOn === best.playedOn && r.id > best.id) ? r : best),
         null,
@@ -62,26 +64,32 @@ export function getCourseOptions(): CourseOption[] {
     });
 }
 
-/** Shots across all rounds (or just one course's, when `courseId` is given),
- * enriched with course/tee/hole context. */
-export function getAllEnrichedShots(courseId?: number): EnrichedShot[] {
-  const allRounds = (
-    courseId === undefined
-      ? db.select().from(rounds)
-      : db.select().from(rounds).where(eq(rounds.courseId, courseId))
-  ).all();
+/** One user's shots across their rounds (or just one course's, when `courseId` is
+ * given), enriched with course/tee/hole context. */
+export async function getAllEnrichedShots(userId: string, courseId?: number): Promise<EnrichedShot[]> {
+  const where =
+    courseId === undefined ? eq(rounds.userId, userId) : and(eq(rounds.userId, userId), eq(rounds.courseId, courseId));
+  const allRounds = await db.select().from(rounds).where(where);
   if (allRounds.length === 0) return [];
 
-  const allCourses = new Map(db.select().from(courses).all().map((c) => [c.id, c]));
-  const allTees = new Map(db.select().from(tees).all().map((t) => [t.id, t]));
-  const allHoles = db.select().from(teeHoles).all();
-  const holesByTee = new Map<number, Map<number, (typeof allHoles)[number]>>();
-  for (const h of allHoles) {
+  const roundIds = allRounds.map((r) => r.id);
+  const courseIds = [...new Set(allRounds.map((r) => r.courseId))];
+  const teeIds = [...new Set(allRounds.map((r) => r.teeId))];
+
+  const [courseRows, teeRows, holeRows, allShots] = await Promise.all([
+    db.select().from(courses).where(inArray(courses.id, courseIds)),
+    db.select().from(tees).where(inArray(tees.id, teeIds)),
+    db.select().from(teeHoles).where(inArray(teeHoles.teeId, teeIds)),
+    db.select().from(shotsTable).where(inArray(shotsTable.roundId, roundIds)),
+  ]);
+
+  const allCourses = new Map(courseRows.map((c) => [c.id, c]));
+  const allTees = new Map(teeRows.map((t) => [t.id, t]));
+  const holesByTee = new Map<number, Map<number, (typeof holeRows)[number]>>();
+  for (const h of holeRows) {
     const m = holesByTee.get(h.teeId) ?? holesByTee.set(h.teeId, new Map()).get(h.teeId)!;
     m.set(h.holeNo, h);
   }
-
-  const allShots = db.select().from(shotsTable).all();
   const shotsByRound = new Map<number, typeof allShots>();
   for (const s of allShots) {
     (shotsByRound.get(s.roundId) ?? shotsByRound.set(s.roundId, []).get(s.roundId)!).push(s);
@@ -135,8 +143,8 @@ export function getAllEnrichedShots(courseId?: number): EnrichedShot[] {
 /** Only shots belonging to *finished* holes (last shot holed) — used wherever a
  * partial in-progress hole would otherwise skew an aggregate (e.g. counting
  * a GIR miss before the hole is actually over). */
-export function getFinishedHoleEnrichedShots(): EnrichedShot[] {
-  const all = getAllEnrichedShots();
+export async function getFinishedHoleEnrichedShots(userId: string): Promise<EnrichedShot[]> {
+  const all = await getAllEnrichedShots(userId);
   const finishedKey = new Set<string>();
   const byHole = new Map<string, EnrichedShot[]>();
   for (const s of all) {
@@ -149,35 +157,52 @@ export function getFinishedHoleEnrichedShots(): EnrichedShot[] {
   return all.filter((s) => finishedKey.has(`${s.roundId}::${s.holeNo}`));
 }
 
-export function getRoundCount(): number {
-  return db.select().from(rounds).all().length;
+export async function getRoundCount(userId: string): Promise<number> {
+  const rows = await db.select({ id: rounds.id }).from(rounds).where(eq(rounds.userId, userId));
+  return rows.length;
 }
 
-/** Distinct courses that have at least one round logged — used by the
+/** Distinct courses this user has at least one round on — used by the
  * cross-course caveat (Phase 5) to warn when a comparison mixes courses. */
-export function getCoursesWithRounds(): { courseId: number; courseName: string }[] {
-  const shots = getAllEnrichedShots();
+export async function getCoursesWithRounds(userId: string): Promise<{ courseId: number; courseName: string }[]> {
+  const shots = await getAllEnrichedShots(userId);
   const seen = new Map<number, string>();
   for (const s of shots) seen.set(s.courseId, s.courseName);
   return [...seen.entries()].map(([courseId, courseName]) => ({ courseId, courseName }));
 }
 
-/** Tees referenced by at least one round, with their course rating (for difficultyAdjustment). */
-export function getTeesWithRounds(): { teeId: number; teeName: string; courseId: number; courseRating: number | null }[] {
-  const shots = getAllEnrichedShots();
+/** Tees this user has played, with their course rating (for difficultyAdjustment). */
+export async function getTeesWithRounds(
+  userId: string,
+): Promise<{ teeId: number; teeName: string; courseId: number; courseRating: number | null }[]> {
+  const shots = await getAllEnrichedShots(userId);
   const seen = new Map<number, { teeId: number; teeName: string; courseId: number }>();
   for (const s of shots) seen.set(s.teeId, { teeId: s.teeId, teeName: s.teeName, courseId: s.courseId });
-  const teeRows = db.select().from(tees).all();
+  if (seen.size === 0) return [];
+  const teeRows = await db
+    .select()
+    .from(tees)
+    .where(inArray(tees.id, [...seen.keys()]));
   const ratingByTee = new Map(teeRows.map((t) => [t.id, t.courseRating]));
   return [...seen.values()].map((t) => ({ ...t, courseRating: ratingByTee.get(t.teeId) ?? null }));
 }
 
-/** Tee holes for a given tee, keyed by hole number — used by difficultyAdjustment. */
-export function getTeeHoleYardages(teeId: number): { holeNo: number; yards: number }[] {
-  return db
-    .select()
-    .from(teeHoles)
-    .where(eq(teeHoles.teeId, teeId))
-    .all()
-    .map((h) => ({ holeNo: h.holeNo, yards: h.yards }));
+/** Tee holes for a given tee, keyed by hole number — used by difficultyAdjustment.
+ * Course data is a shared library, so this is not user-scoped. */
+export async function getTeeHoleYardages(teeId: number): Promise<{ holeNo: number; yards: number }[]> {
+  const rows = await db.select().from(teeHoles).where(eq(teeHoles.teeId, teeId));
+  return rows.map((h) => ({ holeNo: h.holeNo, yards: h.yards }));
+}
+
+/** Everyone who has joined, with how many rounds they've logged — the players list. */
+export async function getPlayers(): Promise<{ userId: string; name: string; roundCount: number }[]> {
+  const [users, allRounds] = await Promise.all([
+    db.select({ id: user.id, name: user.name }).from(user),
+    db.select({ userId: rounds.userId }).from(rounds),
+  ]);
+  const counts = new Map<string, number>();
+  for (const r of allRounds) if (r.userId) counts.set(r.userId, (counts.get(r.userId) ?? 0) + 1);
+  return users
+    .map((u) => ({ userId: u.id, name: u.name, roundCount: counts.get(u.id) ?? 0 }))
+    .sort((a, b) => b.roundCount - a.roundCount || a.name.localeCompare(b.name));
 }
