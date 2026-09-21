@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RecapArea, RecapHole, RecapShot, RoundRecap } from '@/lib/insights/recap';
+import type { RecapArea, RecapHole, RecapShot, RoundRecap, ShotGroups } from '@/lib/insights/recap';
 import { CATEGORY_LABEL } from '@/lib/insights/recap';
 import { swipeToHoleDelta } from '@/lib/rounds/entry';
 import { fmtSg } from '@/lib/insights/chart-colors';
@@ -48,6 +48,28 @@ function AreaCard({ a, tone, kicker }: { a: RecapArea; tone: 'pos' | 'neg'; kick
         <span className={`font-mono font-medium ${sgClass(a.sg)}`}>{fmtSg(a.sg)}</span> over {a.shots} shot
         {a.shots === 1 ? '' : 's'} <span className="text-muted">({fmtSg(a.perShot)} per shot)</span>
       </p>
+    </div>
+  );
+}
+
+/** Tee-to-green and putts ranked separately — a holed putt would otherwise own every list. */
+function ShotGroupsBody({ groups }: { groups: ShotGroups }) {
+  const sections = [
+    { label: 'Tee to green', shots: groups.longGame },
+    { label: 'On the green', shots: groups.putts },
+  ].filter((g) => g.shots.length > 0);
+  return (
+    <div className="space-y-4">
+      {sections.map((g) => (
+        <div key={g.label} className="space-y-2">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-ink-2">{g.label}</h2>
+          <ul className="space-y-2">
+            {g.shots.map((s, i) => (
+              <ShotRow key={`${s.holeNo}-${s.shotNo}`} s={s} rank={i + 1} />
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
@@ -117,15 +139,15 @@ export function RecapDeck({
     {
       key: 'best-shots',
       kicker: 'Shots to remember',
-      heading: `Your best ${recap.bestShots.length === 1 ? 'shot' : `${recap.bestShots.length} shots`}`,
-      body: <ul className="space-y-2">{recap.bestShots.map((s, i) => <ShotRow key={`${s.holeNo}-${s.shotNo}`} s={s} rank={i + 1} />)}</ul>,
+      heading: 'Your best shots',
+      body: <ShotGroupsBody groups={recap.bestShots} />,
     },
-    ...(recap.worstShots.length
+    ...(recap.worstShots.longGame.length + recap.worstShots.putts.length
       ? [{
           key: 'worst-shots',
           kicker: 'Shots to forget',
-          heading: `Your worst ${recap.worstShots.length === 1 ? 'shot' : `${recap.worstShots.length} shots`}`,
-          body: <ul className="space-y-2">{recap.worstShots.map((s, i) => <ShotRow key={`${s.holeNo}-${s.shotNo}`} s={s} rank={i + 1} />)}</ul>,
+          heading: 'Your worst shots',
+          body: <ShotGroupsBody groups={recap.worstShots} />,
         } satisfies Slide]
       : []),
     ...(recap.strongArea && recap.weakArea

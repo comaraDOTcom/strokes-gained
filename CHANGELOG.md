@@ -4,6 +4,15 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.13 — 2026-09-21
+
+### Round recap
+- **Best and worst shots are now ranked in two groups — "Tee to green" and "On the green" — three
+  of each.** A holed putt swings strokes gained in a single stroke (from "about 1.8 more to get
+  down" to "done"), so one combined list was nothing but putts. Now your best full shots, chips and
+  bunker shots get their own list, and the putting list shows holed putts on the best side and poor
+  lag putts on the worst.
+
 ## 0.0.12 — 2026-09-21
 
 ### Round recap

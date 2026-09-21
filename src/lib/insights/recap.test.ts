@@ -60,12 +60,29 @@ describe('buildRoundRecap', () => {
     expect(r.worstHoles[1]).toMatchObject({ result: 'Double bogey' });
   });
 
-  it('picks the best 5 and worst 5 shots, including shots on an unfinished hole', () => {
+  it('ranks tee-to-green shots and putts separately, 3 each, so putts cannot crowd out everything else', () => {
     const r = buildRoundRecap(round);
-    expect(r.bestShots.map((s) => s.sg)).toEqual([0.9, 0.8, 0.6, 0.4, 0.3]);
-    expect(r.bestShots[1]).toMatchObject({ holeNo: 8, category: 'OFF_THE_TEE' });
-    expect(r.worstShots[0]).toMatchObject({ holeNo: 5, shotNo: 1, sg: -1.2 });
-    expect(r.worstShots).toHaveLength(5);
+    // hole 5 is the only PUTTING-category hole in this fixture; everything else is long game
+    expect(r.bestShots.longGame.map((s) => s.sg)).toEqual([0.9, 0.8, 0.6]);
+    expect(r.bestShots.longGame[1]).toMatchObject({ holeNo: 8, category: 'OFF_THE_TEE' }); // unfinished hole still counts
+    expect(r.bestShots.longGame.every((s) => s.category !== 'PUTTING')).toBe(true);
+    expect(r.worstShots.longGame.map((s) => s.sg)).toEqual([-0.6, -0.5, -0.4]);
+
+    expect(r.bestShots.putts.every((s) => s.category === 'PUTTING')).toBe(true);
+    expect(r.bestShots.putts.map((s) => s.sg)).toEqual([-0.1, -0.1, -0.1]); // 6 putts: 3 best…
+    expect(r.worstShots.putts.map((s) => s.sg)).toEqual([-1.2, -0.4, -0.1]); // …and the other 3, worst first
+  });
+
+  it('a monster holed putt no longer hides the best full shots', () => {
+    const r = buildRoundRecap([
+      shot({ holeNo: 1, shotNo: 1, sg: 0.4, startLie: 'TEE', category: 'OFF_THE_TEE' }),
+      shot({ holeNo: 1, shotNo: 2, sg: 0.3 }),
+      shot({ holeNo: 1, shotNo: 3, sg: 1.1, startLie: 'GREEN', startDistance: 30, category: 'PUTTING', holed: true, endLie: null, endDistance: 0 }),
+    ]);
+    expect(r.bestShots.longGame.map((s) => s.sg)).toEqual([0.4]);
+    expect(r.worstShots.longGame.map((s) => s.sg)).toEqual([0.3]);
+    expect(r.bestShots.putts.map((s) => s.text)).toEqual(['30ft putt, holed']);
+    expect(r.worstShots.putts).toEqual([]);
   });
 
   it('shrinks the lists for a short round instead of repeating holes', () => {
@@ -75,8 +92,9 @@ describe('buildRoundRecap', () => {
     const one = buildRoundRecap(hole(1, 4, [0.2]));
     expect(one.bestHoles).toHaveLength(1);
     expect(one.worstHoles).toHaveLength(0);
-    expect(one.bestShots).toHaveLength(1);
-    expect(one.worstShots).toHaveLength(0);
+    expect(one.bestShots.longGame).toHaveLength(1);
+    expect(one.worstShots.longGame).toHaveLength(0);
+    expect(one.bestShots.putts).toHaveLength(0);
   });
 
   it('names the strongest and weakest area with shot counts', () => {
@@ -88,6 +106,6 @@ describe('buildRoundRecap', () => {
   });
 
   it('handles an empty round', () => {
-    expect(buildRoundRecap([])).toMatchObject({ holesPlayed: 0, score: 0, shotCount: 0, bestHoles: [], worstShots: [], strongArea: null });
+    expect(buildRoundRecap([])).toMatchObject({ holesPlayed: 0, score: 0, shotCount: 0, bestHoles: [], worstShots: { longGame: [], putts: [] }, strongArea: null });
   });
 });

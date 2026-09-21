@@ -6,6 +6,9 @@
  * "Best" and "worst" lists never overlap, and shrink sensibly for short rounds (a 3-hole
  * round gets 2 best + 1 worst, not the same holes twice). Only FINISHED holes count as holes;
  * every logged shot counts as a shot.
+ *
+ * Shots are ranked in TWO groups — tee-to-green and putts — because a holed putt swings SG in
+ * one stroke (expected ~1.8 more -> done), so a single list is nothing but putts.
  */
 import type { Category } from '../sg/categorise';
 import type { Lie } from '../sg/baseline-scratch';
@@ -22,6 +25,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 
 export type RecapHole = { holeNo: number; par: number; score: number; toPar: number; result: string; sg: number };
 export type RecapShot = { holeNo: number; shotNo: number; par: number; category: Category; sg: number; text: string; penalty: boolean };
+export type ShotGroups = { longGame: RecapShot[]; putts: RecapShot[] };
 export type RecapArea = { category: Category; label: string; sg: number; shots: number; perShot: number };
 
 export type RoundRecap = {
@@ -33,8 +37,9 @@ export type RoundRecap = {
   shotCount: number;
   bestHoles: RecapHole[];
   worstHoles: RecapHole[];
-  bestShots: RecapShot[];
-  worstShots: RecapShot[];
+  /** Up to 3 each. `longGame` = every non-putt (tee shots, approaches, short game, bunker, recovery). */
+  bestShots: ShotGroups;
+  worstShots: ShotGroups;
   /** Best and worst category by total SG; null when only one category has shots. */
   strongArea: RecapArea | null;
   weakArea: RecapArea | null;
@@ -116,7 +121,8 @@ export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
       holeNo: s.holeNo, shotNo: s.shotNo, par: s.par, category: s.category, sg: s.sg,
       text: describeShot(s), penalty: s.penaltyStrokes > 0,
     }));
-  const sh = bestAndWorst(allShots, 5);
+  const long = bestAndWorst(allShots.filter((s) => s.category !== 'PUTTING'), 3);
+  const putts = bestAndWorst(allShots.filter((s) => s.category === 'PUTTING'), 3);
 
   const areaMap = new Map<Category, { sg: number; shots: number }>();
   for (const s of shots) {
@@ -140,8 +146,8 @@ export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
     shotCount: shots.length,
     bestHoles: h.best,
     worstHoles: h.worst,
-    bestShots: sh.best,
-    worstShots: sh.worst,
+    bestShots: { longGame: long.best, putts: putts.best },
+    worstShots: { longGame: long.worst, putts: putts.worst },
     strongArea: areas.length >= 2 ? areas[0]! : null,
     weakArea: areas.length >= 2 ? areas[areas.length - 1]! : null,
     areas,
