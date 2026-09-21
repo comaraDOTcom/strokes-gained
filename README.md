@@ -153,9 +153,17 @@ aborts unless every round's score and SG total match SQLite exactly).
    `ADMIN_EMAIL`, `INVITE_TOKEN`). The `vercel-build` script runs `db:migrate` then
    `next build`. Give Preview deployments a *different* `DATABASE_URL` (a Neon branch)
    so a preview build can never migrate production.
-4. **Load courses + your rounds** into Neon, from your machine:
-   `DATABASE_URL=… pnpm db:migrate && DATABASE_URL=… pnpm db:seed` then
-   `DATABASE_URL=… ADMIN_EMAIL=… pnpm db:import-sqlite`.
+4. **Load your data into Neon**, from your machine (the scripts don't read `.env` files, so
+   pass the URL explicitly; keep it in `.env.local` as `NEON_DATABASE_URL` so `pnpm dev`
+   can never hit production by accident):
+   ```bash
+   set -a; . ./.env.local; set +a
+   DATABASE_URL="$NEON_DATABASE_URL" pnpm db:migrate
+   DATABASE_URL="$NEON_DATABASE_URL" ADMIN_EMAIL=you@gmail.com pnpm db:import-sqlite
+   ```
+   Do **not** run `db:seed` first: the import already carries the seeded courses and
+   refuses to run against a database that has any. (For a brand-new install with no old
+   SQLite data, run `db:migrate` then `db:seed` instead.)
 5. **Sign in yourself first** (Google). You become admin and inherit your rounds.
 6. Send friends `https://<app>/join/<INVITE_TOKEN>` on WhatsApp.
 
