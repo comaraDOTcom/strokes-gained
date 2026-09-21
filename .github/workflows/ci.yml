@@ -1,0 +1,93 @@
+# Runs on every push to main and every pull request. A push to main deploys to production
+# (Vercel), so this is the gate: typecheck, tests, build, migrations, and a secret scan.
+#
+# Security notes (the repo is public):
+#  - Every action is pinned to a full commit SHA, not a tag (tags can be moved). Dependabot
+#    keeps the pins current.
+#  - Least privilege: the token can only read the repo.
+#  - No secrets are needed or used here, and this never runs on `pull_request_target`.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24' # matches the Vercel project's Node version
+  PNPM_VERSION: '12.5.1'
+
+jobs:
+  check:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm tsc --noEmit
+      - name: Tests (in-memory Postgres via PGlite — no services needed)
+        run: pnpm test
+      - name: Production build
+        run: pnpm build
+        env:
+          # Build-time only, so auth doesn't refuse to load. Not a real secret; never deployed.
+          BETTER_AUTH_SECRET: ci-build-only-not-a-secret-ci-build-only
+
+  migrations:
+    name: Migrations are complete and apply cleanly
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Vercel runs `db:migrate` against the production database on every deploy, so a schema
+      # change without its migration file would ship code that doesn't match the database.
+      - name: schema.ts has no un-generated changes
+        run: |
+          pnpm db:generate
+          if [ -n "$(git status --porcelain -- drizzle)" ]; then
+            echo "::error::src/db/schema.ts changed without a migration. Run 'pnpm db:generate' and commit the new files in drizzle/."
+            git status --porcelain -- drizzle
+            exit 1
+          fi
+      - name: Every migration applies to a fresh database, in order
+        run: pnpm db:migrate
+        env:
+          PGLITE_DIR: 'memory://'
+
+  secrets:
+    name: No secrets in the pushed commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Scans only the commits in this push / pull request. `unknown` = looks like a credential
+      # but couldn't be checked against its service; worth failing on in a public repo.
+      - uses: trufflesecurity/trufflehog@f714bf454f350590f4a24c3ddb1aef02c35bf5b6 # v3.97.5
+        with:
+          extra_args: --results=verified,unknown

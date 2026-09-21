@@ -1,0 +1,25 @@
+# Weekly dependency updates. Minor and patch bumps arrive as ONE grouped pull request per
+# ecosystem, which CI then checks; major versions come individually since they can break things
+# (e.g. Recharts 3). Security fixes additionally need "Dependabot security updates" switched on
+# in the repo's Settings → Code security.
+version: 2
+updates:
+  - package-ecosystem: npm # covers pnpm (pnpm-lock.yaml)
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions # keeps the SHA pins in .github/workflows current
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ['*']
