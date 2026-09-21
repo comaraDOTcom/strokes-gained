@@ -29,7 +29,7 @@ export type RoundDetails = {
 };
 
 /** Everything a round PATCH may change: the human layer plus the date played. */
-export type RoundPatch = Partial<RoundDetails> & { playedOn?: string };
+export type RoundPatch = Partial<RoundDetails> & { playedOn?: string; trackMentality?: boolean };
 
 export type ParseResult =
   | { ok: true; patch: RoundPatch }
@@ -53,6 +53,13 @@ export function parseRoundDetailsPatch(body: unknown): ParseResult {
       return { ok: false, error: 'playedOn must be a real date in YYYY-MM-DD form' };
     }
     patch.playedOn = v;
+  }
+
+  if ('trackMentality' in input) {
+    if (typeof input.trackMentality !== 'boolean') {
+      return { ok: false, error: 'trackMentality must be true or false' };
+    }
+    patch.trackMentality = input.trackMentality;
   }
 
   for (const key of ['name', 'notes'] as const) {

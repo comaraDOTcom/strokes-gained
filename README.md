@@ -50,7 +50,9 @@ reset after every shot): **focus** — internal (swing thoughts) vs external (ta
 and **commitment** — committed vs hesitant (the "make a clear decision and commit"
 idea from Scott Fawcett's approach). Tap them *before* Save / Holed.
 
-None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
+Whether these inputs are open or collapsed-but-expandable is a per-round choice made on the
+new-round form (`rounds.track_mentality`; the form defaults to the player's last choice, off for a
+first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
 `mental_balance/tempo/tension`) and `shots` (`focus`, `commitment`); validated in
 `src/lib/rounds/details.ts` and `src/lib/rounds/entry.ts`. The first-draft ratings
 (`mental_confidence/focus/composure`) are no longer shown but their columns are kept so

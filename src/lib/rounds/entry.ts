@@ -51,3 +51,41 @@ export function parseShotTags(input: { focus?: unknown; commitment?: unknown }):
   if (!commitment.ok) return commitment;
   return { ok: true, focus: focus.value, commitment: commitment.value };
 }
+
+// ---------------------------------------------------------------------------
+// "Distance left" sanity feedback
+// ---------------------------------------------------------------------------
+
+/**
+ * The distance box asks how far the ball FINISHED from the hole, but it's natural to type
+ * how far you HIT it (a 290y drive on a 390y hole should be entered as 100). Given the
+ * shot's start and the entered result, say what that entry implies so a mix-up is obvious
+ * immediately: "travelled about 100y" for the mistaken 290, "about 290y" for the right 100.
+ * Straight-line arithmetic, hence "about". `endDistance` is in display units (feet on GREEN).
+ */
+export function describeEntry(
+  start: { lie: Lie; yards: number },
+  endLie: Lie,
+  endDistance: number,
+): { kind: 'travelled'; text: string } | { kind: 'warning'; text: string } | null {
+  if (!Number.isFinite(endDistance) || endDistance < 0) return null;
+  const endYards = endLie === 'GREEN' ? endDistance / 3 : endDistance;
+  const travelled = start.yards - endYards;
+
+  if (travelled < -0.5) {
+    return {
+      kind: 'warning',
+      text: `That's further from the hole than where you started (${fmt(start)}). Enter the distance LEFT to the hole, not how far you hit it.`,
+    };
+  }
+  // Putts read naturally in feet; everything else in yards.
+  const text =
+    start.lie === 'GREEN' && endLie === 'GREEN'
+      ? `This putt travelled about ${Math.round(travelled * 3)}ft`
+      : `This shot travelled about ${Math.round(travelled)}y`;
+  return { kind: 'travelled', text };
+}
+
+function fmt(start: { lie: Lie; yards: number }): string {
+  return start.lie === 'GREEN' ? `${Math.round(start.yards * 3)}ft` : `${Math.round(start.yards)}y`;
+}

@@ -1,13 +1,23 @@
 import { db } from '@/db/client';
-import { courses, tees } from '@/db/schema';
+import { desc, eq } from 'drizzle-orm';
+import { courses, tees, rounds } from '@/db/schema';
 import { requirePageUser } from '@/lib/auth/session';
 import { NewRoundForm } from './new-round-form';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewRoundPage() {
-  await requirePageUser();
-  const [allCourses, allTees] = await Promise.all([db.select().from(courses), db.select().from(tees)]);
+  const user = await requirePageUser();
+  const [allCourses, allTees, [lastRound]] = await Promise.all([
+    db.select().from(courses),
+    db.select().from(tees),
+    db
+      .select({ trackMentality: rounds.trackMentality })
+      .from(rounds)
+      .where(eq(rounds.userId, user.id))
+      .orderBy(desc(rounds.id))
+      .limit(1),
+  ]);
   allCourses.sort((a, b) => a.id - b.id);
 
   return (
@@ -21,6 +31,8 @@ export default async function NewRoundPage() {
         <NewRoundForm
           courses={allCourses.map((c) => ({ id: c.id, name: c.name }))}
           tees={allTees.map((t) => ({ id: t.id, courseId: t.courseId, name: t.name }))}
+          // First round ever: off — a new player sees the simplest screen.
+          defaultTrackMentality={lastRound?.trackMentality ?? false}
         />
       )}
     </main>

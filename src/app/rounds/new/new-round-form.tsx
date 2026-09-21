@@ -6,12 +6,22 @@ import { useRouter } from 'next/navigation';
 type TeeOption = { id: number; courseId: number; name: string };
 type CourseOption = { id: number; name: string };
 
-export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees: TeeOption[] }) {
+export function NewRoundForm({
+  courses,
+  tees,
+  defaultTrackMentality,
+}: {
+  courses: CourseOption[];
+  tees: TeeOption[];
+  /** The player's choice on their most recent round, so they don't have to re-tick it. */
+  defaultTrackMentality: boolean;
+}) {
   const router = useRouter();
   const [courseId, setCourseId] = useState<number | ''>(courses[0]?.id ?? '');
   const [teeId, setTeeId] = useState<number | ''>('');
   const [playedOn, setPlayedOn] = useState(() => new Date().toISOString().slice(0, 10));
   const [name, setName] = useState('');
+  const [trackMentality, setTrackMentality] = useState(defaultTrackMentality);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +39,7 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
       const res = await fetch('/api/rounds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, teeId, playedOn, name }),
+        body: JSON.stringify({ courseId, teeId, playedOn, name, trackMentality }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -100,6 +110,22 @@ export function NewRoundForm({ courses, tees }: { courses: CourseOption[]; tees:
           value={playedOn}
           onChange={(e) => setPlayedOn(e.target.value)}
         />
+      </label>
+
+      <label className="flex items-start gap-3 border rounded-lg bg-card px-3 py-3">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4"
+          checked={trackMentality}
+          onChange={(e) => setTrackMentality(e.target.checked)}
+        />
+        <span className="text-sm">
+          <span className="font-medium">Track mentality this round</span>
+          <span className="block text-muted">
+            Shows focus and commitment on every shot, and balance / tempo / tension in the round notes. Leave it
+            off for a cleaner screen — they stay one tap away.
+          </span>
+        </span>
       </label>
 
       {error && <p className="text-neg text-sm">{error}</p>}

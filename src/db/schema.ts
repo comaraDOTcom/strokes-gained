@@ -172,6 +172,10 @@ export const rounds = pgTable(
     // Pia Nilsson's balance / tempo / tension. For tension, 5 = relaxed (low tension), so
     // every scale reads "higher is better". Validated in src/lib/rounds/details.ts, not by a
     // DB CHECK. Owner-only, like `notes`.
+    // Chosen when the round is started: does the player want the mentality inputs (per-shot
+    // focus/commitment, and balance/tempo/tension) open by default? False = collapsed but still
+    // expandable. Defaults to true so rounds from before this option keep their inputs open.
+    trackMentality: boolean('track_mentality').notNull().default(true),
     mentalBalance: integer('mental_balance'),
     mentalTempo: integer('mental_tempo'),
     mentalTension: integer('mental_tension'),

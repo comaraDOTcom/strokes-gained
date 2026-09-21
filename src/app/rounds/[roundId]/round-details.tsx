@@ -30,10 +30,13 @@ const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 export function RoundDetailsForm({
   roundId,
   playedOn,
+  trackMentality,
   initial,
 }: {
   roundId: number;
   playedOn: string;
+  /** Round setting: show balance / tempo / tension open by default? */
+  trackMentality: boolean;
   initial: RoundDetails;
 }) {
   const router = useRouter();
@@ -42,6 +45,10 @@ export function RoundDetailsForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  // Collapsed when the round doesn't track mentality — unless a rating already exists.
+  const [ratingsOpen, setRatingsOpen] = useState(
+    trackMentality || RATINGS.some(({ key }) => initial[key] !== null),
+  );
 
   const dirty = !same(saved, draft);
 
@@ -135,6 +142,16 @@ export function RoundDetailsForm({
         <span className="text-xs text-faint self-end font-mono">{draft.notes.length.toLocaleString()} chars</span>
       </label>
 
+      {!ratingsOpen ? (
+        <button
+          type="button"
+          onClick={() => setRatingsOpen(true)}
+          aria-expanded={false}
+          className="text-sm text-muted underline underline-offset-2"
+        >
+          + Balance · Tempo · Tension
+        </button>
+      ) : (
       <fieldset className="space-y-3">
         <legend className="font-mono text-xs uppercase tracking-wide text-muted mb-1">Balance · Tempo · Tension</legend>
         {RATINGS.map(({ key, label, hint }) => (
@@ -165,6 +182,7 @@ export function RoundDetailsForm({
         ))}
         <p className="text-xs text-faint font-mono">1 = poor · 5 = excellent · tap again to clear</p>
       </fieldset>
+      )}
 
       {error && <p className="text-neg text-sm">{error}</p>}
 

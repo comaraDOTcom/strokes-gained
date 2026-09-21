@@ -37,40 +37,42 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body className="font-sans text-ink min-h-screen flex flex-col">
-        <nav className="border-b bg-card sticky top-0 z-10 overflow-x-auto">
-          <ul className="flex items-center gap-3 sm:gap-4 px-3 py-2 max-w-3xl mx-auto text-sm font-medium whitespace-nowrap">
-            <li className="flex items-center gap-2 mr-auto">
-              <Link href="/" className="flex items-center gap-2" aria-label="Strokes Gained home">
-                <Logo size={28} />
-                <span className="font-semibold hidden sm:inline">Strokes Gained</span>
-              </Link>
-            </li>
+        {/* Phone: logo + actions pinned on the first row, links on their own row below (nothing
+            scrolls out of reach). From `sm` up it's a single row: logo · links · actions. */}
+        <nav className="border-b bg-card sticky top-0 z-10">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 max-w-3xl mx-auto text-sm font-medium">
+            <Link href="/" className="flex items-center gap-2 mr-auto" aria-label="Strokes Gained home">
+              <Logo size={28} />
+              <span className="font-semibold">Strokes Gained</span>
+            </Link>
             {user && (
               <>
-                {NAV_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <Link className="text-ink-2 hover:text-ink underline-offset-4 hover:underline" href={link.href}>
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-                <li>
-                  <Link href="/rounds/new" className="bg-ink text-paper rounded-lg px-3 py-1.5 font-medium">
-                    <span className="sm:hidden">+ Log</span>
-                    <span className="hidden sm:inline">Log a round</span>
+                <ul className="order-last sm:order-none w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+                  {NAV_LINKS.map((link) => (
+                    <li key={link.href}>
+                      <Link className="text-ink-2 hover:text-ink underline-offset-4 hover:underline" href={link.href}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center gap-3">
+                  <Link href="/rounds/new" className="bg-ink text-paper rounded-lg px-3 py-1.5 font-medium whitespace-nowrap">
+                    + Log a round
                   </Link>
-                </li>
-                <li className="hidden sm:block text-muted" title={user.email}>
-                  {user.name}
-                </li>
-                <li>
+                  <span className="hidden md:inline text-muted" title={user.email}>
+                    {user.name}
+                  </span>
                   <SignOutButton />
-                </li>
+                </div>
               </>
             )}
-          </ul>
+          </div>
         </nav>
-        <div className="flex-1 flex flex-col">{children}</div>
+        {/* Column flex so a page can fill the height (the sign-in backdrop). `w-full` on the page is
+            essential: a centred (`mx-auto`) flex item otherwise shrink-wraps to its widest child —
+            e.g. the 18-hole strip — and the page ends up wider than a phone. */}
+        <div className="flex-1 flex flex-col min-w-0 [&>*]:w-full [&>*]:min-w-0">{children}</div>
         {user && (
           // Decorative footer; its edges fade into the page (see .golf-scene-strip).
           <div

@@ -67,6 +67,19 @@ describe('playedOn', () => {
   });
 });
 
+describe('trackMentality', () => {
+  it('accepts booleans only', () => {
+    expect(parseRoundDetailsPatch({ trackMentality: false })).toEqual({ ok: true, patch: { trackMentality: false } });
+    expect(parseRoundDetailsPatch({ trackMentality: true })).toEqual({ ok: true, patch: { trackMentality: true } });
+    for (const bad of ['true', 1, 0, null, 'no']) {
+      expect(parseRoundDetailsPatch({ trackMentality: bad }).ok).toBe(false);
+    }
+  });
+  it('is left out of the patch when not sent', () => {
+    expect(parseRoundDetailsPatch({ name: 'x' })).toEqual({ ok: true, patch: { name: 'x' } });
+  });
+});
+
 describe('roundTitle', () => {
   it('prefers the name, falls back otherwise', () => {
     expect(roundTitle({ name: 'St Georges Cup Rd 1' }, 'Elm Park — Blue')).toBe('St Georges Cup Rd 1');

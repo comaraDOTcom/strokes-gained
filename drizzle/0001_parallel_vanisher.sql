@@ -1,0 +1,1 @@
+ALTER TABLE "rounds" ADD COLUMN "track_mentality" boolean DEFAULT true NOT NULL;

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 import { yardsToFeet } from '@/lib/units';
-import { defaultResultLie, type Commitment, type Focus } from '@/lib/rounds/entry';
+import { defaultResultLie, describeEntry, type Commitment, type Focus } from '@/lib/rounds/entry';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
 
@@ -78,6 +78,7 @@ function TagRow<T extends string>({
 export function RoundEntry({
   roundId,
   roundName,
+  trackMentality,
   courseName,
   teeName,
   playedOn,
@@ -87,6 +88,8 @@ export function RoundEntry({
 }: {
   roundId: number;
   roundName: string | null;
+  /** Round setting: show the per-shot mentality tags open by default? */
+  trackMentality: boolean;
   courseName: string;
   teeName: string;
   playedOn: string;
@@ -107,6 +110,8 @@ export function RoundEntry({
   // Optional per-shot mentality tags. Reset after every shot: they describe *that* shot.
   const [focus, setFocus] = useState<Focus | null>(null);
   const [commitment, setCommitment] = useState<Commitment | null>(null);
+  // Collapsed-but-expandable when the round wasn't set up to track mentality.
+  const [tagsOpen, setTagsOpen] = useState(trackMentality);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -164,6 +169,7 @@ export function RoundEntry({
     setPenaltyType(shot.penaltyType as PenaltyType);
     setFocus(shot.focus as Focus | null);
     setCommitment(shot.commitment as Commitment | null);
+    if (shot.focus || shot.commitment) setTagsOpen(true); // never hide a value that's set
     setError(null);
   }
 
@@ -225,6 +231,10 @@ export function RoundEntry({
       setBusy(false);
     }
   }
+
+  // Live read-back of what the typed distance implies (catches "typed how far I hit it").
+  const entryNote =
+    start && selectedLie && distance !== '' ? describeEntry(start, selectedLie, Number(distance)) : null;
 
   const canSaveResult = selectedLie !== null && distance !== '' && Number(distance) >= 0;
   const isStrokeAndDistance = penaltyOn && penaltyType === 'STROKE_AND_DISTANCE';
@@ -355,6 +365,16 @@ export function RoundEntry({
 
             {!isStrokeAndDistance && (
               <>
+                {!tagsOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setTagsOpen(true)}
+                    aria-expanded={false}
+                    className="text-xs text-muted underline underline-offset-2"
+                  >
+                    + Mentality (focus, commitment)
+                  </button>
+                ) : (
                 <div className="space-y-1.5">
                   <TagRow
                     label="Focus"
@@ -374,7 +394,21 @@ export function RoundEntry({
                     value={commitment}
                     onChange={setCommitment}
                   />
+                  {!trackMentality && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTagsOpen(false);
+                        setFocus(null);
+                        setCommitment(null);
+                      }}
+                      className="text-xs text-muted underline underline-offset-2"
+                    >
+                      Hide mentality
+                    </button>
+                  )}
                 </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-2">
                   {LIES.map((lie) => (
@@ -408,14 +442,29 @@ export function RoundEntry({
 
                 {selectedLie && (
                   <label className="flex flex-col gap-1 text-sm">
-                    Distance ({unitFor(selectedLie)})
+                    <span className="font-medium">
+                      {selectedLie === 'GREEN' ? 'Length of the putt you have left (ft)' : 'Distance LEFT to the hole (y)'}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {selectedLie === 'GREEN'
+                        ? 'How far from the hole the ball finished, in feet.'
+                        : start.lie === 'TEE' && start.yards >= 330
+                          ? `Where the ball finished — not how far you hit it. A 290y drive on this ${Math.round(start.yards)}y hole leaves ${Math.round(start.yards) - 290}.`
+                          : 'Where the ball finished — not how far you hit it.'}
+                    </span>
                     <input
                       type="number"
                       inputMode="numeric"
-                      className="border rounded px-3 py-2 text-base"
+                      placeholder={selectedLie === 'GREEN' ? 'e.g. 15' : 'what you had left, e.g. 100'}
+                      className="border rounded px-3 py-2 text-base placeholder:text-faint"
                       value={distance}
                       onChange={(e) => setDistance(e.target.value)}
                     />
+                    {entryNote && (
+                      <span className={`text-xs ${entryNote.kind === 'warning' ? 'text-neg font-medium' : 'text-muted font-mono'}`}>
+                        {entryNote.kind === 'travelled' ? `→ ${entryNote.text}` : entryNote.text}
+                      </span>
+                    )}
                   </label>
                 )}
               </>

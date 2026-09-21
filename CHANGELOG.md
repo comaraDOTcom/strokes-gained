@@ -4,6 +4,30 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.4 — 2026-09-21
+
+From the first friends' feedback.
+
+### Fixed
+- **Pages opened too wide on a phone** (the left edge was cut off and the screen scrolled sideways,
+  worst on the round screen). A 0.0.3 regression: the new footer layout let a page shrink-wrap to its
+  widest child — the 18-hole strip — instead of the screen. Every page now fits a 375px phone.
+- **The "+ Log" button slid out of reach** on a phone because the whole nav scrolled sideways. The
+  logo, **+ Log a round** and Sign out now stay pinned on the first row, with the links on a row below.
+
+### Clearer distance entry
+- The distance box is now labelled **"Distance LEFT to the hole"** with a faded hint using the hole's
+  own yardage ("A 290y drive on this 413y hole leaves 123"), because it was natural to type how far
+  you hit it — which scores a good drive as a bad one.
+- As you type, it reads back what your number means — "→ This shot travelled about 290y" — and warns
+  in red if the ball would finish further from the hole than it started.
+
+### Mentality is now opt-in per round
+- **Track mentality this round** on the new-round form. Off (the default for a new player): the
+  per-shot focus/commitment buttons and the balance/tempo/tension ratings are collapsed behind a
+  one-tap link. On: they're open, as before. The form remembers your last choice; existing rounds
+  keep theirs open.
+
 ## 0.0.3 — 2026-09-21
 
 ### New look
