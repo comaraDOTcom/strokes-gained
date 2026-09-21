@@ -6,6 +6,7 @@ import { courses, tees, teeHoles, shots, user as userTable } from '@/db/schema';
 import { requirePageUser } from '@/lib/auth/session';
 import { getRoundForViewer, HttpError } from '@/lib/auth/guards';
 import { fmtSg } from '@/lib/insights/chart-colors';
+import { ReelIcon } from '../../recap-icon';
 import { RoundEntry } from './round-entry';
 import { RoundDetailsForm } from './round-details';
 
@@ -73,7 +74,10 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
             holesDone === 18 ? 'bg-ink text-paper border-ink' : 'bg-card'
           }`}
         >
-          <span className="font-medium">{holesDone === 18 ? 'Round complete — see your recap' : 'Round recap so far'}</span>
+          <span className="flex items-center gap-2 font-medium">
+            <ReelIcon />
+            {holesDone === 18 ? 'Round complete — watch your recap' : 'Round recap so far'}
+          </span>
           <span aria-hidden="true">›</span>
         </Link>
       )}

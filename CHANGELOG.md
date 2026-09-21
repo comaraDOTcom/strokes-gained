@@ -4,6 +4,12 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.12 — 2026-09-21
+
+### Round recap
+- The recap is now a **film-reel icon button** on every round in your list (a 44px tap target, in
+  place of the small "Recap" text link), and the same icon leads the recap banner on the round page.
+
 ## 0.0.11 — 2026-09-21
 
 ### Round recap

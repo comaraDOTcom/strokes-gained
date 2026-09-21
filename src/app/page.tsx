@@ -3,6 +3,7 @@ import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/li
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import { CourseFilter } from './course-filter';
 import { ExpandableText } from './expandable-text';
+import { RecapIconLink } from './recap-icon';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
@@ -53,19 +54,18 @@ export default async function Home({
             ].filter((x): x is [string, number] => typeof x[1] === 'number');
             return (
               <li key={r.roundId} className="border rounded-xl bg-card p-3 sm:p-4 space-y-2">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <RecapIconLink roundId={r.roundId} />
+                    <div className="min-w-0">
                     <Link href={`/rounds/${r.roundId}`} className="font-semibold hover:underline">
                       {d?.name ?? `${r.courseName} — ${r.teeName}`}
                     </Link>
                     <p className="text-xs text-muted font-mono">
                       {d?.name ? `${r.courseName} — ${r.teeName} · ` : ''}
                       {r.playedOn}
-                      {' · '}
-                      <Link href={`/rounds/${r.roundId}/recap`} className="underline underline-offset-2">
-                        Recap
-                      </Link>
                     </p>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">
