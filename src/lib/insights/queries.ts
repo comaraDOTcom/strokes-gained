@@ -39,15 +39,18 @@ export async function getRoundDetailsById(userId: string): Promise<Map<number, R
   );
 }
 
-/** Every course (including ones the user hasn't played) with THEIR round count and
- * most recent round — the course filter's options. Courses are a shared library;
- * round counts are the viewer's own. Ordered by id so button order is stable. */
+/** The courses THIS user has logged at least one round on, with their round count and most
+ * recent round — the course filter's options. The course library is shared and grows with every
+ * player, so courses you've never played are left out (the filter would otherwise fill up with
+ * other people's clubs). Ordered by id so button order is stable. */
 export async function getCourseOptions(userId: string): Promise<CourseOption[]> {
-  const [allCourses, myRounds] = await Promise.all([
-    db.select().from(courses),
-    db.select().from(rounds).where(eq(rounds.userId, userId)),
-  ]);
-  return allCourses
+  const myRounds = await db.select().from(rounds).where(eq(rounds.userId, userId));
+  if (myRounds.length === 0) return [];
+  const played = await db
+    .select()
+    .from(courses)
+    .where(inArray(courses.id, [...new Set(myRounds.map((r) => r.courseId))]));
+  return played
     .sort((a, b) => a.id - b.id)
     .map((c) => {
       const mine = myRounds.filter((r) => r.courseId === c.id);

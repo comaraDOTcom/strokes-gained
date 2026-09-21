@@ -4,6 +4,14 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.9 — 2026-09-21
+
+### Fixed
+- The course filter on **Rounds** and **Insights** now lists only courses **you** have logged a round
+  on. It used to show the whole shared library, so every course anyone added (Stackstown, …) appeared
+  as an empty "0 rounds" button. A new player with no rounds sees no filter, just the empty state.
+  To start a round somewhere new, use **Log a round** or the Courses page.
+
 ## 0.0.8 — 2026-09-21
 
 ### Courses page

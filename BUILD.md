@@ -196,9 +196,10 @@ columns, computed on read alongside the SG aggregates.
 `/` and `/insights` both need a course filter — a control switching between
 Conor's courses (Portmarnock Championship, Elm Park), since "vs prior 3" and the
 rolling-average chart only make sense within one course (see the cross-course
-caveat in Phase 5). Default to the course of the most recent round. A course with
-zero rounds shows a plain empty state ("No rounds logged yet" + a log-round CTA),
-not an error or a hidden tab. See the design mock's course-filter row
+caveat in Phase 5). Default to the course of the most recent round. The filter lists only
+courses the player has logged a round on (the library is shared — since 0.0.9 unplayed
+courses are left out); with no rounds at all there is no filter, just the empty state
+("No rounds logged yet" + a log-round CTA). See the design mock's course-filter row
 (https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB, Dashboard screen) for the
 intended shape — two named buttons with a round count, not a generic dropdown.
 
