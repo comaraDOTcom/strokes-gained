@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { isAdminEmail, isValidInvite, mayCreateAccount } from './config';
-import { canEditRound, canEditCourse } from './permissions';
+import { canViewRound, canEditRound, canEditCourse } from './permissions';
 
 describe('isAdminEmail', () => {
   it('matches case-insensitively and ignores surrounding space', () => {
@@ -55,6 +55,20 @@ describe('mayCreateAccount', () => {
     expect(mayCreateAccount({ email: 'conor@omni.co', emailVerified: false, inviteCookie: null })).toBe(false);
   });
 
+});
+
+describe('canViewRound', () => {
+  const me = { id: 'me', isAdmin: false };
+  const admin = { id: 'root', isAdmin: true };
+  it('a player sees only their own rounds', () => {
+    expect(canViewRound(me, { userId: 'me' })).toBe(true);
+    expect(canViewRound(me, { userId: 'someone-else' })).toBe(false);
+    expect(canViewRound(me, { userId: null })).toBe(false);
+  });
+  it('the admin can view any round, including unclaimed ones', () => {
+    expect(canViewRound(admin, { userId: 'someone-else' })).toBe(true);
+    expect(canViewRound(admin, { userId: null })).toBe(true);
+  });
 });
 
 describe('canEditRound', () => {

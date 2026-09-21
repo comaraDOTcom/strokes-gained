@@ -46,8 +46,8 @@ export default async function LoginPage({
         {testMode && <TestLoginForm />}
 
         <p className="text-xs text-muted">
-          Alpha, invite-only. Your rounds are private to you; other players can see your scores and strokes gained, but
-          never your notes.
+          Alpha, invite-only. Your rounds are private to you. Other players can&apos;t see them; the organiser can see
+          scores and strokes gained to help with feedback, but never your notes.
         </p>
       </div>
     </main>

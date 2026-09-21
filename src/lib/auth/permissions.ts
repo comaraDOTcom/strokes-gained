@@ -2,12 +2,18 @@
  * Who may change what. Pure decision functions; `guards.ts` loads the rows and
  * calls these.
  *
- * Model: every signed-in user can VIEW every round (read-only) and the shared
- * course library; they can only EDIT their own rounds; and a course/tee is
+ * Model: rounds are PRIVATE — a player sees only their own. The admin alone can
+ * view other players' rounds (read-only) and the player list. Everyone shares the
+ * course library; players can only EDIT their own rounds; and a course/tee is
  * editable by its creator or the admin — with a lock so one player's yardage
  * edit can't change scores on other people's rounds.
  */
 export type Actor = { id: string; isAdmin: boolean };
+
+/** Owner always; the admin may look (read-only) at anyone's. Nobody else. */
+export function canViewRound(actor: Actor, round: { userId: string | null }): boolean {
+  return actor.isAdmin || (round.userId !== null && round.userId === actor.id);
+}
 
 export function canEditRound(actor: Actor, round: { userId: string | null }): boolean {
   if (round.userId === null) return actor.isAdmin; // unclaimed legacy row: admin only

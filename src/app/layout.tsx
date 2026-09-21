@@ -22,12 +22,12 @@ export const metadata: Metadata = {
   description: 'Strokes-gained golf tracking',
 };
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
   { href: '/', label: 'Rounds' },
   { href: '/insights', label: 'Insights' },
   { href: '/trends', label: 'Trends' },
   { href: '/courses', label: 'Courses' },
-  { href: '/players', label: 'Players' },
+  { href: '/players', label: 'Players', adminOnly: true },
 ];
 
 export default async function RootLayout({
@@ -48,7 +48,7 @@ export default async function RootLayout({
             {user && (
               <>
                 <ul className="order-last sm:order-none w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
-                  {NAV_LINKS.map((link) => (
+                  {NAV_LINKS.filter((link) => !link.adminOnly || user.isAdmin).map((link) => (
                     <li key={link.href}>
                       <Link className="text-ink-2 hover:text-ink underline-offset-4 hover:underline" href={link.href}>
                         {link.label}

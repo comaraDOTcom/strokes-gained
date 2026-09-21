@@ -104,8 +104,8 @@ load it.
 - Sessions are cached in a signed cookie for 5 minutes (`session.cookieCache` in
   `src/lib/auth/auth.ts`, to avoid a database hit on every navigation), so removing
   a user takes up to 5 minutes to take effect.
-- Round commentary and mentality ratings are private to the round's owner; friends
-  see scores, stats and SG only.
+- Round commentary and mentality ratings are private to the round's owner — even the admin's
+  read-only view of a round leaves them out.
 
 ## Accounts, invites and who can do what
 
@@ -116,9 +116,9 @@ in `src/lib/auth/config.ts`, enforced in the `user.create.before` hook). Existin
 members sign in freely. The admin (`ADMIN_EMAIL`, verified) can always sign up.
 Rotating `INVITE_TOKEN` kills the old link.
 
-- **Rounds:** private to write — only the owner can add/edit/delete shots or change
-  notes. Other signed-in players can open a round **read-only** (scores, shots, SG;
-  never notes or ratings) via `/players`.
+- **Rounds:** private. Only the owner can see or change a round. The **admin** alone can also
+  open anyone's round **read-only** (scores, shots, SG; never notes or ratings) and see the
+  `/players` list; for other players those return 404, not 403, so ids can't be probed.
 - **Courses:** one shared library. Anyone can add a course; only its creator or the
   admin can edit it, and once another player has a round on a tee only the admin can
   (`canEditCourse` in `src/lib/auth/permissions.ts`) — a yardage edit changes everyone's

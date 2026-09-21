@@ -4,6 +4,16 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.7 — 2026-09-21
+
+### Privacy: rounds are now private
+- Players can no longer see each other. The **Players** list and other people's rounds are
+  **admin-only**; for everyone else they return "not found" (so round ids can't even be probed), and
+  the Players link is gone from their nav.
+- The admin can still open anyone's round **read-only** (scores and strokes gained — never notes or
+  ratings) to help with feedback, and still can't edit it.
+- The sign-in page's privacy note now says exactly that.
+
 ## 0.0.6 — 2026-09-21
 
 ### Course library

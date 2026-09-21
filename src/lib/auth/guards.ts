@@ -9,7 +9,7 @@ import { and, eq, isNull, ne, or } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { rounds, courses, tees, type Round, type Course, type Tee } from '../../db/schema';
 import { getSessionUser, type SessionUser } from './session';
-import { canEditRound, canEditCourse } from './permissions';
+import { canViewRound, canEditRound, canEditCourse } from './permissions';
 
 export class HttpError extends Error {
   constructor(
@@ -32,17 +32,17 @@ export async function requireApiUser(): Promise<SessionUser> {
   return u;
 }
 
-/** Any signed-in user may LOOK at any claimed round (read-only). 404 if it doesn't exist. */
+/** The round, if `viewer` may see it: their own, or any round for the admin (read-only).
+ * Anything else is a 404 — not a 403 — so round ids can't be probed for existence. */
 export async function getRoundForViewer(roundId: number, viewer: SessionUser): Promise<{ round: Round; isOwner: boolean }> {
   const [round] = await db.select().from(rounds).where(eq(rounds.id, roundId));
   if (!round) throw new HttpError(404, 'Round not found');
-  // An unclaimed legacy round (no owner yet) belongs to the admin-to-be: hide it from everyone else
-  // rather than exposing it read-only in the window before the admin's first sign-in.
-  if (round.userId === null && !viewer.isAdmin) throw new HttpError(404, 'Round not found');
+  if (!canViewRound(viewer, round)) throw new HttpError(404, 'Round not found');
   return { round, isOwner: canEditRound(viewer, round) };
 }
 
-/** The round, only if `viewer` may change it: 404 if missing, 403 if it isn't theirs. */
+/** The round, only if `viewer` may change it: 404 if missing or not visible to them; 403 for
+ * the admin looking at someone else's (they can see it, but not change it). */
 export async function requireRoundOwner(roundId: number, viewer: SessionUser): Promise<Round> {
   const { round, isOwner } = await getRoundForViewer(roundId, viewer);
   if (!isOwner) throw new HttpError(403, "You can't change someone else's round");

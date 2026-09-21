@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { requirePageUser } from '@/lib/auth/session';
 import { getPlayers } from '@/lib/insights/queries';
 
@@ -6,13 +7,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function PlayersPage() {
   const me = await requirePageUser();
+  if (!me.isAdmin) notFound(); // the player list is admin-only
   const players = await getPlayers();
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Players</h1>
       <p className="text-sm text-ink-2">
-        Everyone in the group. You can see each other&apos;s scores and strokes gained — never notes or ratings.
+        Admin only. Everyone who has joined; you can open their rounds read-only (scores and strokes gained —
+        never their notes or ratings). Players can&apos;t see each other.
       </p>
       <ul className="space-y-2">
         {players.map((p) => (

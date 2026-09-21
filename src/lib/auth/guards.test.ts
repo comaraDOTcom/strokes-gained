@@ -39,16 +39,17 @@ describe('round guards', () => {
     await expect(guards.requireRoundOwner(r.id, alice)).resolves.toMatchObject({ id: r.id });
   });
 
-  it("another player gets 403 changing it — but may look at it read-only", async () => {
+  it("another player can neither see nor change it — a 404, so round ids can't be probed", async () => {
     const { guards, alice, bob, mkRound } = await arrange();
     const r = await mkRound(alice.id);
-    await expect(guards.requireRoundOwner(r.id, bob)).rejects.toMatchObject({ status: 403 });
-    await expect(guards.getRoundForViewer(r.id, bob)).resolves.toMatchObject({ isOwner: false });
+    await expect(guards.getRoundForViewer(r.id, bob)).rejects.toMatchObject({ status: 404 });
+    await expect(guards.requireRoundOwner(r.id, bob)).rejects.toMatchObject({ status: 404 });
   });
 
-  it("even the admin cannot change someone else's round", async () => {
+  it("the admin can look at someone else's round read-only, but still cannot change it", async () => {
     const { guards, alice, root, mkRound } = await arrange();
     const r = await mkRound(alice.id);
+    await expect(guards.getRoundForViewer(r.id, root)).resolves.toMatchObject({ isOwner: false });
     await expect(guards.requireRoundOwner(r.id, root)).rejects.toMatchObject({ status: 403 });
   });
 
