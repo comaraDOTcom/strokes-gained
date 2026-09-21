@@ -89,3 +89,29 @@ export function describeEntry(
 function fmt(start: { lie: Lie; yards: number }): string {
   return start.lie === 'GREEN' ? `${Math.round(start.yards * 3)}ft` : `${Math.round(start.yards)}y`;
 }
+
+// ---------------------------------------------------------------------------
+// Swipe between holes
+// ---------------------------------------------------------------------------
+
+/**
+ * Interpret a finished touch as a hole change. Deliberately strict so normal use never
+ * triggers it: the finger must travel at least 60px, mostly horizontally (more than twice
+ * the vertical travel, so scrolling the page is never a swipe), and must not have started
+ * within 24px of a screen edge (that's iOS Safari's own back/forward gesture).
+ * Swipe LEFT = next hole (content moves left, like turning a page); RIGHT = previous.
+ */
+export function swipeToHoleDelta(t: {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  viewportWidth: number;
+}): -1 | 0 | 1 {
+  const EDGE = 24;
+  if (t.startX < EDGE || t.startX > t.viewportWidth - EDGE) return 0;
+  const dx = t.endX - t.startX;
+  const dy = t.endY - t.startY;
+  if (Math.abs(dx) < 60 || Math.abs(dx) <= 2 * Math.abs(dy)) return 0;
+  return dx < 0 ? 1 : -1;
+}

@@ -4,6 +4,16 @@ Each shipped feature or fix gets its own release: bump `version` in `package.jso
 entry here, tag `vX.Y.Z`, and publish a GitHub release with the same notes. While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.5 — 2026-09-21
+
+### Swipe between holes
+- On the round screen, **swipe the hole card left for the next hole, right for the previous one**.
+  New ‹ › buttons beside the hole title do the same (and work on desktop). The hole strip scrolls to
+  keep the current hole in view.
+- Built not to fire by accident: the swipe must be at least 60px and clearly horizontal (scrolling
+  the page never counts), pinch-zoom is ignored, and swipes that start at the very edge of the
+  screen are left to Safari's own back/forward gesture.
+
 ## 0.0.4 — 2026-09-21
 
 From the first friends' feedback.

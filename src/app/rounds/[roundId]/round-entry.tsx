@@ -1,10 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 import { yardsToFeet } from '@/lib/units';
-import { defaultResultLie, describeEntry, type Commitment, type Focus } from '@/lib/rounds/entry';
+import {
+  defaultResultLie,
+  describeEntry,
+  swipeToHoleDelta,
+  type Commitment,
+  type Focus,
+} from '@/lib/rounds/entry';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
 
@@ -236,6 +242,42 @@ export function RoundEntry({
   const entryNote =
     start && selectedLie && distance !== '' ? describeEntry(start, selectedLie, Number(distance)) : null;
 
+  function goToHole(holeNo: number) {
+    if (holeNo === currentHoleNo || !holes.some((h) => h.holeNo === holeNo)) return;
+    setCurrentHoleNo(holeNo);
+    resetForm(shotsByHole[holeNo] ?? []);
+  }
+
+  // Swipe left/right on the hole card to change hole (see swipeToHoleDelta for the guard rails).
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    // A multi-finger gesture (pinch-zoom) is never a swipe.
+    touchStart.current = e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const from = touchStart.current;
+    const t = e.changedTouches[0];
+    touchStart.current = null;
+    if (!from || !t || busy) return;
+    const delta = swipeToHoleDelta({
+      startX: from.x,
+      startY: from.y,
+      endX: t.clientX,
+      endY: t.clientY,
+      viewportWidth: window.innerWidth,
+    });
+    if (delta !== 0) goToHole(currentHoleNo + delta);
+  }
+
+  // Keep the current hole's button in view in the scrolling strip (it may have been swiped to).
+  const holeStripRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    holeStripRef.current
+      ?.querySelector<HTMLElement>('[aria-current="true"]')
+      ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [currentHoleNo]);
+
   const canSaveResult = selectedLie !== null && distance !== '' && Number(distance) >= 0;
   const isStrokeAndDistance = penaltyOn && penaltyType === 'STROKE_AND_DISTANCE';
 
@@ -249,17 +291,15 @@ export function RoundEntry({
         </p>
       </header>
 
-      <nav className="flex gap-1 overflow-x-auto pb-1" aria-label="Holes">
+      <nav ref={holeStripRef} className="flex gap-1 overflow-x-auto pb-1" aria-label="Holes">
         {holes.map((h) => {
           const done = (shotsByHole[h.holeNo] ?? []).some((s) => s.holed);
           const started = (shotsByHole[h.holeNo] ?? []).length > 0;
           return (
             <button
               key={h.holeNo}
-              onClick={() => {
-                setCurrentHoleNo(h.holeNo);
-                resetForm(shotsByHole[h.holeNo] ?? []);
-              }}
+              aria-current={h.holeNo === currentHoleNo ? 'true' : undefined}
+              onClick={() => goToHole(h.holeNo)}
               className={[
                 'shrink-0 w-9 h-9 rounded text-sm font-medium border',
                 h.holeNo === currentHoleNo ? 'border-ink bg-ink text-white' : 'border-line-strong',
@@ -273,11 +313,36 @@ export function RoundEntry({
         })}
       </nav>
 
-      <section className="border rounded-xl bg-card p-3 space-y-3">
-        <h2 className="font-semibold">
-          Hole {hole.holeNo} · Par {hole.par} · {hole.yards}y
-          {hole.strokeIndex !== null ? ` · SI ${hole.strokeIndex}` : ''}
-        </h2>
+      <section
+        className="border rounded-xl bg-card p-3 space-y-3 touch-pan-y"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">
+            Hole {hole.holeNo} · Par {hole.par} · {hole.yards}y
+            {hole.strokeIndex !== null ? ` · SI ${hole.strokeIndex}` : ''}
+          </h2>
+          {/* Same as swiping the card right / left. */}
+          <div className="flex shrink-0 gap-1">
+            {([-1, 1] as const).map((d) => {
+              const target = currentHoleNo + d;
+              const exists = holes.some((h) => h.holeNo === target);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => goToHole(target)}
+                  disabled={!exists || busy}
+                  aria-label={d < 0 ? 'Previous hole' : 'Next hole'}
+                  className="h-8 w-8 rounded-lg border border-line-strong text-lg leading-none disabled:opacity-30"
+                >
+                  {d < 0 ? '‹' : '›'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <ul className="text-sm space-y-1">
           {holeShots.map((s) => (

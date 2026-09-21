@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultResultLie, describeEntry } from './entry';
+import { defaultResultLie, describeEntry, swipeToHoleDelta } from './entry';
 
 describe('defaultResultLie', () => {
   it('pre-selects GREEN once the last shot finished on the green', () => {
@@ -77,5 +77,26 @@ describe('describeEntry', () => {
   it('returns nothing for empty or negative input', () => {
     expect(describeEntry(tee, 'FAIRWAY', NaN)).toBeNull();
     expect(describeEntry(tee, 'FAIRWAY', -5)).toBeNull();
+  });
+});
+
+describe('swipeToHoleDelta', () => {
+  const base = { startX: 200, startY: 400, endY: 400, viewportWidth: 375 };
+  it('left swipe = next hole, right swipe = previous', () => {
+    expect(swipeToHoleDelta({ ...base, endX: 100 })).toBe(1);
+    expect(swipeToHoleDelta({ ...base, endX: 300 })).toBe(-1);
+  });
+  it('ignores short movements and taps', () => {
+    expect(swipeToHoleDelta({ ...base, endX: 150 })).toBe(0);
+    expect(swipeToHoleDelta({ ...base, endX: 200 })).toBe(0);
+  });
+  it('ignores vertical scrolling and diagonal drags', () => {
+    expect(swipeToHoleDelta({ ...base, endX: 120, endY: 700 })).toBe(0);
+    expect(swipeToHoleDelta({ ...base, endX: 120, endY: 445 })).toBe(0); // 80 across, 45 down: not clearly horizontal
+    expect(swipeToHoleDelta({ ...base, endX: 100, endY: 430 })).toBe(1); // 100 across, 30 down: fine
+  });
+  it("leaves the screen edges to the browser's own back/forward gesture", () => {
+    expect(swipeToHoleDelta({ ...base, startX: 10, endX: 200 })).toBe(0);
+    expect(swipeToHoleDelta({ ...base, startX: 365, endX: 150 })).toBe(0);
   });
 });
