@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
-import { SG_TABLE_COLUMNS, barPercent, leakAndStrength, type SgTable, type SgTableRow } from '@/lib/insights/sg-table';
+import { useState } from 'react';
+import { SG_TABLE_COLUMNS, barPercent, drillKey, leakAndStrength, type SgTable, type SgTableRow } from '@/lib/insights/sg-table';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import type { Category } from '@/lib/sg/categorise';
 import type { AreaDrill } from '@/lib/insights/recap';
@@ -113,7 +116,7 @@ function Cell({ value, scale, strong = false }: { value: number | null; scale: n
 }
 
 /** One round, one area: the costliest shots behind the number that was tapped. */
-function DrillPanel({ drill, title, closeHref }: { drill: AreaDrill; title: string; closeHref: string }) {
+function DrillPanel({ drill, title, onClose }: { drill: AreaDrill; title: string; onClose: () => void }) {
   return (
     <div className="space-y-3 rounded-lg border border-line-strong bg-paper p-4">
       <div className="flex items-start justify-between gap-3">
@@ -126,9 +129,9 @@ function DrillPanel({ drill, title, closeHref }: { drill: AreaDrill; title: stri
             {drill.shots} shot{drill.shots === 1 ? '' : 's'} · {drill.lost} lost strokes · {drill.gained} gained
           </p>
         </div>
-        <Link href={closeHref} scroll={false} className="shrink-0 rounded-md border px-2 py-1 text-xs text-ink-2 hover:bg-paper-2" aria-label="Close">
+        <button type="button" onClick={onClose} className="shrink-0 rounded-md border px-2 py-1 text-xs text-ink-2 hover:bg-paper-2">
           Close
-        </Link>
+        </button>
       </div>
       {drill.worst.length === 0 ? (
         <p className="text-sm text-muted">No shot in this area lost strokes this round.</p>
@@ -154,30 +157,42 @@ function DrillPanel({ drill, title, closeHref }: { drill: AreaDrill; title: stri
   );
 }
 
+/**
+ * Tapping a number opens its drill-down right here, from `drills` the page already computed for
+ * every round × area — no request. The URL's `?area=` is kept in step (replaceState), so the view
+ * can still be linked to and survives a reload.
+ */
 export function SgRoundTable({
   table,
-  drill = null,
-  areaHref,
-  closeHref = '',
+  drills = {},
+  initialOpen = null,
 }: {
   table: SgTable;
-  drill?: AreaDrill | null;
-  /** Link for a round × area cell (tapping the open one closes it). */
-  areaHref?: (roundId: number, category: Category) => string;
-  closeHref?: string;
+  drills?: Record<string, AreaDrill>;
+  initialOpen?: string | null;
 }) {
-  const isOpen = (roundId: number | null, cat: Category) => drill?.roundId === roundId && drill.category === cat;
+  const [openKey, setOpenKey] = useState<string | null>(initialOpen && drills[initialOpen] ? initialOpen : null);
+  const drill = openKey ? drills[openKey] ?? null : null;
+  const select = (key: string | null) => {
+    setOpenKey(key);
+    const url = new URL(window.location.href);
+    if (key) url.searchParams.set('area', key);
+    else url.searchParams.delete('area');
+    window.history.replaceState(window.history.state, '', url);
+  };
+  const isOpen = (roundId: number | null, cat: Category) => roundId !== null && openKey === drillKey(roundId, cat);
   const drillRow = drill ? table.rows.find((r) => r.roundId === drill.roundId) : undefined;
   const drillTitle = drillRow ? `${drillRow.title} · ${drillRow.subtitle}` : '';
   const tap = (roundId: number | null, cat: Category, children: React.ReactNode, className = '') =>
-    areaHref && roundId !== null ? (
-      <Link
-        href={areaHref(roundId, cat)}
-        scroll={false}
-        className={`block rounded-md hover:bg-paper-2 ${isOpen(roundId, cat) ? 'bg-accent-soft ring-1 ring-accent/40' : ''} ${className}`}
+    roundId !== null && drills[drillKey(roundId, cat)] ? (
+      <button
+        type="button"
+        aria-pressed={isOpen(roundId, cat)}
+        onClick={() => select(isOpen(roundId, cat) ? null : drillKey(roundId, cat))}
+        className={`block w-full rounded-md text-left hover:bg-paper-2 ${isOpen(roundId, cat) ? 'bg-accent-soft ring-1 ring-accent/40' : ''} ${className}`}
       >
         {children}
-      </Link>
+      </button>
     ) : (
       children
     );
@@ -232,7 +247,7 @@ export function SgRoundTable({
                 ))}
               </tbody>
             </table>
-            {drill && <div className="mt-3"><DrillPanel drill={drill} title={drillTitle} closeHref={closeHref} /></div>}
+            {drill && <div className="mt-3"><DrillPanel drill={drill} title={drillTitle} onClose={() => select(null)} /></div>}
           </div>
 
           {/* below lg: one card per round, disciplines stacked (no sideways scrolling) */}
@@ -266,7 +281,7 @@ export function SgRoundTable({
                 </dl>
                 {drill && drill.roundId === row.roundId && (
                   <div className="mt-3">
-                    <DrillPanel drill={drill} title={drillTitle} closeHref={closeHref} />
+                    <DrillPanel drill={drill} title={drillTitle} onClose={() => select(null)} />
                   </div>
                 )}
               </li>

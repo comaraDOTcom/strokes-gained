@@ -27,6 +27,14 @@
   --color-neg: #b5432b;
   --color-neg-soft: #f6dfd8;
   --color-accent: #3b5b8c;
+
+  /* Score-to-par colours (scorecards, eclectic, "How your holes finish"). Tour-leaderboard
+     structure — gold eagle, blank par, blue bogey, navy double and worse — but a green birdie,
+     so red keeps its one meaning in this app: strokes lost. */
+  --color-eagle: #e9b31c;
+  --color-bogey: #a9c9ea;
+  --color-double: #2c5a97;
+  --color-worse: #13284c;
   --color-accent-soft: #e3e9f2;
 }
 

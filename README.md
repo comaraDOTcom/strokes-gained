@@ -68,12 +68,16 @@ eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and 
 scores" section of `/insights` (per course, since hole numbers only mean something within one).
 `scoreDistribution` buckets every finished hole (eagle+ … triple+) and gives the par-or-better :
 bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
-Score colours are in `src/app/score-cell.tsx`.
+Score colours are in `src/app/score-cell.tsx` (tokens `--color-eagle/bogey/double/worse` in `globals.css`).
 
 The "Strokes gained" section of `/insights` leads with the average full round (or the one full
 round) by discipline, with its biggest leak (`leakAndStrength` in `src/lib/insights/sg-table.ts`),
-then a round-by-round grid. SG shows one decimal on screen and two on hover (`fmtSg(v, 1)`). Tapping a round × area cell sets
-`?area=<roundId>.<CATEGORY>` and opens that area's costliest shots (`drillArea` in `src/lib/insights/recap.ts`).
+then a round-by-round grid. SG shows one decimal on screen and two on hover (`fmtSg(v, 1)`). Tapping a round × area cell opens that area's costliest shots in the browser (`drillArea` in
+`src/lib/insights/recap.ts`, all precomputed by the page) and mirrors it in `?area=<roundId>.<CATEGORY>`.
+
+**Performance.** Functions run in `lhr1` (London, `vercel.json`) next to the Neon database in `eu-west-2`;
+keep them together. Reads are single joined queries; `getSessionUser()` is `cache()`d per request.
+`/insights` logs `[timing] …` per request — read with `vercel logs -x -q "[timing]"`.
 
 ### Editing a finished round
 

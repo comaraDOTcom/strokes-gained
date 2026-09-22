@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleMeta } from '@/lib/insights/queries';
+import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleMetaForCourse } from '@/lib/insights/queries';
 import { buildEclectic, buildRoundCard, scoreDistribution } from '@/lib/insights/scorecard';
 import { EclecticTable } from './eclectic-table';
 import { ScoreDistributionChart } from './score-distribution';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
 import { buildCourseStory, drillArea } from '@/lib/insights/recap';
-import { SG_TABLE_COLUMNS } from '@/lib/insights/sg-table';
+import { SG_TABLE_COLUMNS, drillKey } from '@/lib/insights/sg-table';
 import { AreaCard, ShotGroupsBody, StoryHoleRow } from '../recap-parts';
 import { requirePageUser } from '@/lib/auth/session';
 import { requestTimer } from '@/lib/timing';
@@ -68,11 +68,21 @@ export default async function InsightsPage({
   const timer = requestTimer('/insights');
   const user = await timer.span('session', requirePageUser);
   const { course, area } = await searchParams;
-  const options = await timer.span('options', () => getCourseOptions(user.id));
+  // Two stages, each one parallel batch: what's needed to pick the course, then that course's data.
+  const [options, details] = await Promise.all([
+    timer.span('options', () => getCourseOptions(user.id)),
+    timer.span('details', () => getRoundDetailsById(user.id)),
+  ]);
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
   const roundCount = selected?.roundCount ?? 0;
-  const shots = selectedCourseId === null ? [] : await timer.span('shots', () => getAllEnrichedShots(user.id, selectedCourseId));
+  const [shots, teeMeta] =
+    selectedCourseId === null
+      ? [[], new Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>()]
+      : await Promise.all([
+          timer.span('shots', () => getAllEnrichedShots(user.id, selectedCourseId)),
+          timer.span('teeMeta', () => getTeeHoleMetaForCourse(user.id, selectedCourseId)),
+        ]);
 
   if (roundCount === 0) {
     return (
@@ -95,8 +105,7 @@ export default async function InsightsPage({
 
   // Eclectic: each round's card against its own tee; par header from the latest round's tee.
   const summaries = roundSummaries(shots);
-  const roundNames = new Map([...(await timer.span('details', () => getRoundDetailsById(user.id)))].map(([id, d]) => [id, d.name]));
-  const teeMeta = await timer.span('teeMeta', () => getTeeHoleMeta(summaries.map((r) => r.teeId)));
+  const roundNames = new Map([...details].map(([id, d]) => [id, d.name]));
   const cards = summaries.map((r) => ({
     roundId: r.roundId,
     title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
@@ -109,12 +118,17 @@ export default async function InsightsPage({
   );
   const distribution = scoreDistribution(cards.map((c) => c.card));
   const sgTable = buildSgTable(summaries, roundNames);
-  // ?area=<roundId>.<CATEGORY> opens that round's costliest shots in that area under the table.
-  const [areaRound, areaCat] = (Array.isArray(area) ? area[0] : area)?.split('.') ?? [];
-  const drillCat = SG_TABLE_COLUMNS.find((c) => c.key === areaCat)?.key;
-  const drillRound = summaries.find((r) => String(r.roundId) === areaRound)?.roundId;
-  const drill = drillCat && drillRound !== undefined ? drillArea(shots, drillRound, drillCat) : null;
-  const insightsHref = (extra = '') => `/insights?course=${selectedCourseId}${extra}`;
+  // Every round × area drill-down, worked out here (a few shots each) so tapping a number in the
+  // table opens it instantly in the browser. `?area=<roundId>.<CATEGORY>` says which starts open.
+  const drills = Object.fromEntries(
+    summaries.flatMap((r) =>
+      SG_TABLE_COLUMNS.filter((c) => shots.some((s) => s.roundId === r.roundId && s.category === c.key)).map((c) => [
+        drillKey(r.roundId, c.key),
+        drillArea(shots, r.roundId, c.key),
+      ]),
+    ),
+  );
+  const openArea = (Array.isArray(area) ? area[0] : area) ?? null;
   const rolling = rollingAverageByCategory(series, 3);
 
   const puttingBands = puttingBandStats(shots);
@@ -128,7 +142,7 @@ export default async function InsightsPage({
   const holeLosses = penaltyAndRecoveryByHole(shots);
   const upDownTrend = upAndDownVsSandSaveTrend(shots);
 
-  timer.done(`shots=${shots.length}${area ? ' drill' : ''}`);
+  timer.done(`shots=${shots.length}`);
 
   const categoriesInOrder = ['OFF_THE_TEE', 'APPROACH', 'SHORT_GAME', 'BUNKER', 'PUTTING', 'RECOVERY'];
   const rollingByCategory = categoriesInOrder
@@ -199,14 +213,7 @@ export default async function InsightsPage({
         title="Strokes gained"
         subtitle="Where your strokes go, discipline by discipline, against a scratch golfer: green = gained, red = lost. Tap any number to see the shots behind it; hover for two decimals."
       >
-        <SgRoundTable
-          table={sgTable}
-          drill={drill}
-          areaHref={(roundId, cat) =>
-            insightsHref(drill?.roundId === roundId && drill.category === cat ? '' : `&area=${roundId}.${cat}`)
-          }
-          closeHref={insightsHref()}
-        />
+        <SgRoundTable table={sgTable} drills={drills} initialOpen={openArea} />
       </Section>
 
       <Section title="SG per round over time" subtitle="Each round's strokes gained per category, with the 3-round average dashed on top">

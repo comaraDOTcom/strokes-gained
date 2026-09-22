@@ -38,7 +38,7 @@ export function ScoreDistributionChart({ d }: { d: ScoreDistribution }) {
             <span className="font-mono text-[11px] uppercase tracking-wide text-muted">{b.label}</span>
             <span className="h-5 border-l border-line-strong">
               <span
-                className={`block h-full rounded-r-sm ring-1 ring-inset ring-ink/10 ${toneFillClass(b.key)}`}
+                className={`block h-full rounded-r-sm ${toneFillClass(b.key)}`}
                 style={{ width: max ? `${(b.pct / max) * 100}%` : 0 }}
               />
             </span>

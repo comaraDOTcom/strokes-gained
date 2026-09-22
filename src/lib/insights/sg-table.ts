@@ -96,3 +96,6 @@ export function leakAndStrength(row: SgTableRow): { leak: Category | null; stren
   const best = sorted[sorted.length - 1]!;
   return { leak, strength: best.key !== leak ? best.key : null };
 }
+
+/** Key of one round × area drill-down, as used in `?area=<roundId>.<CATEGORY>`. */
+export const drillKey = (roundId: number, category: Category) => `${roundId}.${category}`;

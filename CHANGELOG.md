@@ -5,6 +5,27 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.22 — 2026-09-22
+
+### Faster Insights ([#16](https://github.com/comaraDOTcom/strokes-gained/issues/16))
+- **The app's server now runs in London**, next to the database, instead of Washington DC — every
+  database round trip was crossing the Atlantic (`vercel.json` → `"regions": ["lhr1"]`, free on Hobby).
+- **Drill-downs open instantly**: tapping a number in *Round by round* (and Close) no longer reloads
+  the page — every round × area drill-down is worked out with the page, and the URL's `?area=`
+  still follows along, so links keep working.
+- **Fewer database round trips per page**: the session is looked up once per request (it was twice),
+  your shots load in one joined query (it was five, four of them each opening a new connection),
+  the course list in one (was two), and Insights runs its independent queries side by side.
+  Idle database connections are kept for a minute so back-to-back pages reuse them.
+- Insights logs one timing line per request (`[timing] /insights total=… session=… shots=…`) so the
+  effect can be measured in production.
+
+### Score colours, tour-leaderboard style
+- Scorecards, the eclectic table and "How your holes finish" use the tour structure: **gold eagle,
+  green birdie, blank par, light-blue bogey, navy double, dark-navy triple or worse**. Par has no fill,
+  so every birdie and bogey stands out; each step has its own colour. Birdie stays green (not the
+  tours' red) because red means *strokes lost* everywhere else in the app.
+
 ## 0.0.21 — 2026-09-22
 
 ### Insights charts: bars with numbers on them

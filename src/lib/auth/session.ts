@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from './auth';
@@ -14,8 +15,11 @@ export type SessionUser = {
   isAdmin: boolean;
 };
 
-/** The signed-in user, or null. Safe to call from any Server Component or route handler. */
-export async function getSessionUser(): Promise<SessionUser | null> {
+/**
+ * The signed-in user, or null. Safe to call from any Server Component or route handler.
+ * Wrapped in React `cache()` so the layout and the page share ONE session lookup per request.
+ */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const s = await auth.api.getSession({ headers: await headers() });
   if (!s) return null;
   const u = s.user;
@@ -28,7 +32,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     // hard-disabled in production, where only a Google-verified ADMIN_EMAIL is the admin.
     isAdmin: (Boolean(u.emailVerified) || TEST_MODE) && isAdminEmail(u.email),
   };
-}
+});
 
 /** For pages: the signed-in user, or redirect to /login. */
 export async function requirePageUser(): Promise<SessionUser> {

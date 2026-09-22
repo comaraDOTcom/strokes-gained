@@ -1,21 +1,23 @@
 import { scoreTone, type ScoreTone } from '@/lib/insights/scorecard';
 
 /**
- * Score colours follow the rest of the app — green is good, terracotta is bad — rather than the
- * printed-scorecard convention of red for birdies, so a colour never means two things here.
+ * Score colours: the structure of a tour leaderboard (gold eagle, NO fill for par, blue bogey,
+ * navy double and worse — each step its own colour, and par blank so every non-par stands out)
+ * with one change: birdie is green, not red, because red means "strokes lost" everywhere else in
+ * this app and a colour should never mean two things.
  */
-const TONE: Record<ScoreTone, string> = {
-  eagle: 'bg-pos text-paper font-semibold',
-  birdie: 'bg-pos/70 text-paper font-medium',
-  par: 'bg-pos-soft text-ink',
-  bogey: 'bg-neg-soft text-ink',
-  double: 'bg-neg/60 text-paper',
-  worse: 'bg-neg text-paper font-medium',
-  none: 'text-faint',
+const TONE: Record<ScoreTone, { cell: string; fill: string }> = {
+  eagle: { cell: 'bg-eagle text-ink font-semibold', fill: 'bg-eagle' },
+  birdie: { cell: 'bg-pos text-paper font-semibold', fill: 'bg-pos' },
+  par: { cell: 'text-ink ring-1 ring-inset ring-line', fill: 'bg-card ring-1 ring-inset ring-line-strong' },
+  bogey: { cell: 'bg-bogey text-ink', fill: 'bg-bogey' },
+  double: { cell: 'bg-double text-paper font-medium', fill: 'bg-double' },
+  worse: { cell: 'bg-worse text-paper font-semibold', fill: 'bg-worse' },
+  none: { cell: 'text-faint', fill: '' },
 };
 
 export function scoreToneClass(toPar: number | null): string {
-  return TONE[scoreTone(toPar)];
+  return TONE[scoreTone(toPar)].cell;
 }
 
 export function ScoreLegend() {
@@ -25,13 +27,13 @@ export function ScoreLegend() {
     ['Par', 'par'],
     ['Bogey', 'bogey'],
     ['Double', 'double'],
-    ['Worse', 'worse'],
+    ['Triple+', 'worse'],
   ];
   return (
     <ul className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wide text-muted">
       {items.map(([label, tone]) => (
         <li key={tone} className="flex items-center gap-1">
-          <span className={`inline-block h-3 w-3 rounded-sm ${TONE[tone].split(' ')[0]}`} /> {label}
+          <span className={`inline-block h-3 w-3 rounded-sm ${TONE[tone].fill}`} /> {label}
         </li>
       ))}
     </ul>
@@ -40,5 +42,5 @@ export function ScoreLegend() {
 
 /** Just the fill colour for a score tone — for bars and swatches. */
 export function toneFillClass(tone: ScoreTone): string {
-  return TONE[tone].split(' ')[0]!;
+  return TONE[tone].fill;
 }

@@ -32,7 +32,9 @@ function createDb(): { db: Db; close: () => Promise<void> } {
   if (url) {
     // Node < 22 has no global WebSocket; the driver needs one for the Pool.
     if (typeof WebSocket === 'undefined') neonConfig.webSocketConstructor = ws;
-    const pool = new Pool({ connectionString: url });
+    // Keep idle connections for a minute (default 10s) so back-to-back requests on a warm
+    // function reuse one instead of paying a new TLS + WebSocket + auth handshake each time.
+    const pool = new Pool({ connectionString: url, idleTimeoutMillis: 60_000 });
     return {
       db: drizzleNeon(pool, { schema }) as unknown as Db,
       close: () => pool.end(),

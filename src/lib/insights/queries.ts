@@ -10,7 +10,7 @@
  * deliberately passes that user's id (the read-only `/players/[id]` view does,
  * and it strips the private fields itself).
  */
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { rounds, courses, tees, teeHoles, shots as shotsTable, user } from '../../db/schema';
 import { yardsToFeet } from '../units';
@@ -44,23 +44,25 @@ export async function getRoundDetailsById(userId: string): Promise<Map<number, R
  * player, so courses you've never played are left out (the filter would otherwise fill up with
  * other people's clubs). Ordered by id so button order is stable. */
 export async function getCourseOptions(userId: string): Promise<CourseOption[]> {
-  const myRounds = await db.select().from(rounds).where(eq(rounds.userId, userId));
+  // One round trip: this user's rounds joined to their course.
+  const myRounds = await db
+    .select({ id: rounds.id, courseId: rounds.courseId, playedOn: rounds.playedOn, courseName: courses.name })
+    .from(rounds)
+    .innerJoin(courses, eq(courses.id, rounds.courseId))
+    .where(eq(rounds.userId, userId));
   if (myRounds.length === 0) return [];
-  const played = await db
-    .select()
-    .from(courses)
-    .where(inArray(courses.id, [...new Set(myRounds.map((r) => r.courseId))]));
-  return played
-    .sort((a, b) => a.id - b.id)
-    .map((c) => {
-      const mine = myRounds.filter((r) => r.courseId === c.id);
+  const byCourse = new Map<number, typeof myRounds>();
+  for (const r of myRounds) (byCourse.get(r.courseId) ?? byCourse.set(r.courseId, []).get(r.courseId)!).push(r);
+  return [...byCourse.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([courseId, mine]) => {
       const last = mine.reduce<(typeof mine)[number] | null>(
         (best, r) => (!best || r.playedOn > best.playedOn || (r.playedOn === best.playedOn && r.id > best.id) ? r : best),
         null,
       );
       return {
-        courseId: c.id,
-        name: c.name,
+        courseId,
+        name: mine[0]!.courseName,
         roundCount: mine.length,
         lastRound: last ? { playedOn: last.playedOn, roundId: last.id } : null,
       };
@@ -72,74 +74,56 @@ export async function getCourseOptions(userId: string): Promise<CourseOption[]> 
 export async function getAllEnrichedShots(userId: string, courseId?: number): Promise<EnrichedShot[]> {
   const where =
     courseId === undefined ? eq(rounds.userId, userId) : and(eq(rounds.userId, userId), eq(rounds.courseId, courseId));
-  const allRounds = await db.select().from(rounds).where(where);
-  if (allRounds.length === 0) return [];
-
-  const roundIds = allRounds.map((r) => r.id);
-  const courseIds = [...new Set(allRounds.map((r) => r.courseId))];
-  const teeIds = [...new Set(allRounds.map((r) => r.teeId))];
-
-  const [courseRows, teeRows, holeRows, allShots] = await Promise.all([
-    db.select().from(courses).where(inArray(courses.id, courseIds)),
-    db.select().from(tees).where(inArray(tees.id, teeIds)),
-    db.select().from(teeHoles).where(inArray(teeHoles.teeId, teeIds)),
-    db.select().from(shotsTable).where(inArray(shotsTable.roundId, roundIds)),
-  ]);
-
-  const allCourses = new Map(courseRows.map((c) => [c.id, c]));
-  const allTees = new Map(teeRows.map((t) => [t.id, t]));
-  const holesByTee = new Map<number, Map<number, (typeof holeRows)[number]>>();
-  for (const h of holeRows) {
-    const m = holesByTee.get(h.teeId) ?? holesByTee.set(h.teeId, new Map()).get(h.teeId)!;
-    m.set(h.holeNo, h);
-  }
-  const shotsByRound = new Map<number, typeof allShots>();
-  for (const s of allShots) {
-    (shotsByRound.get(s.roundId) ?? shotsByRound.set(s.roundId, []).get(s.roundId)!).push(s);
-  }
+  // ONE round trip: shots joined to their round, course, tee and hole. Inner joins drop a shot
+  // whose hole no longer exists on the tee, as before.
+  const rows = await db
+    .select({
+      shot: shotsTable,
+      roundId: rounds.id,
+      playedOn: rounds.playedOn,
+      courseId: rounds.courseId,
+      courseName: courses.name,
+      teeId: rounds.teeId,
+      teeName: tees.name,
+      par: teeHoles.par,
+    })
+    .from(shotsTable)
+    .innerJoin(rounds, eq(rounds.id, shotsTable.roundId))
+    .innerJoin(courses, eq(courses.id, rounds.courseId))
+    .innerJoin(tees, eq(tees.id, rounds.teeId))
+    .innerJoin(teeHoles, and(eq(teeHoles.teeId, rounds.teeId), eq(teeHoles.holeNo, shotsTable.holeNo)))
+    .where(where)
+    .orderBy(asc(rounds.id), asc(shotsTable.holeNo), asc(shotsTable.shotNo));
 
   const out: EnrichedShot[] = [];
-  for (const round of allRounds) {
-    const course = allCourses.get(round.courseId);
-    const tee = allTees.get(round.teeId);
-    const holeMap = holesByTee.get(round.teeId);
-    const roundShots = shotsByRound.get(round.id) ?? [];
-
-    for (const s of roundShots) {
-      // A shot with no sg yet (mid-mutation, or a hole that was deleted out
-      // from under it) is dropped rather than silently counted as 0 — a
-      // dashboard number must never look right by accident.
-      if (s.sg === null || s.category === null) continue;
-      const hole = holeMap?.get(s.holeNo);
-      if (!hole) continue;
-
-      const startLie = s.startLie as Lie;
-      const endLie = s.endLie as Lie | null;
-
-      out.push({
-        roundId: round.id,
-        playedOn: round.playedOn,
-        courseId: round.courseId,
-        courseName: course?.name ?? 'Unknown course',
-        teeId: round.teeId,
-        teeName: tee?.name ?? 'Unknown tee',
-        holeNo: s.holeNo,
-        par: hole.par,
-        shotNo: s.shotNo,
-        startLie,
-        startDistance: startLie === 'GREEN' ? yardsToFeet(s.startYards) : s.startYards,
-        endLie,
-        endDistance: endLie === 'GREEN' ? yardsToFeet(s.endYards) : s.endYards,
-        holed: s.holed,
-        penaltyStrokes: s.penaltyStrokes,
-        penaltyType: s.penaltyType as PenaltyType,
-        sg: s.sg,
-        category: s.category as Category,
-        bunkerSubtype: s.bunkerSubtype as BunkerSubtype | null,
-      });
-    }
+  for (const { shot: s, ...r } of rows) {
+    // A shot with no sg yet (mid-mutation) is dropped rather than silently counted as 0 —
+    // a dashboard number must never look right by accident.
+    if (s.sg === null || s.category === null) continue;
+    const startLie = s.startLie as Lie;
+    const endLie = s.endLie as Lie | null;
+    out.push({
+      roundId: r.roundId,
+      playedOn: r.playedOn,
+      courseId: r.courseId,
+      courseName: r.courseName,
+      teeId: r.teeId,
+      teeName: r.teeName,
+      holeNo: s.holeNo,
+      par: r.par,
+      shotNo: s.shotNo,
+      startLie,
+      startDistance: startLie === 'GREEN' ? yardsToFeet(s.startYards) : s.startYards,
+      endLie,
+      endDistance: endLie === 'GREEN' ? yardsToFeet(s.endYards) : s.endYards,
+      holed: s.holed,
+      penaltyStrokes: s.penaltyStrokes,
+      penaltyType: s.penaltyType as PenaltyType,
+      sg: s.sg,
+      category: s.category as Category,
+      bunkerSubtype: s.bunkerSubtype as BunkerSubtype | null,
+    });
   }
-
   return out;
 }
 
@@ -217,6 +201,27 @@ export async function getTeeHoleMeta(
   const out = new Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>();
   if (teeIds.length === 0) return out;
   const rows = await db.select().from(teeHoles).where(inArray(teeHoles.teeId, [...new Set(teeIds)]));
+  for (const h of rows) {
+    (out.get(h.teeId) ?? out.set(h.teeId, []).get(h.teeId)!).push({ holeNo: h.holeNo, par: h.par, strokeIndex: h.strokeIndex });
+  }
+  for (const list of out.values()) list.sort((a, b) => a.holeNo - b.holeNo);
+  return out;
+}
+
+/**
+ * `getTeeHoleMeta` for every tee this user has played at a course, found by the query itself —
+ * so it can run alongside `getAllEnrichedShots` instead of waiting for it.
+ */
+export async function getTeeHoleMetaForCourse(
+  userId: string,
+  courseId: number,
+): Promise<Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>> {
+  const played = db
+    .selectDistinct({ teeId: rounds.teeId })
+    .from(rounds)
+    .where(and(eq(rounds.userId, userId), eq(rounds.courseId, courseId)));
+  const rows = await db.select().from(teeHoles).where(inArray(teeHoles.teeId, played));
+  const out = new Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>();
   for (const h of rows) {
     (out.get(h.teeId) ?? out.set(h.teeId, []).get(h.teeId)!).push({ holeNo: h.holeNo, par: h.par, strokeIndex: h.strokeIndex });
   }
