@@ -5,6 +5,19 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.23 — 2026-09-22
+
+### How your holes finish: compared with scratch golfers
+- Each bar (eagle+, birdie, par, bogey, double+) now shows the **scratch average** as a black tick
+  and the **range between scratch golfers** as a grey band, next to your own share.
+- Both ratios show the scratch figure underneath: **par or better : bogey** (scratch 2.1 : 1) and
+  **par or better : double+** (scratch 11.2 : 1).
+- A headline names your costliest gap vs scratch, e.g. *"You make a double bogey or worse on 12% of
+  holes; scratch players on 6%."* It only ever points at gaps that cost you.
+- The benchmark starts with 2 scratch-or-better golfers: 33 competition rounds, 594 holes. More will
+  be added. The data is anonymised (letters only, no names, clubs or dates), and a test enforces that.
+  Pick-ups count as triple bogeys.
+
 ## 0.0.22 — 2026-09-22
 
 ### Faster Insights ([#16](https://github.com/comaraDOTcom/strokes-gained/issues/16))

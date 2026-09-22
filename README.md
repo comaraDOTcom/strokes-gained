@@ -68,6 +68,10 @@ eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and 
 scores" section of `/insights` (per course, since hole numbers only mean something within one).
 `scoreDistribution` buckets every finished hole (eagle+ … triple+) and gives the par-or-better :
 bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
+Those are compared with a **scratch benchmark** (`src/lib/insights/benchmarks.ts`, data in
+`src/lib/insights/benchmark-data/scratch.json`): anonymised hole counts from scratch-or-better
+golfers' competition rounds. How it's collected, anonymised and validated: `docs/benchmarks.md`.
+Source screenshots live only in the git-ignored `benchmarks-raw/`.
 Score colours are in `src/app/score-cell.tsx` (tokens `--color-eagle/bogey/double/worse` in `globals.css`).
 
 The "Strokes gained" section of `/insights` leads with the average full round (or the one full
