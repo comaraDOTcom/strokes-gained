@@ -70,6 +70,10 @@ scores" section of `/insights` (per course, since hole numbers only mean somethi
 bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
 Score colours are in `src/app/score-cell.tsx`.
 
+The "Strokes gained" section of `/insights` leads with the average full round (or the one full
+round) by discipline, with its biggest leak (`leakAndStrength` in `src/lib/insights/sg-table.ts`),
+then a round-by-round grid. SG shows one decimal on screen and two on hover (`fmtSg(v, 1)`).
+
 ### Editing a finished round
 
 Any past shot can be edited from its hole (**Edit**). The edit is **in place**: later

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSgTable, barPercent } from './sg-table';
+import { buildSgTable, barPercent, leakAndStrength } from './sg-table';
 import type { RoundSummary } from './aggregate';
 
 const round = (id: number, over: Partial<RoundSummary> & { sg?: Partial<RoundSummary['sgByCategory']> } = {}): RoundSummary => {
@@ -50,5 +50,18 @@ describe('barPercent', () => {
     expect(barPercent(9, 5.4)).toBe(100);
     expect(barPercent(0.01, 5.4)).toBe(3);
     expect(barPercent(0, 5.4)).toBe(0);
+  });
+});
+
+describe('leakAndStrength', () => {
+  it('names the biggest loss and the biggest gain', () => {
+    const [row] = buildSgTable([round(1, { sg: { APPROACH: -5.4, SHORT_GAME: -3.8, PUTTING: 1.1 } })]).rows;
+    expect(leakAndStrength(row!)).toEqual({ leak: 'APPROACH', strength: 'PUTTING' });
+  });
+  it('has no leak when nothing lost strokes, and the "strength" can be the least-bad loss', () => {
+    const [up] = buildSgTable([round(1, { sg: { PUTTING: 1.1 } })]).rows;
+    expect(leakAndStrength(up!)).toEqual({ leak: null, strength: 'PUTTING' });
+    const [down] = buildSgTable([round(1, { sg: { APPROACH: -3, PUTTING: -0.2 } })]).rows;
+    expect(leakAndStrength(down!)).toEqual({ leak: 'APPROACH', strength: 'PUTTING' });
   });
 });

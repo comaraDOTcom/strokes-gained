@@ -84,3 +84,15 @@ export function barPercent(value: number, scale: number): number {
   if (Math.abs(value) < EPS || scale <= 0) return 0;
   return Math.min(100, Math.max(3, (Math.abs(value) / scale) * 100));
 }
+
+/** The category that cost the most and the one that gained the most (or held up best) in a row. */
+export function leakAndStrength(row: SgTableRow): { leak: Category | null; strength: Category | null } {
+  const vals = SG_TABLE_COLUMNS.map(({ key }) => ({ key, v: row.cells[key] })).filter(
+    (c): c is { key: Category; v: number } => c.v !== null,
+  );
+  if (vals.length === 0) return { leak: null, strength: null };
+  const sorted = [...vals].sort((a, b) => a.v - b.v);
+  const leak = sorted[0]!.v < 0 ? sorted[0]!.key : null;
+  const best = sorted[sorted.length - 1]!;
+  return { leak, strength: best.key !== leak ? best.key : null };
+}

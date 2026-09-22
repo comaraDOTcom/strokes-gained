@@ -41,8 +41,9 @@ export function sgColor(value: number): string {
   return DIVERGING.neutral;
 }
 
-export function fmtSg(value: number): string {
-  const s = value.toFixed(2);
+export function fmtSg(value: number, digits = 2): string {
+  const s = value.toFixed(digits);
+  if (Number(s) === 0) return (0).toFixed(digits); // no "-0.0" / "+0.0"
   return value > 0 ? `+${s}` : s;
 }
 

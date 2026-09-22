@@ -185,8 +185,8 @@ export default async function InsightsPage({
       </Section>
 
       <Section
-        title="Strokes gained, round by round"
-        subtitle="Green = strokes gained, red = strokes lost vs. a scratch golfer. Every category bar is on the same scale, so the longest red bar is your biggest leak."
+        title="Strokes gained"
+        subtitle="Where your strokes go, discipline by discipline, against a scratch golfer: green = gained, red = lost. Hover a number for two decimals."
       >
         <SgRoundTable table={sgTable} />
       </Section>

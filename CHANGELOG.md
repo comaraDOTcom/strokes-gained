@@ -5,6 +5,18 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.18 — 2026-09-22
+
+### Strokes gained, easier to read (Insights)
+- **The overall picture comes first**: your average round (or your one full round) as a big,
+  spaced-out chart — one row per discipline, the total up top, and a line naming your **biggest
+  leak** and your best area.
+- **Round by round** sits underneath and is calmer: each cell shows the number first with a slim bar
+  under it, so neighbouring numbers no longer run into each other, and there's more room between
+  columns. On a phone every round is still its own card.
+- Numbers show **one decimal**; hover for the exact two-decimal value. A value that rounds to 0.0 is
+  shown in grey, not green or red.
+
 ## 0.0.17 — 2026-09-22
 
 ### How your holes finish (Insights, per course)
