@@ -118,3 +118,32 @@ export function compareToBenchmark(d: ScoreDistribution, bench: Benchmark): Buck
     inRange: mine[b] >= bench.range[b].min - 1e-9 && mine[b] <= bench.range[b].max + 1e-9,
   }));
 }
+
+const PHRASE: Record<BenchmarkBucket, string> = {
+  eagle: 'an eagle or better',
+  birdie: 'a birdie',
+  par: 'a par',
+  bogey: 'a bogey',
+  doublePlus: 'a double bogey or worse',
+};
+
+/**
+ * The one line to lead with: the bucket where you're furthest from scratch RELATIVELY — twice as
+ * many doubles (12% vs 6%) outranks a few fewer pars (44% vs 53%), because that's where the
+ * strokes go. Only gaps in the costly direction count. Eagles are too rare to headline, and gaps
+ * under 2 points aren't worth a headline.
+ */
+export function headlineGap(c: readonly BucketComparison[]): { bucket: BenchmarkBucket; text: string } | null {
+  // Only gaps that cost you: fewer birdies/pars, or more bogeys/doubles, than scratch.
+  const worse = (x: BucketComparison) => (x.bucket === 'bogey' || x.bucket === 'doublePlus' ? x.diff > 0 : x.diff < 0);
+  const size = (x: BucketComparison) => Math.abs(Math.log(Math.max(x.mine, 1e-3) / x.bench));
+  const biggest = c
+    .filter((x) => x.bucket !== 'eagle' && x.bench > 0 && Math.abs(x.diff) >= 0.02 && worse(x))
+    .reduce<BucketComparison | null>((best, x) => (!best || size(x) > size(best) + 1e-9 ? x : best), null);
+  if (!biggest) return null;
+  const p = (x: number) => `${Math.round(x * 100)}%`;
+  return {
+    bucket: biggest.bucket,
+    text: `You make ${PHRASE[biggest.bucket]} on ${p(biggest.mine)} of holes; scratch players on ${p(biggest.bench)}.`,
+  };
+}

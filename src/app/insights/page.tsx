@@ -3,6 +3,8 @@ import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleM
 import { buildEclectic, buildRoundCard, scoreDistribution } from '@/lib/insights/scorecard';
 import { EclecticTable } from './eclectic-table';
 import { ScoreDistributionChart } from './score-distribution';
+import { buildBenchmark, compareToBenchmark, type BenchmarkFile } from '@/lib/insights/benchmarks';
+import scratchBenchmark from '@/lib/insights/benchmark-data/scratch.json';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
 import { buildCourseStory, drillArea } from '@/lib/insights/recap';
@@ -117,6 +119,8 @@ export default async function InsightsPage({
     cards,
   );
   const distribution = scoreDistribution(cards.map((c) => c.card));
+  const bench = buildBenchmark(scratchBenchmark as BenchmarkFile);
+  const comparison = bench && distribution.holesPlayed > 0 ? compareToBenchmark(distribution, bench) : null;
   const sgTable = buildSgTable(summaries, roundNames);
   // Every round × area drill-down, worked out here (a few shots each) so tapping a number in the
   // table opens it instantly in the browser. `?area=<roundId>.<CATEGORY>` says which starts open.
@@ -206,7 +210,7 @@ export default async function InsightsPage({
         title="How your holes finish"
         subtitle={`Every one of the ${distribution.holesPlayed} holes you've finished here, by score to par. The ratios are how many pars (or better) you make for every bogey, and for every double or worse — higher is better.`}
       >
-        <ScoreDistributionChart d={distribution} />
+        <ScoreDistributionChart d={distribution} bench={bench} comparison={comparison} />
       </Section>
 
       <Section

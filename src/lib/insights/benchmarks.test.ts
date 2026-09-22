@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildBenchmark, compareToBenchmark, toBenchmarkBuckets, validateBenchmark, type BenchmarkFile } from './benchmarks';
+import { buildBenchmark, compareToBenchmark, headlineGap, toBenchmarkBuckets, validateBenchmark, type BenchmarkFile } from './benchmarks';
 import { buildRoundCard, scoreDistribution, type CardHoleMeta } from './scorecard';
 import type { EnrichedShot } from './aggregate';
 import scratch from './benchmark-data/scratch.json';
@@ -82,5 +82,30 @@ describe('compareToBenchmark', () => {
     expect(dbl.bench).toBeCloseTo(2 / 54);
     expect(dbl.diff).toBeCloseTo(0.5 - 2 / 54);
     expect(dbl.inRange).toBe(false);
+  });
+
+  it('headlines the bucket furthest from scratch, in plain words', () => {
+    const h = headlineGap(compareToBenchmark(d, buildBenchmark(file)!))!;
+    expect(h.bucket).toBe('doublePlus');
+    expect(h.text).toBe('You make a double bogey or worse on 50% of holes; scratch players on 4%.');
+  });
+
+  it('ranks relative gaps: twice the doubles beats a few fewer pars', () => {
+    const row = (bucket: 'birdie' | 'par' | 'bogey' | 'doublePlus', mine: number, bench: number) =>
+      ({ bucket, label: bucket, mine, bench, diff: mine - bench, inRange: false });
+    const h = headlineGap([row('birdie', 0.08, 0.11), row('par', 0.44, 0.53), row('bogey', 0.32, 0.3), row('doublePlus', 0.12, 0.06)])!;
+    expect(h.bucket).toBe('doublePlus');
+    expect(h.text).toBe('You make a double bogey or worse on 12% of holes; scratch players on 6%.');
+  });
+
+  it('never headlines a gap in your favour', () => {
+    const row = (bucket: 'birdie' | 'par' | 'bogey' | 'doublePlus', mine: number, bench: number) =>
+      ({ bucket, label: bucket, mine, bench, diff: mine - bench, inRange: false });
+    expect(headlineGap([row('birdie', 0.2, 0.11), row('par', 0.6, 0.53), row('bogey', 0.15, 0.3), row('doublePlus', 0.01, 0.06)])).toBeNull();
+  });
+
+  it('has no headline when you match scratch everywhere', () => {
+    const same = compareToBenchmark(d, buildBenchmark(file)!).map((x) => ({ ...x, diff: 0.004 }));
+    expect(headlineGap(same)).toBeNull();
   });
 });

@@ -57,22 +57,24 @@ This extends "How your holes finish" on `/insights`.
 - **Comparison (`compareToBenchmark`).** For each bucket: your share, the scratch share, the
   difference, and whether you sit inside the scratch band.
 
-## Planned UI (next commit on this PR, once real data is in)
+## UI
 
 In **How your holes finish**:
 - **On each bar:** a thin marker at the scratch share, with the scratch band as a faint strip
   behind it. Your bar stays as it is.
 - **Under each ratio:** the scratch figure, e.g. "scratch 4.1 : 1".
-- **One headline sentence:** the bucket furthest from scratch, e.g. *"You make a double or worse
-  on 14% of holes; scratch players on 3%."*
+- **One headline sentence:** the bucket furthest from scratch *relatively*, and only in the costly
+  direction (fewer birdies or pars, more bogeys or doubles), e.g. *"You make a double bogey or worse
+  on 12% of holes; scratch players on 6%."* (`headlineGap`)
 - **Sample size, stated:** "5 scratch golfers, N rounds".
 - **Empty data file:** the benchmark is hidden and nothing changes.
 
 ## Caveats, stated on screen
 
 - **Small sample.** About 5 players. It's a guide, not a statistic.
-- **Different courses.** Their rounds are spread across courses; yours are filtered to one
-  course. A hard course pushes everyone's bogeys up. We compare anyway: that's what the band is for.
+- **Different courses.** Each player's rounds are mostly on their home course; yours are
+  filtered to whichever course you pick. A hard course pushes everyone's bogeys up. We compare
+  anyway: that's what the band is for.
 - **Different app.** The source app's definitions (e.g. how penalty strokes count) may differ
   slightly. Gross scores per hole are unambiguous, which is why we only take score-to-par buckets
   from it.
@@ -82,6 +84,7 @@ In **How your holes finish**:
 - [x] Pure calculation code with tests: pooling, spread, ratios, comparison, 6→5 bucket folding
 - [x] Validation, including an anonymisation check on the committed file
 - [x] Screenshot folder git-ignored
-- [ ] Transcribe 5 players into `scratch.json`
-- [ ] Benchmark markers, scratch ratios and headline on "How your holes finish"
+- [x] Players A and B transcribed (33 rounds, 594 holes)
+- [ ] Players C–E (more can be added any time)
+- [x] Benchmark markers, scratch ratios and headline on "How your holes finish"
 - [ ] Release note
