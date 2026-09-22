@@ -68,6 +68,8 @@ eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and 
 scores" section of `/insights` (per course, since hole numbers only mean something within one).
 `scoreDistribution` buckets every finished hole (eagle+ … triple+) and gives the par-or-better :
 bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
+`/trends` opens with a 90-day play calendar (`buildPlayCalendar` in `src/lib/insights/calendar.ts`,
+pure and tested: Monday-first columns, UTC date maths, gap stats), coloured by course.
 All of the scoring views live on **`/scoring`**: score history across every course, how your holes
 finish vs scratch (with `strokesPerRound` pricing each gap in strokes per 18), par 3s/4s/5s
 (`parTypeStats`: average score and SG per hole and per round) and the eclectic. `/insights` is

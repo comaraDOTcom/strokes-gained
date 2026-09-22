@@ -10,6 +10,8 @@ import { categoryTrends, practicePriority, difficultyAdjustment } from '@/lib/in
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
 import { DifficultyToggle, type AdjustableRound } from './difficulty-toggle';
+import { buildPlayCalendar } from '@/lib/insights/calendar';
+import { PlayCalendarGrid } from './play-calendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +37,7 @@ const SIGNAL_LABEL: Record<string, string> = {
 };
 
 const MIN_ROUNDS_FOR_TREND = 4;
+const CALENDAR_DAYS = 90;
 
 export default async function TrendsPage() {
   const user = await requirePageUser();
@@ -51,6 +54,8 @@ export default async function TrendsPage() {
   }
 
   const trends = roundCount >= MIN_ROUNDS_FOR_TREND ? categoryTrends(shots, 3) : [];
+  // Today in Irish time, so a Saturday evening round lands on Saturday's square.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin' }).format(new Date());
   const priorities = practicePriority(shots, 4);
 
   const [courses, tees] = await Promise.all([getCoursesWithRounds(user.id), getTeesWithRounds(user.id)]);
@@ -81,6 +86,20 @@ export default async function TrendsPage() {
     };
   });
 
+  const calendar = buildPlayCalendar(
+    summaries.map((r) => ({
+      roundId: r.roundId,
+      playedOn: r.playedOn,
+      courseId: r.courseId,
+      courseName: r.courseName,
+      grossScore: r.grossScore,
+      par: r.par,
+      holesPlayed: r.holesPlayed,
+    })),
+    today,
+    CALENDAR_DAYS,
+  );
+
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Trends &amp; practice focus</h1>
@@ -95,6 +114,14 @@ export default async function TrendsPage() {
         )}
         .
       </p>
+
+      <section className="border rounded-xl bg-card p-4 space-y-3">
+        <h2 className="font-semibold text-lg">When you played</h2>
+        <p className="text-xs text-muted">
+          The last {CALENDAR_DAYS} days, a square a day, coloured by course. Tap a day to open that round.
+        </p>
+        <PlayCalendarGrid calendar={calendar} days={CALENDAR_DAYS} />
+      </section>
 
       <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Trend — latest round vs. mean of prior 3</h2>

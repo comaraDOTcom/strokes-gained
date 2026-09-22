@@ -5,6 +5,15 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.25 — 2026-09-22
+
+### When you played (Trends)
+- A **calendar of the last 90 days** at the top of Trends: one square a day, **coloured by course**,
+  with a legend and round counts. Tap a day to open that round; hover for the course and score.
+  A day with two rounds gets a corner mark.
+- Alongside it: rounds played, **days played out of 90**, how long since your last round, and your
+  **longest gap** without golf.
+
 ## 0.0.24 — 2026-09-22
 
 ### New Scoring page
