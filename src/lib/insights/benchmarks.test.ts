@@ -49,6 +49,12 @@ describe('validateBenchmark', () => {
     expect(errors).toContain('whole number');
   });
 
+  it('checks totals exactly when unrecorded holes are given', () => {
+    const p = { id: 'C', rounds: 1, unrecorded: 1, holes: { eagle: 0, birdie: 2, par: 11, bogey: 3, doublePlus: 1 } };
+    expect(validateBenchmark({ ...file, players: [p] })).toEqual([]);
+    expect(validateBenchmark({ ...file, players: [{ ...p, unrecorded: 0 }] }).join()).toContain('unrecorded');
+  });
+
   it('the committed data file is always valid and anonymised', () => {
     expect(validateBenchmark(scratch as BenchmarkFile)).toEqual([]);
   });

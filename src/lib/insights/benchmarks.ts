@@ -22,8 +22,12 @@ export const BENCHMARK_LABEL: Record<BenchmarkBucket, string> = {
   doublePlus: 'Double+',
 };
 
-/** One anonymised player: how many holes they finished in each bucket, over `rounds` rounds. */
-export type BenchmarkPlayer = { id: string; rounds: number; holes: Record<BenchmarkBucket, number> };
+/**
+ * One anonymised player: how many holes they finished in each bucket, over `rounds` rounds.
+ * `unrecorded` = holes with no score in the source (a pick-up or blank). They're left out of the
+ * shares, but counted so the totals can be checked exactly: holes + unrecorded = rounds × 18.
+ */
+export type BenchmarkPlayer = { id: string; rounds: number; unrecorded?: number; holes: Record<BenchmarkBucket, number> };
 export type BenchmarkFile = { cohort: string; description: string; players: BenchmarkPlayer[] };
 
 export type BucketShares = Record<BenchmarkBucket, number>;
@@ -61,8 +65,13 @@ export function validateBenchmark(file: BenchmarkFile): string[] {
       if (!Number.isInteger(v) || v < 0) errors.push(`Player ${p.id}: ${BENCHMARK_LABEL[b]} must be a whole number ≥ 0`);
     }
     const n = total(p.holes);
-    if (p.rounds > 0 && n > p.rounds * 18) errors.push(`Player ${p.id}: ${n} holes is more than ${p.rounds} rounds allow`);
-    if (p.rounds > 0 && n < p.rounds * 9) errors.push(`Player ${p.id}: only ${n} holes for ${p.rounds} rounds — check the transcription`);
+    if (p.unrecorded !== undefined) {
+      if (n + p.unrecorded !== p.rounds * 18)
+        errors.push(`Player ${p.id}: ${n} holes + ${p.unrecorded} unrecorded ≠ ${p.rounds} rounds × 18 — check the transcription`);
+    } else {
+      if (p.rounds > 0 && n > p.rounds * 18) errors.push(`Player ${p.id}: ${n} holes is more than ${p.rounds} rounds allow`);
+      if (p.rounds > 0 && n < p.rounds * 9) errors.push(`Player ${p.id}: only ${n} holes for ${p.rounds} rounds — check the transcription`);
+    }
   }
   return errors;
 }
