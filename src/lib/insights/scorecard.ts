@@ -205,3 +205,56 @@ export function scoreDistribution(cards: readonly RoundCard[]): ScoreDistributio
     parToDoublePlus: doubleOrWorse ? parOrBetter / doubleOrWorse : null,
   };
 }
+
+// ---------------------------------------------------------------------------
+// By par type
+// ---------------------------------------------------------------------------
+
+export type ParTypeStats = {
+  par: number;
+  /** Finished holes of this par. */
+  holes: number;
+  avgScore: number;
+  avgToPar: number;
+  /** Strokes gained per hole (vs scratch), over the same finished holes. */
+  sgPerHole: number;
+  /** How many holes of this par a round has, on average (e.g. 4 par 3s) — to turn per-hole into per-round. */
+  perRound: number;
+  /** avgToPar × perRound: what this par type adds to a round's score. */
+  toParPerRound: number;
+  sgPerRound: number;
+  birdieOrBetter: number;
+  pars: number;
+  bogeys: number;
+  doubleOrWorse: number;
+};
+
+/** Scoring and SG on par 3s, 4s and 5s, from finished holes only. Only par types that were played. */
+export function parTypeStats(cards: readonly RoundCard[]): ParTypeStats[] {
+  const out: ParTypeStats[] = [];
+  const fullCards = cards.filter((c) => c.holes.length > 0);
+  for (const par of [3, 4, 5, 6]) {
+    const holes = fullCards.flatMap((c) => c.holes.filter((h) => h.par === par && h.score !== null));
+    if (holes.length === 0) continue;
+    const n = holes.length;
+    const avgToPar = holes.reduce((a, h) => a + h.toPar!, 0) / n;
+    const sgPerHole = holes.reduce((a, h) => a + (h.sg ?? 0), 0) / n;
+    const perRound = fullCards.reduce((a, c) => a + c.holes.filter((h) => h.par === par).length, 0) / fullCards.length;
+    const share = (f: (t: number) => boolean) => holes.filter((h) => f(h.toPar!)).length / n;
+    out.push({
+      par,
+      holes: n,
+      avgScore: holes.reduce((a, h) => a + h.score!, 0) / n,
+      avgToPar,
+      sgPerHole,
+      perRound,
+      toParPerRound: avgToPar * perRound,
+      sgPerRound: sgPerHole * perRound,
+      birdieOrBetter: share((t) => t <= -1),
+      pars: share((t) => t === 0),
+      bogeys: share((t) => t === 1),
+      doubleOrWorse: share((t) => t >= 2),
+    });
+  }
+  return out;
+}

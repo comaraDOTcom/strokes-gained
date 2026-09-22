@@ -1,5 +1,5 @@
 import type { ScoreDistribution, ScoreTone } from '@/lib/insights/scorecard';
-import { BENCHMARK_LABEL, headlineGap, type Benchmark, type BenchmarkBucket, type BucketComparison } from '@/lib/insights/benchmarks';
+import { BENCHMARK_LABEL, headlineGap, strokesPerRound, type Benchmark, type BenchmarkBucket, type BucketComparison } from '@/lib/insights/benchmarks';
 import { toneFillClass } from '../score-cell';
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -55,6 +55,50 @@ function BenchmarkBars({ rows, bench, triples }: { rows: BucketComparison[]; ben
   );
 }
 
+const GAP_WORDS: Record<string, [string, string]> = {
+  eagle: ['More eagles', 'Fewer eagles'],
+  birdie: ['More birdies', 'Fewer birdies'],
+  bogey: ['More bogeys', 'Fewer bogeys'],
+  doublePlus: ['More doubles or worse', 'Fewer doubles or worse'],
+};
+
+/** What each gap to scratch is worth in strokes per 18 holes — red where it costs you. */
+function StrokeCost({ comparison }: { comparison: BucketComparison[] }) {
+  const { gaps, total } = strokesPerRound(comparison);
+  const shown = gaps.filter((g) => Math.abs(g.strokesPerRound) >= 0.05);
+  if (shown.length === 0) return null;
+  const fmt = (v: number) => `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
+  return (
+    <div className="space-y-2 rounded-lg border bg-paper p-3">
+      <p className="font-mono text-[10px] uppercase tracking-wide text-muted">What it costs you per round vs scratch</p>
+      <ul className="space-y-1 text-sm">
+        {shown
+          .sort((a, b) => b.strokesPerRound - a.strokesPerRound)
+          .map((g) => {
+            const idx = comparison.find((c) => c.bucket === g.bucket)!.diff > 0 ? 0 : 1;
+            return (
+              <li key={g.bucket} className="flex items-baseline justify-between gap-3">
+                <span className="text-ink-2">{GAP_WORDS[g.bucket]![idx]}</span>
+                <span className={`font-mono tabular-nums ${g.strokesPerRound > 0 ? 'text-neg' : 'text-pos'}`}>
+                  {fmt(g.strokesPerRound)}
+                  {g.bucket === 'doublePlus' && g.strokesPerRound > 0 ? '+' : ''} strokes
+                </span>
+              </li>
+            );
+          })}
+      </ul>
+      <p className="flex items-baseline justify-between gap-3 border-t pt-2 text-sm font-medium">
+        <span>{total >= 0 ? 'Behind scratch on how holes finish' : 'Ahead of scratch on how holes finish'}</span>
+        <span className={`font-mono tabular-nums ${total > 0 ? 'text-neg' : 'text-pos'}`}>≈ {Math.abs(total).toFixed(1)} a round</span>
+      </p>
+      <p className="text-[11px] text-muted">
+        18 holes × the gap in each share × what that score is worth to par. A double or worse is counted as +2, so its cost is
+        at least this. Missed pars aren&apos;t listed: they show up as the bogeys and doubles they became.
+      </p>
+    </div>
+  );
+}
+
 /** Share of every hole played that finished eagle-or-better … triple-or-worse, plus the two ratios that matter. */
 export function ScoreDistributionChart({
   d,
@@ -90,6 +134,7 @@ export function ScoreDistributionChart({
       {bench && comparison ? (
         <>
           <BenchmarkBars rows={comparison} bench={bench} triples={triples} />
+          <StrokeCost comparison={comparison} />
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span className="flex items-center gap-1">
               <span className="inline-block h-3 w-0.5 bg-ink" /> scratch average

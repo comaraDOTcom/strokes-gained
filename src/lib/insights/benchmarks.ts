@@ -147,3 +147,22 @@ export function headlineGap(c: readonly BucketComparison[]): { bucket: Benchmark
     text: `You make ${PHRASE[biggest.bucket]} on ${p(biggest.mine)} of holes; scratch players on ${p(biggest.bench)}.`,
   };
 }
+
+/** Strokes to par a hole in each bucket is worth. Double+ counts as exactly +2, so it's a floor. */
+const BUCKET_STROKES: Record<BenchmarkBucket, number> = { eagle: -2, birdie: -1, par: 0, bogey: 1, doublePlus: 2 };
+
+export type StrokeGap = { bucket: BenchmarkBucket; label: string; strokesPerRound: number };
+
+/**
+ * What each bucket's gap to scratch costs per 18 holes: 18 × (your share − scratch share) × the
+ * bucket's strokes to par. Positive = strokes you lose vs scratch. Par is left out — a par is worth
+ * 0 to par, so pars you miss show up as the bogeys (and worse) they turned into. Double+ is counted
+ * as +2 a hole, so its cost is AT LEAST that. `total` ≈ how far behind scratch you finish per round
+ * on hole outcomes alone.
+ */
+export function strokesPerRound(c: readonly BucketComparison[]): { gaps: StrokeGap[]; total: number } {
+  const gaps = c
+    .filter((x) => x.bucket !== 'par')
+    .map((x) => ({ bucket: x.bucket, label: x.label, strokesPerRound: 18 * x.diff * BUCKET_STROKES[x.bucket] }));
+  return { gaps, total: gaps.reduce((a, g) => a + g.strokesPerRound, 0) };
+}

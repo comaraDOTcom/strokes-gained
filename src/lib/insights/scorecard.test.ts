@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEclectic, buildRoundCard, scoreDistribution, scoreTone, stablefordPoints, strokesReceived, type CardHoleMeta } from './scorecard';
+import { buildEclectic, buildRoundCard, parTypeStats, scoreDistribution, scoreTone, stablefordPoints, strokesReceived, type CardHoleMeta } from './scorecard';
 import type { EnrichedShot } from './aggregate';
 
 const META: CardHoleMeta[] = Array.from({ length: 18 }, (_, i) => ({ holeNo: i + 1, par: i % 3 === 2 ? 3 : 4, strokeIndex: ((i * 7) % 18) + 1 }));
@@ -129,5 +129,21 @@ describe('scoreDistribution', () => {
     expect(d.parToBogey).toBeNull();
     expect(d.parToDoublePlus).toBeNull();
     expect(scoreDistribution([]).buckets.every((b) => b.pct === 0)).toBe(true);
+  });
+});
+
+describe('parTypeStats', () => {
+  it('scores and SG per par type, per hole and per round, from finished holes only', () => {
+    // META: holes 3,6,9,12,15,18 are par 3 (6 per round); the rest par 4 (12 per round).
+    const shots = [...play(3, 4, -0.1), ...play(6, 2, 0.5), ...play(1, 5, -0.2), ...play(2, 4), ...play(4, 2).slice(0, 1)];
+    const [p3, p4] = parTypeStats([buildRoundCard(META, shots)]);
+    expect(p3).toMatchObject({ par: 3, holes: 2, avgScore: 3, avgToPar: 0, perRound: 6, birdieOrBetter: 0.5, bogeys: 0.5 });
+    expect(p3!.sgPerHole).toBeCloseTo((4 * -0.1 + 2 * 0.5) / 2);
+    expect(p3!.sgPerRound).toBeCloseTo(p3!.sgPerHole * 6);
+    expect(p4).toMatchObject({ par: 4, holes: 2, avgToPar: 0.5, perRound: 12, toParPerRound: 6, pars: 0.5, bogeys: 0.5 });
+  });
+
+  it('leaves out par types never played', () => {
+    expect(parTypeStats([buildRoundCard(META, play(1, 4))]).map((p) => p.par)).toEqual([4]);
   });
 });

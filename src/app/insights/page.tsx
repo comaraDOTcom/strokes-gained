@@ -1,10 +1,5 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleMetaForCourse } from '@/lib/insights/queries';
-import { buildEclectic, buildRoundCard, scoreDistribution } from '@/lib/insights/scorecard';
-import { EclecticTable } from './eclectic-table';
-import { ScoreDistributionChart } from './score-distribution';
-import { buildBenchmark, compareToBenchmark, type BenchmarkFile } from '@/lib/insights/benchmarks';
-import scratchBenchmark from '@/lib/insights/benchmark-data/scratch.json';
+import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
 import { buildCourseStory, drillArea } from '@/lib/insights/recap';
@@ -30,6 +25,7 @@ import {
 } from '@/lib/insights/aggregate';
 import { fmtPct, fmtSg, CATEGORICAL } from '@/lib/insights/chart-colors';
 import { CourseFilter } from '../course-filter';
+import { Section } from '../section';
 import { DivergingBarChart, GroupedBarChart, TrendBarChart } from './charts';
 
 export const dynamic = 'force-dynamic';
@@ -50,18 +46,6 @@ function ChartOrEmpty({ data, children }: { data: unknown[]; children: React.Rea
   return <>{children}</>;
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="border rounded-xl bg-card p-4 space-y-3">
-      <div>
-        <h2 className="font-semibold text-lg">{title}</h2>
-        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export default async function InsightsPage({
   searchParams,
 }: {
@@ -78,13 +62,7 @@ export default async function InsightsPage({
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
   const roundCount = selected?.roundCount ?? 0;
-  const [shots, teeMeta] =
-    selectedCourseId === null
-      ? [[], new Map<number, { holeNo: number; par: number; strokeIndex: number | null }[]>()]
-      : await Promise.all([
-          timer.span('shots', () => getAllEnrichedShots(user.id, selectedCourseId)),
-          timer.span('teeMeta', () => getTeeHoleMetaForCourse(user.id, selectedCourseId)),
-        ]);
+  const shots = selectedCourseId === null ? [] : await timer.span('shots', () => getAllEnrichedShots(user.id, selectedCourseId));
 
   if (roundCount === 0) {
     return (
@@ -105,22 +83,8 @@ export default async function InsightsPage({
   const series = categorySeries(shots);
   const story = buildCourseStory(shots);
 
-  // Eclectic: each round's card against its own tee; par header from the latest round's tee.
   const summaries = roundSummaries(shots);
   const roundNames = new Map([...details].map(([id, d]) => [id, d.name]));
-  const cards = summaries.map((r) => ({
-    roundId: r.roundId,
-    title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
-    playedOn: r.playedOn,
-    card: buildRoundCard(teeMeta.get(r.teeId) ?? [], shots.filter((s) => s.roundId === r.roundId)),
-  }));
-  const eclectic = buildEclectic(
-    (teeMeta.get(summaries[0]?.teeId ?? -1) ?? []).map(({ holeNo, par }) => ({ holeNo, par })),
-    cards,
-  );
-  const distribution = scoreDistribution(cards.map((c) => c.card));
-  const bench = buildBenchmark(scratchBenchmark as BenchmarkFile);
-  const comparison = bench && distribution.holesPlayed > 0 ? compareToBenchmark(distribution, bench) : null;
   const sgTable = buildSgTable(summaries, roundNames);
   // Every round × area drill-down, worked out here (a few shots each) so tapping a number in the
   // table opens it instantly in the browser. `?area=<roundId>.<CATEGORY>` says which starts open.
@@ -202,16 +166,13 @@ export default async function InsightsPage({
         </div>
       </Section>
 
-      <Section title="Eclectic scores" subtitle="Every round here, hole by hole — and the best and worst you've made on each. Tap a round for its scorecard.">
-        <EclecticTable eclectic={eclectic} />
-      </Section>
-
-      <Section
-        title="How your holes finish"
-        subtitle={`Every one of the ${distribution.holesPlayed} holes you've finished here, by score to par. The ratios are how many pars (or better) you make for every bogey, and for every double or worse — higher is better.`}
-      >
-        <ScoreDistributionChart d={distribution} bench={bench} comparison={comparison} />
-      </Section>
+      <p className="text-sm text-ink-2">
+        Scores, how your holes finish vs scratch golfers, par 3s/4s/5s and your eclectic are on{' '}
+        <Link className="underline" href={`/scoring?course=${selectedCourseId}`}>
+          Scoring
+        </Link>
+        .
+      </p>
 
       <Section
         title="Strokes gained"

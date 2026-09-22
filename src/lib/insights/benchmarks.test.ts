@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildBenchmark, compareToBenchmark, headlineGap, toBenchmarkBuckets, validateBenchmark, type BenchmarkFile } from './benchmarks';
+import { buildBenchmark, compareToBenchmark, headlineGap, strokesPerRound, toBenchmarkBuckets, validateBenchmark, type BenchmarkFile } from './benchmarks';
 import { buildRoundCard, scoreDistribution, type CardHoleMeta } from './scorecard';
 import type { EnrichedShot } from './aggregate';
 import scratch from './benchmark-data/scratch.json';
@@ -107,5 +107,24 @@ describe('compareToBenchmark', () => {
   it('has no headline when you match scratch everywhere', () => {
     const same = compareToBenchmark(d, buildBenchmark(file)!).map((x) => ({ ...x, diff: 0.004 }));
     expect(headlineGap(same)).toBeNull();
+  });
+});
+
+describe('strokesPerRound', () => {
+  const row = (bucket: 'eagle' | 'birdie' | 'par' | 'bogey' | 'doublePlus', mine: number, bench: number) =>
+    ({ bucket, label: bucket, mine, bench, diff: mine - bench, inRange: false });
+
+  it('prices each gap per 18 holes: fewer birdies and more bogeys/doubles cost strokes', () => {
+    const r = strokesPerRound([row('eagle', 0, 0), row('birdie', 0.05, 0.11), row('par', 0.45, 0.53), row('bogey', 0.36, 0.3), row('doublePlus', 0.14, 0.06)]);
+    const g = Object.fromEntries(r.gaps.map((x) => [x.bucket, x.strokesPerRound]));
+    expect(g.birdie).toBeCloseTo(18 * 0.06); // 1.08 fewer birdies = +1.08 strokes
+    expect(g.bogey).toBeCloseTo(18 * 0.06);
+    expect(g.doublePlus).toBeCloseTo(18 * 0.08 * 2);
+    expect('par' in g).toBe(false);
+    expect(r.total).toBeCloseTo(1.08 + 1.08 + 2.88);
+  });
+
+  it('is zero when you match scratch', () => {
+    expect(strokesPerRound([row('birdie', 0.1, 0.1), row('bogey', 0.3, 0.3)]).total).toBe(0);
   });
 });

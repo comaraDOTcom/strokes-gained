@@ -31,10 +31,13 @@ const AXIS_STYLE = { fontSize: 11, fill: CHROME.mutedInk };
  * props across that boundary), so formatting choices are threaded through
  * as plain data instead.
  */
-type ValueFormat = 'sg' | 'plain' | 'percent';
+type ValueFormat = 'sg' | 'plain' | 'percent' | 'toPar';
+
+/** Score to par as golfers write it: +6, −2, E. */
+const toPar = (v: number) => (Math.round(v * 10) / 10 === 0 ? 'E' : `${v > 0 ? '+' : '−'}${Number.isInteger(v) ? Math.abs(v) : Math.abs(v).toFixed(1)}`);
 
 function formatValue(v: number, format: ValueFormat, suffix?: string): string {
-  const base = format === 'sg' ? fmtSg(v) : format === 'percent' ? `${v}%` : `${v}`;
+  const base = format === 'sg' ? fmtSg(v) : format === 'percent' ? `${v}%` : format === 'toPar' ? toPar(v) : `${v}`;
   return suffix ? `${base} ${suffix}` : base;
 }
 
@@ -42,6 +45,7 @@ function formatValue(v: number, format: ValueFormat, suffix?: string): string {
 function labelText(v: number, format: ValueFormat, digits: number): string {
   if (format === 'sg') return fmtSg(v, digits);
   if (format === 'percent') return `${Math.round(v)}%`;
+  if (format === 'toPar') return toPar(v);
   return Number.isInteger(v) ? `${v}` : v.toFixed(1);
 }
 

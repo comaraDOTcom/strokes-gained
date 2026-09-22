@@ -5,6 +5,28 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.24 — 2026-09-22
+
+### New Scoring page
+Insights was getting crowded, so everything about the number on the card now has its own page,
+**Scoring** (in the nav). Insights is strokes gained only.
+- **Score history:** every round you've logged on every course, with your best, average and
+  last-5 average. A bar chart shows each full round's score to par, with your 5-round average
+  dashed on top. Tap a round for its scorecard.
+- **How your holes finish vs scratch** (moved from Insights) now says **what each gap costs you per
+  round**: e.g. "More doubles or worse +2.3+ strokes, fewer birdies +0.5". It adds up to roughly how
+  far behind scratch you finish on hole outcomes alone.
+- **Par 3s, 4s and 5s:** average score, score to par per hole and per round, **strokes gained per
+  hole and per round**, and your birdie/par/bogey/double+ split for each. A headline names the par
+  type that costs you most.
+- **Eclectic scores** moved here from Insights.
+
+### Also
+- The nav fits on one row on desktop again, and wraps (instead of overflowing) on a phone.
+- **Vercel preview deployments are off.** They failed on every pull request because previews
+  (deliberately) have no database. CI already typechecks, tests and builds every PR, so only `main`
+  deploys now.
+
 ## 0.0.23 — 2026-09-22
 
 ### How your holes finish: compared with scratch golfers
