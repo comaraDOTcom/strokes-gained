@@ -33,6 +33,8 @@ This extends "How your holes finish" on `/insights`.
    (count hole by hole) or a stats summary (use its counts).
    - **Summary shows only percentages:** record `rounds`, then convert back to counts:
      `round(pct × rounds × 18)`.
+   - **A hole with no score ("–")** is almost always a pick-up, so it's counted as a **triple
+     bogey**, which puts it in double+. Leaving pick-ups out would flatter the scratch double+ rate.
    - **"Double bogey or worse" is one number** in most apps, so the benchmark has five buckets.
      Our own six (double and triple+ separately) are folded into five when comparing.
 3. `validateBenchmark` checks each entry:

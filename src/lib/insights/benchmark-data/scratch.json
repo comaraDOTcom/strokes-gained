@@ -5,25 +5,25 @@
     {
       "id": "A",
       "rounds": 11,
-      "unrecorded": 3,
+      "unrecorded": 0,
       "holes": {
         "eagle": 1,
         "birdie": 19,
         "par": 113,
         "bogey": 58,
-        "doublePlus": 4
+        "doublePlus": 7
       }
     },
     {
       "id": "B",
       "rounds": 22,
-      "unrecorded": 3,
+      "unrecorded": 0,
       "holes": {
         "eagle": 0,
         "birdie": 46,
         "par": 202,
         "bogey": 121,
-        "doublePlus": 24
+        "doublePlus": 27
       }
     }
   ]

@@ -24,8 +24,9 @@ export const BENCHMARK_LABEL: Record<BenchmarkBucket, string> = {
 
 /**
  * One anonymised player: how many holes they finished in each bucket, over `rounds` rounds.
- * `unrecorded` = holes with no score in the source (a pick-up or blank). They're left out of the
- * shares, but counted so the totals can be checked exactly: holes + unrecorded = rounds × 18.
+ * A hole with no score in the source ("–", a pick-up) is transcribed as a TRIPLE BOGEY, so it lands
+ * in double+. `unrecorded` is only for holes genuinely missing from the source (e.g. a round cut
+ * short); with it the totals are checked exactly: holes + unrecorded = rounds × 18.
  */
 export type BenchmarkPlayer = { id: string; rounds: number; unrecorded?: number; holes: Record<BenchmarkBucket, number> };
 export type BenchmarkFile = { cohort: string; description: string; players: BenchmarkPlayer[] };
