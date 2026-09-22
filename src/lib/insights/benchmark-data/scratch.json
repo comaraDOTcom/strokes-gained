@@ -1,0 +1,30 @@
+{
+  "cohort": "scratch",
+  "description": "Hole-score distribution of scratch and plus-handicap golfers (index about +1 to 0), transcribed from their 2026 competition rounds. Anonymised: players are A, B, C\u2026 with no names, clubs or dates.",
+  "players": [
+    {
+      "id": "A",
+      "rounds": 11,
+      "unrecorded": 0,
+      "holes": {
+        "eagle": 1,
+        "birdie": 19,
+        "par": 113,
+        "bogey": 58,
+        "doublePlus": 7
+      }
+    },
+    {
+      "id": "B",
+      "rounds": 22,
+      "unrecorded": 0,
+      "holes": {
+        "eagle": 0,
+        "birdie": 46,
+        "par": 202,
+        "bogey": 121,
+        "doublePlus": 27
+      }
+    }
+  ]
+}
