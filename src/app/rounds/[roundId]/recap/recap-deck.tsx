@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RoundRecap } from '@/lib/insights/recap';
-import { AreaCard, HoleRow, ShotGroupsBody, sgClass } from '@/app/recap-parts';
+import { AreaCard, HoleRow, ShotGroupsBody, SkillBars, sgClass } from '@/app/recap-parts';
 import { swipeToHoleDelta } from '@/lib/rounds/entry';
 import { fmtSg } from '@/lib/insights/chart-colors';
 
@@ -95,6 +95,10 @@ export function RecapDeck({
               {recap.strongArea.sg < 0 && (
                 <p className="text-sm text-muted">Even your best area lost a little to scratch — that&apos;s a high bar, not a bad round.</p>
               )}
+              <div className="space-y-2 rounded-xl border bg-paper p-4">
+                <p className="font-mono text-xs uppercase tracking-wide text-muted">Every area</p>
+                <SkillBars areas={recap.areas} />
+              </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Link href="/insights" className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-paper">
                   See full insights

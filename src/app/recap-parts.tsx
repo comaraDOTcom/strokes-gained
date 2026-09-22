@@ -110,3 +110,30 @@ export function AreaCard({
     </div>
   );
 }
+
+/**
+ * Every skill area side by side: a diverging bar per area (gained right in green, lost left in
+ * terracotta), best at the top. One decimal on screen, two on hover.
+ */
+export function SkillBars({ areas }: { areas: readonly RecapArea[] }) {
+  const scale = Math.max(1, ...areas.map((a) => Math.abs(a.sg)));
+  return (
+    <ul className="space-y-2">
+      {areas.map((a) => {
+        const pct = Math.max(3, (Math.abs(a.sg) / scale) * 100);
+        const text = fmtSg(a.sg, 1);
+        const shown = Number(text);
+        return (
+          <li key={a.category} className="grid grid-cols-[6rem_minmax(0,1fr)_3rem] items-center gap-2 text-sm" title={`${fmtSg(a.sg)} over ${a.shots} shot${a.shots === 1 ? '' : 's'}`}>
+            <span className="text-ink-2">{a.label}</span>
+            <span className="flex items-center">
+              <span className="flex w-1/2 justify-end">{a.sg < 0 && <span className="h-3.5 rounded-l-sm bg-neg/70" style={{ width: `${pct}%` }} />}</span>
+              <span className="flex w-1/2 border-l border-line-strong">{a.sg >= 0 && <span className="h-3.5 rounded-r-sm bg-pos/70" style={{ width: `${pct}%` }} />}</span>
+            </span>
+            <span className={`text-right font-mono tabular-nums ${shown < 0 ? 'text-neg' : shown > 0 ? 'text-pos' : 'text-muted'}`}>{text}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

@@ -5,6 +5,13 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.19 — 2026-09-22
+
+### Round recap: every area on the takeaway
+- The last slide of the recap ("Strong area, weak area") now also has a bar chart of **every skill
+  area** for the round, best to worst, so you see the whole picture and not just the two ends.
+  One decimal on screen; hover for the exact value and shot count.
+
 ## 0.0.18 — 2026-09-22
 
 ### Strokes gained, easier to read (Insights)
