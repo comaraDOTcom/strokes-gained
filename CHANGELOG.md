@@ -5,6 +5,15 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.20 — 2026-09-22
+
+### Tap a number to see the shots behind it (Insights → Strokes gained)
+- Every number in **Round by round** is now tappable. Pick a round and an area (say, off the tee on
+  2026-09-13) and a panel opens with that area's **five costliest shots** that round, biggest loss
+  first — hole, par, what happened ("358y off the tee to 158y on the fairway") and the strokes lost —
+  plus how many shots in that area lost or gained. Tap the number again, or Close, to put it away.
+- On a phone the panel opens inside that round's card. The link is shareable (`?area=`).
+
 ## 0.0.19 — 2026-09-22
 
 ### Round recap: every area on the takeaway

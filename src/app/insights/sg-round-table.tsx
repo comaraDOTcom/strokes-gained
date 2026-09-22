@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { SG_TABLE_COLUMNS, barPercent, leakAndStrength, type SgTable, type SgTableRow } from '@/lib/insights/sg-table';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import type { Category } from '@/lib/sg/categorise';
+import type { AreaDrill } from '@/lib/insights/recap';
 
 /** One decimal on screen; the exact two-decimal value on hover. */
 function Sg({ value, className = '' }: { value: number; className?: string }) {
@@ -111,7 +112,76 @@ function Cell({ value, scale, strong = false }: { value: number | null; scale: n
   );
 }
 
-export function SgRoundTable({ table }: { table: SgTable }) {
+/** One round, one area: the costliest shots behind the number that was tapped. */
+function DrillPanel({ drill, title, closeHref }: { drill: AreaDrill; title: string; closeHref: string }) {
+  return (
+    <div className="space-y-3 rounded-lg border border-line-strong bg-paper p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] uppercase tracking-wide text-muted">{title}</p>
+          <p className="font-semibold">
+            {drill.label} <Sg value={drill.sg} className="ml-1" />
+          </p>
+          <p className="text-xs text-muted">
+            {drill.shots} shot{drill.shots === 1 ? '' : 's'} · {drill.lost} lost strokes · {drill.gained} gained
+          </p>
+        </div>
+        <Link href={closeHref} scroll={false} className="shrink-0 rounded-md border px-2 py-1 text-xs text-ink-2 hover:bg-paper-2" aria-label="Close">
+          Close
+        </Link>
+      </div>
+      {drill.worst.length === 0 ? (
+        <p className="text-sm text-muted">No shot in this area lost strokes this round.</p>
+      ) : (
+        <ol className="space-y-2">
+          {drill.worst.map((s, i) => (
+            <li key={`${s.holeNo}-${s.shotNo}`} className="flex items-start justify-between gap-3 rounded-md border bg-card px-3 py-2">
+              <div className="min-w-0">
+                <p className="font-mono text-[11px] uppercase tracking-wide text-muted">
+                  {i + 1}. Hole {s.holeNo} · par {s.par} · shot {s.shotNo}
+                </p>
+                <p className="text-sm">{s.text}</p>
+              </div>
+              <Sg value={s.sg} className="shrink-0 text-sm font-medium" />
+            </li>
+          ))}
+        </ol>
+      )}
+      <Link href={`/rounds/${drill.roundId}`} className="inline-block text-xs text-ink-2 underline">
+        Open the round
+      </Link>
+    </div>
+  );
+}
+
+export function SgRoundTable({
+  table,
+  drill = null,
+  areaHref,
+  closeHref = '',
+}: {
+  table: SgTable;
+  drill?: AreaDrill | null;
+  /** Link for a round × area cell (tapping the open one closes it). */
+  areaHref?: (roundId: number, category: Category) => string;
+  closeHref?: string;
+}) {
+  const isOpen = (roundId: number | null, cat: Category) => drill?.roundId === roundId && drill.category === cat;
+  const drillRow = drill ? table.rows.find((r) => r.roundId === drill.roundId) : undefined;
+  const drillTitle = drillRow ? `${drillRow.title} · ${drillRow.subtitle}` : '';
+  const tap = (roundId: number | null, cat: Category, children: React.ReactNode, className = '') =>
+    areaHref && roundId !== null ? (
+      <Link
+        href={areaHref(roundId, cat)}
+        scroll={false}
+        className={`block rounded-md hover:bg-paper-2 ${isOpen(roundId, cat) ? 'bg-accent-soft ring-1 ring-accent/40' : ''} ${className}`}
+      >
+        {children}
+      </Link>
+    ) : (
+      children
+    );
+
   // The average of full rounds when there are 2+; otherwise the one full round (or the only round).
   const full = table.rows.filter((r) => r.holesPlayed === 18);
   const single = full.length === 1 ? full[0]! : table.rows.length === 1 ? table.rows[0]! : null;
@@ -151,8 +221,8 @@ export function SgRoundTable({ table }: { table: SgTable }) {
                       <RowTitle row={row} />
                     </td>
                     {SG_TABLE_COLUMNS.map((c) => (
-                      <td key={c.key} className="px-3 py-3 align-middle">
-                        <Cell value={row.cells[c.key]} scale={table.categoryScale} />
+                      <td key={c.key} className="px-1.5 py-2 align-middle">
+                        {tap(row.roundId, c.key, <Cell value={row.cells[c.key]} scale={table.categoryScale} />, 'px-1.5 py-1')}
                       </td>
                     ))}
                     <td className="border-l px-3 py-3 align-middle">
@@ -162,6 +232,7 @@ export function SgRoundTable({ table }: { table: SgTable }) {
                 ))}
               </tbody>
             </table>
+            {drill && <div className="mt-3"><DrillPanel drill={drill} title={drillTitle} closeHref={closeHref} /></div>}
           </div>
 
           {/* below lg: one card per round, disciplines stacked (no sideways scrolling) */}
@@ -174,18 +245,30 @@ export function SgRoundTable({ table }: { table: SgTable }) {
                   </div>
                   <Sg value={row.total} className="shrink-0 text-lg font-semibold" />
                 </div>
-                <dl className="mt-3 space-y-2">
+                <dl className="mt-3 space-y-0.5">
                   {SG_TABLE_COLUMNS.map((c) => {
                     const v = row.cells[c.key];
                     return (
-                      <div key={c.key} className="grid grid-cols-[5.5rem_minmax(0,1fr)_3rem] items-center gap-2">
-                        <dt className="text-xs text-muted">{c.label}</dt>
-                        <dd>{v === null ? null : <Diverging value={v} scale={table.categoryScale} />}</dd>
-                        <dd className="text-right text-xs">{v === null ? <span className="font-mono text-faint">—</span> : <Sg value={v} />}</dd>
+                      <div key={c.key}>
+                        {tap(
+                          row.roundId,
+                          c.key,
+                          <div className="grid grid-cols-[5.5rem_minmax(0,1fr)_3rem] items-center gap-2">
+                            <dt className="text-xs text-muted">{c.label}</dt>
+                            <dd>{v === null ? null : <Diverging value={v} scale={table.categoryScale} />}</dd>
+                            <dd className="text-right text-xs">{v === null ? <span className="font-mono text-faint">—</span> : <Sg value={v} />}</dd>
+                          </div>,
+                          '-mx-1 px-1 py-1',
+                        )}
                       </div>
                     );
                   })}
                 </dl>
+                {drill && drill.roundId === row.roundId && (
+                  <div className="mt-3">
+                    <DrillPanel drill={drill} title={drillTitle} closeHref={closeHref} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>

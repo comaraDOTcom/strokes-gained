@@ -113,6 +113,48 @@ function bestAndWorst<T extends { sg: number }>(inRoundOrder: T[], max: number):
   return { best, worst };
 }
 
+function toRecapShot(s: EnrichedShot): RecapShot {
+  return {
+    roundId: s.roundId, playedOn: s.playedOn, holeNo: s.holeNo, shotNo: s.shotNo, par: s.par, category: s.category, sg: s.sg,
+    text: describeShot(s), penalty: s.penaltyStrokes > 0,
+  };
+}
+
+export type AreaDrill = {
+  roundId: number;
+  category: Category;
+  label: string;
+  /** Every shot in the area that round. */
+  shots: number;
+  sg: number;
+  /** How many of them lost strokes, and how many gained. */
+  lost: number;
+  gained: number;
+  /** The costliest shots, biggest loss first (ties in round order). Only shots that lost strokes. */
+  worst: RecapShot[];
+};
+
+/** One round, one skill area: where the strokes went, costliest shot first. */
+export function drillArea(shots: readonly EnrichedShot[], roundId: number, category: Category, max = 5): AreaDrill {
+  const inArea = shots
+    .filter((s) => s.roundId === roundId && s.category === category)
+    .sort((a, b) => a.holeNo - b.holeNo || a.shotNo - b.shotNo);
+  return {
+    roundId,
+    category,
+    label: CATEGORY_LABEL[category],
+    shots: inArea.length,
+    sg: inArea.reduce((a, s) => a + s.sg, 0),
+    lost: inArea.filter((s) => cmpSg(s.sg, 0) < 0).length,
+    gained: inArea.filter((s) => cmpSg(s.sg, 0) > 0).length,
+    worst: inArea
+      .map(toRecapShot)
+      .filter((s) => cmpSg(s.sg, 0) < 0)
+      .sort((a, b) => cmpSg(a.sg, b.sg))
+      .slice(0, max),
+  };
+}
+
 export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
   const byHole = new Map<number, EnrichedShot[]>();
   for (const s of shots) (byHole.get(s.holeNo) ?? byHole.set(s.holeNo, []).get(s.holeNo)!).push(s);
@@ -129,10 +171,7 @@ export function buildRoundRecap(shots: readonly EnrichedShot[]): RoundRecap {
 
   const allShots: RecapShot[] = [...shots]
     .sort((a, b) => a.holeNo - b.holeNo || a.shotNo - b.shotNo) // round order
-    .map((s) => ({
-      roundId: s.roundId, playedOn: s.playedOn, holeNo: s.holeNo, shotNo: s.shotNo, par: s.par, category: s.category, sg: s.sg,
-      text: describeShot(s), penalty: s.penaltyStrokes > 0,
-    }));
+    .map(toRecapShot);
   const long = bestAndWorst(allShots.filter((s) => s.category !== 'PUTTING'), 3);
   const putts = bestAndWorst(allShots.filter((s) => s.category === 'PUTTING'), 3);
 

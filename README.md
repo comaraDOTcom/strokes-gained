@@ -72,7 +72,8 @@ Score colours are in `src/app/score-cell.tsx`.
 
 The "Strokes gained" section of `/insights` leads with the average full round (or the one full
 round) by discipline, with its biggest leak (`leakAndStrength` in `src/lib/insights/sg-table.ts`),
-then a round-by-round grid. SG shows one decimal on screen and two on hover (`fmtSg(v, 1)`).
+then a round-by-round grid. SG shows one decimal on screen and two on hover (`fmtSg(v, 1)`). Tapping a round × area cell sets
+`?area=<roundId>.<CATEGORY>` and opens that area's costliest shots (`drillArea` in `src/lib/insights/recap.ts`).
 
 ### Editing a finished round
 

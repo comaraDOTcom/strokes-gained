@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCourseStory, buildRoundRecap, describeShot, holeResult } from './recap';
+import { buildCourseStory, buildRoundRecap, describeShot, drillArea, holeResult } from './recap';
 import type { EnrichedShot } from './aggregate';
 
 const shot = (o: Partial<EnrichedShot> & { holeNo: number; shotNo: number; sg: number }): EnrichedShot => ({
@@ -139,5 +139,27 @@ describe('buildCourseStory', () => {
 
   it('handles no shots', () => {
     expect(buildCourseStory([])).toMatchObject({ rounds: 0, bestHoles: [], strongArea: null, sgPer18: 0 });
+  });
+});
+
+describe('drillArea', () => {
+  const tee = (holeNo: number, sg: number, roundId = 1) =>
+    shot({ holeNo, shotNo: 1, sg, roundId, category: 'OFF_THE_TEE', startLie: 'TEE', startDistance: 400, endLie: 'FAIRWAY', endDistance: 170 });
+  const shots = [
+    tee(1, -0.3), tee(2, 0.2), tee(3, -0.9), tee(4, -0.1), tee(5, -0.3), tee(6, -0.5), tee(7, -0.05), tee(8, 0),
+    tee(1, -2, 2), // another round
+    shot({ holeNo: 1, shotNo: 2, sg: -1.5, category: 'APPROACH' }), // another area
+  ];
+
+  it('lists the five costliest shots in that round and area, biggest loss first, ties in round order', () => {
+    const d = drillArea(shots, 1, 'OFF_THE_TEE');
+    expect(d.worst.map((s) => [s.holeNo, s.sg])).toEqual([[3, -0.9], [6, -0.5], [1, -0.3], [5, -0.3], [4, -0.1]]);
+    expect(d).toMatchObject({ label: 'Off the tee', shots: 8, lost: 6, gained: 1 });
+    expect(d.sg).toBeCloseTo(-1.95);
+    expect(d.worst[0]!.text).toContain('400y');
+  });
+
+  it('never lists a shot that gained or broke even', () => {
+    expect(drillArea([tee(1, 0.4), tee(2, 0)], 1, 'OFF_THE_TEE').worst).toEqual([]);
   });
 });

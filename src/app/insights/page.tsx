@@ -5,7 +5,8 @@ import { EclecticTable } from './eclectic-table';
 import { ScoreDistributionChart } from './score-distribution';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
-import { buildCourseStory } from '@/lib/insights/recap';
+import { buildCourseStory, drillArea } from '@/lib/insights/recap';
+import { SG_TABLE_COLUMNS } from '@/lib/insights/sg-table';
 import { AreaCard, ShotGroupsBody, StoryHoleRow } from '../recap-parts';
 import { requirePageUser } from '@/lib/auth/session';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
@@ -61,10 +62,10 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 export default async function InsightsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ course?: string | string[] }>;
+  searchParams: Promise<{ course?: string | string[]; area?: string | string[] }>;
 }) {
   const user = await requirePageUser();
-  const { course } = await searchParams;
+  const { course, area } = await searchParams;
   const options = await getCourseOptions(user.id);
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
@@ -106,6 +107,12 @@ export default async function InsightsPage({
   );
   const distribution = scoreDistribution(cards.map((c) => c.card));
   const sgTable = buildSgTable(summaries, roundNames);
+  // ?area=<roundId>.<CATEGORY> opens that round's costliest shots in that area under the table.
+  const [areaRound, areaCat] = (Array.isArray(area) ? area[0] : area)?.split('.') ?? [];
+  const drillCat = SG_TABLE_COLUMNS.find((c) => c.key === areaCat)?.key;
+  const drillRound = summaries.find((r) => String(r.roundId) === areaRound)?.roundId;
+  const drill = drillCat && drillRound !== undefined ? drillArea(shots, drillRound, drillCat) : null;
+  const insightsHref = (extra = '') => `/insights?course=${selectedCourseId}${extra}`;
   const rolling = rollingAverageByCategory(series, 3);
 
   const puttingBands = puttingBandStats(shots);
@@ -186,9 +193,16 @@ export default async function InsightsPage({
 
       <Section
         title="Strokes gained"
-        subtitle="Where your strokes go, discipline by discipline, against a scratch golfer: green = gained, red = lost. Hover a number for two decimals."
+        subtitle="Where your strokes go, discipline by discipline, against a scratch golfer: green = gained, red = lost. Tap any number to see the shots behind it; hover for two decimals."
       >
-        <SgRoundTable table={sgTable} />
+        <SgRoundTable
+          table={sgTable}
+          drill={drill}
+          areaHref={(roundId, cat) =>
+            insightsHref(drill?.roundId === roundId && drill.category === cat ? '' : `&area=${roundId}.${cat}`)
+          }
+          closeHref={insightsHref()}
+        />
       </Section>
 
       <Section title="SG per round over time" subtitle="3-round rolling average, per category">
