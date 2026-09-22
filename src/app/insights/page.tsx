@@ -9,6 +9,7 @@ import { buildCourseStory, drillArea } from '@/lib/insights/recap';
 import { SG_TABLE_COLUMNS } from '@/lib/insights/sg-table';
 import { AreaCard, ShotGroupsBody, StoryHoleRow } from '../recap-parts';
 import { requirePageUser } from '@/lib/auth/session';
+import { requestTimer } from '@/lib/timing';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import {
   categorySeries,
@@ -64,13 +65,14 @@ export default async function InsightsPage({
 }: {
   searchParams: Promise<{ course?: string | string[]; area?: string | string[] }>;
 }) {
-  const user = await requirePageUser();
+  const timer = requestTimer('/insights');
+  const user = await timer.span('session', requirePageUser);
   const { course, area } = await searchParams;
-  const options = await getCourseOptions(user.id);
+  const options = await timer.span('options', () => getCourseOptions(user.id));
   const selectedCourseId = resolveSelectedCourseId(options, Array.isArray(course) ? course[0] : course);
   const selected = options.find((o) => o.courseId === selectedCourseId);
   const roundCount = selected?.roundCount ?? 0;
-  const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
+  const shots = selectedCourseId === null ? [] : await timer.span('shots', () => getAllEnrichedShots(user.id, selectedCourseId));
 
   if (roundCount === 0) {
     return (
@@ -93,8 +95,8 @@ export default async function InsightsPage({
 
   // Eclectic: each round's card against its own tee; par header from the latest round's tee.
   const summaries = roundSummaries(shots);
-  const roundNames = new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name]));
-  const teeMeta = await getTeeHoleMeta(summaries.map((r) => r.teeId));
+  const roundNames = new Map([...(await timer.span('details', () => getRoundDetailsById(user.id)))].map(([id, d]) => [id, d.name]));
+  const teeMeta = await timer.span('teeMeta', () => getTeeHoleMeta(summaries.map((r) => r.teeId)));
   const cards = summaries.map((r) => ({
     roundId: r.roundId,
     title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
@@ -125,6 +127,8 @@ export default async function InsightsPage({
   const girFairwayTrend = girAndFairwayTrend(shots);
   const holeLosses = penaltyAndRecoveryByHole(shots);
   const upDownTrend = upAndDownVsSandSaveTrend(shots);
+
+  timer.done(`shots=${shots.length}${area ? ' drill' : ''}`);
 
   const categoriesInOrder = ['OFF_THE_TEE', 'APPROACH', 'SHORT_GAME', 'BUNKER', 'PUTTING', 'RECOVERY'];
   const rollingByCategory = categoriesInOrder
