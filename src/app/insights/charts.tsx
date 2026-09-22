@@ -12,15 +12,16 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
+  LabelList,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { CATEGORICAL, CHROME, DIVERGING, fmtSg, sgColor } from '@/lib/insights/chart-colors';
+import { CATEGORICAL, CHROME, DIVERGING, fmtSg, niceAxis, sgColor } from '@/lib/insights/chart-colors';
 
 const AXIS_STYLE = { fontSize: 11, fill: CHROME.mutedInk };
 
@@ -37,6 +38,47 @@ function formatValue(v: number, format: ValueFormat, suffix?: string): string {
   return suffix ? `${base} ${suffix}` : base;
 }
 
+/** The number printed on a bar: SG to `digits` decimals (1 by default; per-shot values need 2). */
+function labelText(v: number, format: ValueFormat, digits: number): string {
+  if (format === 'sg') return fmtSg(v, digits);
+  if (format === 'percent') return `${Math.round(v)}%`;
+  return Number.isInteger(v) ? `${v}` : v.toFixed(1);
+}
+
+type LabelProps = { x?: number | string; y?: number | string; width?: number | string; height?: number | string; value?: unknown };
+
+/**
+ * Value label drawn just past the end of the bar — above a positive bar, below a negative one —
+ * so every bar carries its number and the chart reads without hovering.
+ */
+function barLabel(format: ValueFormat, digits: number) {
+  const BarValueLabel = (props: LabelProps) => {
+    const v = Number(props.value);
+    if (props.value === null || props.value === undefined || !Number.isFinite(v)) return null;
+    const x = Number(props.x) + Number(props.width) / 2;
+    const y = Number(props.y);
+    const h = Number(props.height);
+    const top = Math.min(y, y + h);
+    const bottom = Math.max(y, y + h);
+    return (
+      <text x={x} y={v < 0 ? bottom + 12 : top - 4} textAnchor="middle" fontSize={11} fill={CHROME.mutedInk}>
+        {labelText(v, format, digits)}
+      </text>
+    );
+  };
+  return BarValueLabel;
+}
+
+const valuesOf = (data: Record<string, unknown>[], keys: string[]) =>
+  data.flatMap((d) => keys.map((k) => Number(d[k]))).filter((v) => Number.isFinite(v));
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** ISO dates on a round axis read as "13 Sep". */
+function shortDate(v: unknown): string {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(String(v));
+  return m ? `${Number(m[2])} ${MONTHS[Number(m[1]) - 1]}` : String(v);
+}
+
 /** A single bar series over categorical/ordinal x, colored by SG sign. */
 export function DivergingBarChart({
   data,
@@ -45,6 +87,7 @@ export function DivergingBarChart({
   height = 220,
   format = 'sg',
   suffix,
+  digits = 1,
 }: {
   data: Record<string, unknown>[];
   xKey: string;
@@ -52,21 +95,25 @@ export function DivergingBarChart({
   height?: number;
   format?: ValueFormat;
   suffix?: string;
+  /** Decimals on the bar labels (SG only). */
+  digits?: number;
 }) {
+  const axis = niceAxis(valuesOf(data, [yKey]));
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={CHROME.gridline} />
         <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
-        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} />
+        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={40} domain={axis.domain} ticks={axis.ticks} tickFormatter={(v: number) => labelText(v, format, Math.max(1, axis.decimals))} />
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
-        <Bar dataKey={yKey} radius={[4, 4, 4, 4]} maxBarSize={40}>
+        <Bar dataKey={yKey} radius={[4, 4, 4, 4]} maxBarSize={40} isAnimationActive={false}>
           {data.map((d, i) => (
             <Cell key={i} fill={sgColor(Number(d[yKey]))} />
           ))}
+          <LabelList dataKey={yKey} content={barLabel(format, digits)} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -91,32 +138,41 @@ export function GroupedBarChart({
   suffix?: string;
   domain?: [number, number];
 }) {
+  const axis = domain ? { domain, ticks: undefined, decimals: 0 } : niceAxis(valuesOf(data, series.map((x) => x.key)));
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={CHROME.gridline} />
-        <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
-        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={domain} />
+        <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} tickFormatter={shortDate} />
+        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={axis.domain} ticks={axis.ticks} />
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
+          labelFormatter={shortDate}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {series.map((s) => (
-          <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} radius={[4, 4, 4, 4]} maxBarSize={28} />
+          <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} radius={[4, 4, 4, 4]} maxBarSize={28} isAnimationActive={false}>
+            <LabelList dataKey={s.key} content={barLabel(format, 1)} />
+          </Bar>
         ))}
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-/** A round-over-time line: raw per-round value (dots) + a rolling average line. Single series -> no legend needed. */
-export function TrendLineChart({
+/**
+ * A round-over-time bar chart: one labelled bar per round (SG bars coloured by sign), plus an
+ * optional rolling-average line on top. Bars rather than a line, so each round's number and the
+ * scale are visible at a glance.
+ */
+export function TrendBarChart({
   data,
   xKey,
   valueKey,
   rollingKey,
-  height = 160,
+  rollingLabel = 'Rolling average',
+  height = 180,
   domain,
   format = 'sg',
   suffix,
@@ -125,33 +181,32 @@ export function TrendLineChart({
   xKey: string;
   valueKey: string;
   rollingKey?: string;
+  rollingLabel?: string;
   height?: number;
   domain?: [number, number];
   format?: ValueFormat;
   suffix?: string;
 }) {
+  const axis = domain ? { domain, ticks: undefined, decimals: 0 } : niceAxis(valuesOf(data, rollingKey ? [valueKey, rollingKey] : [valueKey]));
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <ComposedChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={CHROME.gridline} />
-        <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} />
-        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={domain} />
+        <XAxis dataKey={xKey} tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} tickFormatter={shortDate} />
+        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={36} domain={axis.domain} ticks={axis.ticks} tickFormatter={(v: number) => labelText(v, format, Math.max(1, axis.decimals))} />
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
+          labelFormatter={shortDate}
           contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
         />
-        <Line
-          type="monotone"
-          dataKey={valueKey}
-          stroke={CATEGORICAL[0]}
-          strokeWidth={1.5}
-          dot={{ r: 3, fill: CATEGORICAL[0] }}
-          strokeOpacity={0.45}
-        />
+        <Bar dataKey={valueKey} name="This round" radius={[4, 4, 4, 4]} maxBarSize={40} fill={CATEGORICAL[0]} isAnimationActive={false}>
+          {format === 'sg' && data.map((d, i) => <Cell key={i} fill={sgColor(Number(d[valueKey]))} />)}
+          <LabelList dataKey={valueKey} content={barLabel(format, 1)} />
+        </Bar>
         {rollingKey && (
-          <Line type="monotone" dataKey={rollingKey} stroke={CATEGORICAL[0]} strokeWidth={2.5} dot={false} />
+          <Line type="monotone" dataKey={rollingKey} name={rollingLabel} stroke={CHROME.mutedInk} strokeWidth={2} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
         )}
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

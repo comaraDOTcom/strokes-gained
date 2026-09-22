@@ -5,6 +5,18 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.21 — 2026-09-22
+
+### Insights charts: bars with numbers on them
+- **SG per round over time** and **Putts per round** are now bar charts, not lines: one bar per round,
+  with its value printed on it. SG bars are green when gained and red when lost; the 3-round average
+  is a dashed line on top.
+- **Every bar chart on Insights** now shows its number on each bar (above a gain, below a loss), so
+  the scale reads without hovering. SG totals show 1 decimal; per-shot and per-putt values show 2.
+- Axes sit on round numbers (steps of 1, 2 or 5), always include zero, leave room for the labels,
+  and never repeat a tick label on small ranges. Round dates read "13 Sep".
+- Charts draw instantly (no animation).
+
 ## 0.0.20 — 2026-09-22
 
 ### Tap a number to see the shots behind it (Insights → Strokes gained)

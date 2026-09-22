@@ -51,3 +51,25 @@ export function fmtPct(value: number | null): string {
   if (value === null || Number.isNaN(value)) return '—';
   return `${Math.round(value * 100)}%`;
 }
+
+/**
+ * A y-axis on round numbers (steps of 1, 2 or 5 × 10ⁿ) that always includes 0 and leaves
+ * headroom past the longest bar in each direction for its label.
+ */
+export function niceAxis(values: number[]): { domain: [number, number]; ticks: number[]; decimals: number } {
+  const finite = values.filter((v) => Number.isFinite(v));
+  const lo = Math.min(0, ...finite);
+  const hi = Math.max(0, ...finite);
+  const range = hi - lo || 1;
+  const raw = range / 4;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = Number(([1, 2, 5, 10].map((m) => m * mag).find((st) => st >= raw)!).toPrecision(6));
+  const pad = range * 0.12;
+  const min = lo < 0 ? Math.floor((lo - pad) / step) * step : 0;
+  const max = hi > 0 ? Math.ceil((hi + pad) / step) * step : 0;
+  const ticks: number[] = [];
+  for (let t = min; t <= max + step / 1e6; t += step) ticks.push(Number(t.toFixed(6)));
+  // Decimals the tick labels need so no two ticks print the same (0.05 steps need 2).
+  const decimals = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return { domain: [min, max], ticks, decimals };
+}

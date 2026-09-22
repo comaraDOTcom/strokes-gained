@@ -27,7 +27,7 @@ import {
 } from '@/lib/insights/aggregate';
 import { fmtPct, fmtSg, CATEGORICAL } from '@/lib/insights/chart-colors';
 import { CourseFilter } from '../course-filter';
-import { DivergingBarChart, GroupedBarChart, TrendLineChart } from './charts';
+import { DivergingBarChart, GroupedBarChart, TrendBarChart } from './charts';
 
 export const dynamic = 'force-dynamic';
 
@@ -205,17 +205,18 @@ export default async function InsightsPage({
         />
       </Section>
 
-      <Section title="SG per round over time" subtitle="3-round rolling average, per category">
+      <Section title="SG per round over time" subtitle="Each round's strokes gained per category, with the 3-round average dashed on top">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {rollingByCategory.map(({ cat, points }) => (
             <div key={cat}>
               <p className="text-sm font-medium mb-1">{CATEGORY_LABEL[cat] ?? cat}</p>
-              <TrendLineChart
+              <TrendBarChart
                 data={points.map((p) => ({ round: p.playedOn, sg: Number(p.sg.toFixed(3)), rolling: Number(p.rollingAvg.toFixed(3)) }))}
                 xKey="round"
                 valueKey="sg"
                 rollingKey="rolling"
-                height={140}
+                rollingLabel="3-round average"
+                height={180}
               />
             </div>
           ))}
@@ -233,6 +234,7 @@ export default async function InsightsPage({
           xKey="band"
           yKey="sgPerPutt"
           suffix="/ putt"
+          digits={2}
         />
         <table className="w-full text-sm">
           <thead>
@@ -255,11 +257,11 @@ export default async function InsightsPage({
           </tbody>
         </table>
         <p className="text-sm font-medium mt-2">Putts per round</p>
-        <TrendLineChart
+        <TrendBarChart
           data={putts.map((p) => ({ round: p.playedOn, putts: p.putts }))}
           xKey="round"
           valueKey="putts"
-          height={140}
+          height={180}
           format="plain"
         />
       </Section>
@@ -272,6 +274,7 @@ export default async function InsightsPage({
             xKey="band"
             yKey="sgPerShot"
             suffix="/ shot"
+            digits={2}
             height={180}
           />
         </ChartOrEmpty>
@@ -282,6 +285,7 @@ export default async function InsightsPage({
             xKey="lie"
             yKey="sgPerShot"
             suffix="/ shot"
+            digits={2}
             height={180}
           />
         </ChartOrEmpty>
@@ -294,6 +298,7 @@ export default async function InsightsPage({
             xKey="subtype"
             yKey="sgPerShot"
             suffix="/ shot"
+            digits={2}
             height={180}
           />
         </ChartOrEmpty>
@@ -308,6 +313,7 @@ export default async function InsightsPage({
             xKey="band"
             yKey="sgPerShot"
             suffix="/ shot"
+            digits={2}
             height={180}
           />
         </ChartOrEmpty>
@@ -318,6 +324,7 @@ export default async function InsightsPage({
             xKey="lie"
             yKey="sgPerShot"
             suffix="/ shot"
+            digits={2}
             height={180}
           />
         </ChartOrEmpty>
