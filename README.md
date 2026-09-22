@@ -66,6 +66,8 @@ hole, and — given `rounds.playing_handicap` plus a stroke index on every hole 
 via `strokesReceived`/`stablefordPoints`) and `buildEclectic` (rounds × holes, low/high per hole,
 eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and the "Eclectic
 scores" section of `/insights` (per course, since hole numbers only mean something within one).
+`scoreDistribution` buckets every finished hole (eagle+ … triple+) and gives the par-or-better :
+bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
 Score colours are in `src/app/score-cell.tsx`.
 
 ### Editing a finished round

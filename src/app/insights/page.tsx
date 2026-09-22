@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById, getTeeHoleMeta } from '@/lib/insights/queries';
-import { buildEclectic, buildRoundCard } from '@/lib/insights/scorecard';
+import { buildEclectic, buildRoundCard, scoreDistribution } from '@/lib/insights/scorecard';
 import { EclecticTable } from './eclectic-table';
+import { ScoreDistributionChart } from './score-distribution';
 import { buildSgTable } from '@/lib/insights/sg-table';
 import { SgRoundTable } from './sg-round-table';
 import { buildCourseStory } from '@/lib/insights/recap';
@@ -93,15 +94,17 @@ export default async function InsightsPage({
   const summaries = roundSummaries(shots);
   const roundNames = new Map([...(await getRoundDetailsById(user.id))].map(([id, d]) => [id, d.name]));
   const teeMeta = await getTeeHoleMeta(summaries.map((r) => r.teeId));
+  const cards = summaries.map((r) => ({
+    roundId: r.roundId,
+    title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
+    playedOn: r.playedOn,
+    card: buildRoundCard(teeMeta.get(r.teeId) ?? [], shots.filter((s) => s.roundId === r.roundId)),
+  }));
   const eclectic = buildEclectic(
     (teeMeta.get(summaries[0]?.teeId ?? -1) ?? []).map(({ holeNo, par }) => ({ holeNo, par })),
-    summaries.map((r) => ({
-      roundId: r.roundId,
-      title: roundNames.get(r.roundId) ?? `${r.courseName} — ${r.teeName}`,
-      playedOn: r.playedOn,
-      card: buildRoundCard(teeMeta.get(r.teeId) ?? [], shots.filter((s) => s.roundId === r.roundId)),
-    })),
+    cards,
   );
+  const distribution = scoreDistribution(cards.map((c) => c.card));
   const sgTable = buildSgTable(summaries, roundNames);
   const rolling = rollingAverageByCategory(series, 3);
 
@@ -172,6 +175,13 @@ export default async function InsightsPage({
 
       <Section title="Eclectic scores" subtitle="Every round here, hole by hole — and the best and worst you've made on each. Tap a round for its scorecard.">
         <EclecticTable eclectic={eclectic} />
+      </Section>
+
+      <Section
+        title="How your holes finish"
+        subtitle={`Every one of the ${distribution.holesPlayed} holes you've finished here, by score to par. The ratios are how many pars (or better) you make for every bogey, and for every double or worse — higher is better.`}
+      >
+        <ScoreDistributionChart d={distribution} />
       </Section>
 
       <Section

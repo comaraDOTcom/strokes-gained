@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEclectic, buildRoundCard, scoreTone, stablefordPoints, strokesReceived, type CardHoleMeta } from './scorecard';
+import { buildEclectic, buildRoundCard, scoreDistribution, scoreTone, stablefordPoints, strokesReceived, type CardHoleMeta } from './scorecard';
 import type { EnrichedShot } from './aggregate';
 
 const META: CardHoleMeta[] = Array.from({ length: 18 }, (_, i) => ({ holeNo: i + 1, par: i % 3 === 2 ? 3 : 4, strokeIndex: ((i * 7) % 18) + 1 }));
@@ -105,5 +105,29 @@ describe('buildEclectic', () => {
 
   it('handles no rounds', () => {
     expect(buildEclectic(holes, [])).toMatchObject({ rows: [], holesCovered: 0, eclecticTotal: null });
+  });
+});
+
+describe('scoreDistribution', () => {
+  it('buckets every finished hole relative to par and works out the ratios', () => {
+    // META hole 1 is a par 4: scores 2 (eagle), 3, 4, 4, 5, 6, 7 (triple) across rounds.
+    const cards = [2, 3, 4, 4, 5, 6, 7].map((n) => buildRoundCard(META, play(1, n)));
+    const d = scoreDistribution(cards);
+    expect(d.holesPlayed).toBe(7);
+    expect(d.buckets.map((b) => [b.label, b.count])).toEqual([
+      ['Eagle+', 1], ['Birdie', 1], ['Par', 2], ['Bogey', 1], ['Double', 1], ['Triple+', 1],
+    ]);
+    expect(d.buckets[2]!.pct).toBeCloseTo(2 / 7);
+    expect(d.parOrBetter).toBe(4);
+    expect(d.parToBogey).toBe(4);
+    expect(d.parToDoublePlus).toBe(2);
+  });
+
+  it('ignores unfinished holes and has no ratio without anything to divide by', () => {
+    const d = scoreDistribution([buildRoundCard(META, play(1, 4))]);
+    expect(d.holesPlayed).toBe(1);
+    expect(d.parToBogey).toBeNull();
+    expect(d.parToDoublePlus).toBeNull();
+    expect(scoreDistribution([]).buckets.every((b) => b.pct === 0)).toBe(true);
   });
 });

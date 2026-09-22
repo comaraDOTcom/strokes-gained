@@ -37,3 +37,8 @@ export function ScoreLegend() {
     </ul>
   );
 }
+
+/** Just the fill colour for a score tone — for bars and swatches. */
+export function toneFillClass(tone: ScoreTone): string {
+  return TONE[tone].split(' ')[0]!;
+}

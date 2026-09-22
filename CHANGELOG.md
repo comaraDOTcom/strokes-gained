@@ -5,6 +5,14 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.17 — 2026-09-22
+
+### How your holes finish (Insights, per course)
+- A bar chart of **every finished hole** at the chosen course by score to par: eagle or better,
+  birdie, par, bogey, double, triple or worse — as a % of holes played, with the count.
+- Two headline ratios above it: **par or better : bogey** and **par or better : double+** — how
+  many pars (or better) you make for every dropped shot, and for every big number. Higher is better.
+
 ## 0.0.16 — 2026-09-22
 
 ### Dev: automated checks

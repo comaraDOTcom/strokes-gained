@@ -154,3 +154,54 @@ export function buildEclectic(
     holesCovered: covered,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Score distribution
+// ---------------------------------------------------------------------------
+
+export type DistributionBucket = { key: ScoreTone; label: string; count: number; pct: number };
+
+export type ScoreDistribution = {
+  holesPlayed: number;
+  /** Eagle-or-better → triple-or-worse, always all six buckets (zero counts included). */
+  buckets: DistributionBucket[];
+  parOrBetter: number;
+  bogeys: number;
+  doubleOrWorse: number;
+  /** Holes at par or better for every bogey; null when there are no bogeys to divide by. */
+  parToBogey: number | null;
+  /** Holes at par or better for every double-or-worse; null when there are none. */
+  parToDoublePlus: number | null;
+};
+
+const BUCKETS: [ScoreTone, string][] = [
+  ['eagle', 'Eagle+'],
+  ['birdie', 'Birdie'],
+  ['par', 'Par'],
+  ['bogey', 'Bogey'],
+  ['double', 'Double'],
+  ['worse', 'Triple+'],
+];
+
+/** How every finished hole across these cards went, relative to par. */
+export function scoreDistribution(cards: readonly RoundCard[]): ScoreDistribution {
+  const toPars = cards.flatMap((c) => c.holes.map((h) => h.toPar)).filter((t): t is number => t !== null);
+  const n = toPars.length;
+  const count = (tone: ScoreTone) => toPars.filter((t) => scoreTone(t) === tone).length;
+  const buckets = BUCKETS.map(([key, label]) => {
+    const c = count(key);
+    return { key, label, count: c, pct: n ? c / n : 0 };
+  });
+  const parOrBetter = toPars.filter((t) => t <= 0).length;
+  const bogeys = toPars.filter((t) => t === 1).length;
+  const doubleOrWorse = toPars.filter((t) => t >= 2).length;
+  return {
+    holesPlayed: n,
+    buckets,
+    parOrBetter,
+    bogeys,
+    doubleOrWorse,
+    parToBogey: bogeys ? parOrBetter / bogeys : null,
+    parToDoublePlus: doubleOrWorse ? parOrBetter / doubleOrWorse : null,
+  };
+}
