@@ -68,6 +68,12 @@ eclectic total once every hole is covered). Views: `/rounds/[id]/scorecard` and 
 scores" section of `/insights` (per course, since hole numbers only mean something within one).
 `scoreDistribution` buckets every finished hole (eagle+ … triple+) and gives the par-or-better :
 bogey and par-or-better : double+ ratios, shown as "How your holes finish" on `/insights`.
+Sign-in is **Google or a magic link** (Better Auth's `magicLink` plugin, `src/lib/auth/auth.ts`).
+A link is only sent to a member, the admin, or an invited address; invited addresses are recorded
+in `invited_emails` so the emailed link works in a mail app's own browser, where the `/join`
+cookie doesn't exist. Email goes through `sendEmail` in `src/lib/notify.ts` (Resend): set
+`RESEND_API_KEY`, plus `NOTIFY_FROM` on a verified domain to reach anyone but the account owner.
+
 `/trends` opens with a 90-day play calendar (`buildPlayCalendar` in `src/lib/insights/calendar.ts`,
 pure and tested: Monday-first columns, UTC date maths, gap stats), coloured by course.
 All of the scoring views live on **`/scoring`**: score history across every course, how your holes

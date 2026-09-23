@@ -5,6 +5,24 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.26 — 2026-09-23
+
+### Sign in without Google: a link by email
+- The sign-in page now offers **"email me a link"** as well as Google. No password, no account to
+  create: the link signs you in and lasts 15 minutes, once.
+- **Invites still hold.** A link is only emailed to an existing player, the admin, or an address
+  that arrived with a valid `/join/<token>` invite. Anything else is silently ignored, and the page
+  answers the same way either way, so it never reveals who has an account.
+- **The link works in any browser.** Mail apps open links in their own browser, where the invite
+  cookie doesn't exist, so an invited address is recorded server-side (new `invited_emails` table)
+  when the link is requested.
+- A used or expired link comes back to the sign-in page with an explanation instead of failing.
+- The email option only appears when sending is actually configured (`RESEND_API_KEY`), so it can
+  never be a dead end.
+
+**Setup still needed before friends can use it:** a `RESEND_API_KEY` in Vercel, and — to email
+anyone other than the Resend account owner — a `NOTIFY_FROM` address on a verified domain.
+
 ## 0.0.25 — 2026-09-22
 
 ### When you played (Trends)

@@ -13,3 +13,4 @@ data/pglite
 # Benchmark source screenshots (other golfers' round histories). NEVER commit these — only the
 # anonymised counts in src/lib/insights/benchmark-data/ go in the repo.
 benchmarks-raw/
+.vercel

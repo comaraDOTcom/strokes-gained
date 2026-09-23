@@ -232,6 +232,19 @@ export const shots = pgTable(
   }),
 );
 
+/**
+ * Emails pre-authorised to create an account, recorded when someone with a valid invite cookie
+ * asks for a magic link. The emailed link is often opened in a DIFFERENT browser (a mail app's
+ * in-app browser), where the invite cookie doesn't exist — without this the sign-up gate would
+ * reject a perfectly good invite. Rows are only ever added for an address that already proved it
+ * had the invite.
+ */
+export const invitedEmails = pgTable('invited_emails', {
+  /** Lower-cased. */
+  email: text('email').primaryKey(),
+  invitedAt: timestamp('invited_at').notNull().defaultNow(),
+});
+
 /** "Please add my course" — raised by any player, worked through by the admin. */
 export const courseRequests = pgTable(
   'course_requests',
@@ -250,6 +263,7 @@ export const courseRequests = pgTable(
 );
 
 export type User = typeof user.$inferSelect;
+export type InvitedEmail = typeof invitedEmails.$inferSelect;
 export type CourseRequest = typeof courseRequests.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type NewCourse = typeof courses.$inferInsert;

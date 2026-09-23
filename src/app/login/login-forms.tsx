@@ -33,6 +33,72 @@ export function GoogleButton({ label }: { label: string }) {
   );
 }
 
+/**
+ * Email me a link — no password, no Google. The reply is deliberately the same whether or not the
+ * address may sign in, so the page never reveals who has an account.
+ */
+export function MagicLinkForm({ invited }: { invited: boolean }) {
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setState('sending');
+    setError(null);
+    const res = await authClient.signIn.magicLink({
+      email: email.trim(),
+      callbackURL: '/',
+      // A used or expired link lands back here with an explanation, not on a home page it can't open.
+      errorCallbackURL: '/login?error=link_used',
+    });
+    if (res?.error) {
+      setError(res.error.message ?? 'Could not send the link. Try again.');
+      setState('idle');
+      return;
+    }
+    setState('sent');
+  }
+
+  if (state === 'sent') {
+    return (
+      <div className="space-y-1 rounded-lg bg-pos-soft px-3 py-3 text-sm text-pos">
+        <p className="font-medium">Check your email.</p>
+        <p>
+          If <span className="font-mono">{email.trim()}</span> can sign in, a link is on its way. It works once and
+          lasts 15 minutes.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-2">
+      <label htmlFor="magic-email" className="block text-sm text-ink-2">
+        Or use your email — no password
+      </label>
+      <input
+        id="magic-email"
+        type="email"
+        required
+        autoComplete="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="you@example.com"
+        className="w-full rounded-lg border border-line-strong bg-paper px-3 py-3 text-base"
+      />
+      <button
+        type="submit"
+        disabled={state === 'sending'}
+        className="w-full rounded-lg border border-line-strong py-3 text-base font-medium disabled:opacity-50"
+      >
+        {state === 'sending' ? 'Sending…' : invited ? 'Email me a join link' : 'Email me a sign-in link'}
+      </button>
+      {error && <p className="text-sm text-neg">{error}</p>}
+    </form>
+  );
+}
+
 /** LOCAL DEV / TESTS ONLY (rendered only when AUTH_TEST_MODE=1 outside production). */
 export function TestLoginForm() {
   const [email, setEmail] = useState('');

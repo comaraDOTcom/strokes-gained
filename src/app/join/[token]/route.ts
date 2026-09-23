@@ -1,7 +1,7 @@
 /**
  * The WhatsApp link: `/join/<INVITE_TOKEN>`. A valid token sets a short-lived
- * cookie that the sign-up gate (`mayCreateAccount`) reads, then sends the person
- * to Google sign-in. An invalid token gets nothing.
+ * cookie that the sign-up gate (`mayCreateAccount`) reads, then sends the person to the sign-in
+ * page (Google, or a link by email). An invalid token gets nothing.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { INVITE_COOKIE, isValidInvite } from '@/lib/auth/config';
