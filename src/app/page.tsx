@@ -12,6 +12,7 @@ import { requirePageUser } from '@/lib/auth/session';
 import { qualityStat } from '@/lib/insights/quality';
 import { QualityInfo } from './quality-info';
 import { RoundsTip } from './rounds-tip';
+import { GettingStarted } from './getting-started';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -44,7 +45,9 @@ export default async function Home({
 
       {roundCount > 0 && <RoundsTip />}
 
-      {roundCount === 0 ? (
+      {options.length === 0 ? (
+        <GettingStarted name={user.name} />
+      ) : roundCount === 0 ? (
         <p className="text-ink-2">
           No rounds logged yet{selected ? ` at ${selected.name}` : ''}.{' '}
           <Link className="underline" href="/rounds/new">Log a round</Link>.

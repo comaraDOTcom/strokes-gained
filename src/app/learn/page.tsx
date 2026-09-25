@@ -6,6 +6,7 @@ import { qualityStat, type QualityStat } from '@/lib/insights/quality';
 import { buildTour } from '@/lib/learn/tour';
 import { explainQuality, qualityLadder } from '@/lib/learn/explain';
 import { MIN_TAGGED } from '@/lib/insights/dispersion';
+import { LOGGING_STEPS } from '@/lib/learn/onboarding';
 import { QualityBadge } from '../quality-badge';
 import { SgTour } from './sg-tour';
 
@@ -13,6 +14,7 @@ export const dynamic = 'force-dynamic';
 
 const TOPICS = [
   { id: 'strokes-gained', label: 'Strokes gained' },
+  { id: 'logging', label: 'Logging a round' },
   { id: 'shot-quality', label: 'The hexagon' },
   { id: 'round-card', label: 'A round card' },
   { id: 'what-to-work-on', label: 'What to work on' },
@@ -54,6 +56,9 @@ export default async function LearnPage() {
               {t.label}
             </a>
           ))}
+          <Link href="/welcome?again=1" className="rounded-full border border-accent/40 bg-accent-soft px-3 py-1 text-sm text-ink-2 hover:text-ink">
+            Welcome tour
+          </Link>
         </nav>
       </header>
 
@@ -66,6 +71,38 @@ export default async function LearnPage() {
         </p>
         <SgTour tour={tour} />
       </section>
+
+      <Topic id="logging" kicker="Logging a round" title="What every shot needs">
+        <ol className="space-y-2">
+          {LOGGING_STEPS.map((s, i) => (
+            <li key={s.title} className="grid grid-cols-[2rem_1fr] gap-2 rounded-lg border bg-card p-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink font-mono text-sm text-paper">{i + 1}</span>
+              <div>
+                <p className="font-medium">{s.title}</p>
+                <p className="mt-0.5 text-sm text-ink-2">{s.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
+          <li>
+            <b className="text-ink">Penalties:</b> tick &ldquo;Penalty on this shot&rdquo;, then lateral (enter where you dropped) or
+            stroke and distance (replay from the same spot). The penalty stays with the shot that caused it.
+          </li>
+          <li>
+            <b className="text-ink">Log on the course or after.</b> Swipe the hole card, or use the strip of hole numbers, to
+            move between holes; the round resumes at the first unfinished hole.
+          </li>
+          <li>
+            <b className="text-ink">Nothing is final:</b> Undo last shot, or Edit any shot from its hole. Later shots keep their
+            results and start where the edited one finished.
+          </li>
+          <li>
+            The round page also takes a <b className="text-ink">name, notes</b> (type, dictate, or paste a voice note) and three
+            1–5 ratings for balance, tempo and tension. None of that changes strokes gained.
+          </li>
+        </ul>
+      </Topic>
 
       <Topic id="shot-quality" kicker="The hexagon" title="Shot quality: 100 is scratch">
         <p className="text-ink-2">

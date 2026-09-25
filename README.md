@@ -243,7 +243,7 @@ aborts unless every round's score and SG total match SQLite exactly).
    refuses to run against a database that has any. (For a brand-new install with no old
    SQLite data, run `db:migrate` then `db:seed` instead.)
 5. **Sign in yourself first** (Google). You become admin and inherit your rounds.
-6. Send friends `https://<app>/join/<INVITE_TOKEN>` on WhatsApp.
+6. Send friends `https://<app>/join/<INVITE_TOKEN>` on WhatsApp (see "Inviting someone").
 
 If `/login` returns a 500 with "You are using the default secret", `BETTER_AUTH_SECRET` isn't set
 in Vercel's **Production** environment (all seven variables above must be). Env changes only
@@ -252,6 +252,40 @@ apply to a new deployment, so redeploy after adding them. Runtime logs:
 
 Backups are now Neon's (point-in-time restore on the free tier is short — export
 occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).
+
+## Inviting someone: the sign-up flow
+
+What a new player goes through, and where each piece lives:
+
+1. **The link** `/join/<INVITE_TOKEN>` (`src/app/join/[token]/route.ts`) sets the invite cookie and
+   lands on `/login?invited=1`, which reads as an invitation: what the app does in three lines, then
+   Google or an emailed link.
+2. **After signing in** every sign-in method sends them to **`/welcome`** (`src/app/welcome/`): a
+   five-screen tour (why strokes gained, how a shot is scored using `buildTour()`'s real numbers,
+   how to log a round, what comes back and when, add-to-home-screen for their phone). It ends on
+   "Log your first round". It only shows unasked to a player with **no rounds** who hasn't skipped
+   it in that browser (`sg_welcomed` cookie, set by `POST /api/onboarding`); anyone with rounds is
+   bounced to `/`. The rules and copy are pure and tested in `src/lib/learn/onboarding.ts`;
+   Learn's "Welcome tour" link reopens it (`?again=1`).
+3. **Rounds with no rounds yet** shows a three-step Getting started card (`src/app/getting-started.tsx`).
+4. **Their first round** shows a dismissible "Your first shot" card above the hole strip until the
+   first hole is finished (`first-shot-tip.tsx`, `firstRound` on `RoundEntry`).
+
+**Add to Home Screen.** `src/app/manifest.ts` + `public/icon-192.png` / `icon-512.png` (generated
+from `src/app/icon.svg` by `scripts/make-pwa-icons.sh`; re-run when the mark changes, alongside
+`apple-icon.png`) and the `appleWebApp` / `viewport` settings in `layout.tsx` make the installed app
+open full screen on Rounds. The middleware lets the manifest and icons through without a session.
+Tell people to **sign in first, then add it**: a magic link opens in Safari, not in the installed app,
+so adding before signing in gives them a signed-out icon.
+
+A WhatsApp message that covers the essentials:
+
+> Here's the strokes-gained app I mentioned: https://<app>/join/<INVITE_TOKEN>
+> Sign in with Google (or get a link by email), and it'll walk you through it in two minutes.
+> Per shot it only needs where the ball finished and how far you had left. Log your next round
+> on the course or after from your card, and you'll get a recap of where the strokes went.
+> Once you're signed in, add it to your home screen (Share → Add to Home Screen) so it opens like an app.
+> If your course isn't in the list, request it on the Courses page and I'll add it.
 
 ## Course requests
 
