@@ -9,6 +9,8 @@ import { sgClass } from './recap-parts';
 import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
+import { qualityStat } from '@/lib/insights/quality';
+import { QualityBadge } from './quality-badge';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -49,7 +51,9 @@ export default async function Home({
           {rounds.map((r) => {
             const t = r.traditional;
             const d = detailsById.get(r.roundId);
-            const story = buildRoundRecap(shots.filter((s) => s.roundId === r.roundId));
+            const roundShots = shots.filter((s) => s.roundId === r.roundId);
+            const story = buildRoundRecap(roundShots);
+            const quality = qualityStat(roundShots);
             const bestHole = story.bestHoles[0];
             const worstHole = story.worstHoles[0];
             const ratings = [
@@ -71,6 +75,8 @@ export default async function Home({
                     </p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                  <QualityBadge stat={quality} />
                   <div className="text-right">
                     <p className="font-semibold">
                       {r.grossScore}{' '}
@@ -82,6 +88,7 @@ export default async function Home({
                     <p className={`text-sm font-medium ${r.sgTotal >= 0 ? 'text-pos' : 'text-neg'}`}>
                       SG {fmtSg(r.sgTotal)}
                     </p>
+                  </div>
                   </div>
                 </div>
 
