@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { fixGolfWords, type Fix } from '@/lib/voice/vocabulary';
 
 /**
  * Tap to start, tap to stop. NOT hold-to-talk: on iOS a long press on any element starts text
@@ -19,7 +20,11 @@ const MAX_SECONDS = 45;
 
 type Attempt = {
   id: number;
+  /** What came back, after golf words are snapped back into place. */
   text: string;
+  /** What was actually heard, kept so a "fix" can never hide a mishearing. */
+  heard: string;
+  fixes: Fix[];
   source: 'server' | 'browser';
   seconds: number;
   bytes: number | null;
@@ -110,7 +115,8 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
         else setError(data.error ?? 'Transcription failed.');
         return;
       }
-      add({ text: data.text, source: 'server', seconds, bytes: blob.size, ms: Math.round(performance.now() - started) });
+      const { text, fixes } = fixGolfWords(data.text);
+      add({ text, heard: data.text, fixes, source: 'server', seconds, bytes: blob.size, ms: Math.round(performance.now() - started) });
     } catch {
       setError('Could not reach the server. Are you offline?');
     } finally {
@@ -135,11 +141,12 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
     setState('listening');
 
     asr.onresult = (e) => {
-      const text = e.results[0][0].transcript.trim();
-      if (!text) return;
+      const heard = e.results[0][0].transcript.trim();
+      if (!heard) return;
       gotResultRef.current = true;
       const seconds = (Date.now() - startedAtRef.current) / 1000;
-      add({ text, source: 'browser', seconds, bytes: null, ms: Math.round(seconds * 1000) });
+      const { text, fixes } = fixGolfWords(heard);
+      add({ text, heard, fixes, source: 'browser', seconds, bytes: null, ms: Math.round(seconds * 1000) });
     };
     asr.onerror = (e) => {
       // "aborted" just means we stopped it, and "no-speech" means it heard nothing — neither is a fault.
@@ -252,6 +259,17 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
           {attempts.map((a) => (
             <li key={a.id} className="rounded-lg border bg-paper p-3">
               <p className="text-base">{a.text}</p>
+              {a.fixes.length > 0 && (
+                <p className="mt-1 text-xs text-ink-2">
+                  Golf words put back:{' '}
+                  {a.fixes.map((f, i) => (
+                    <span key={`${f.from}-${i}`}>
+                      {i > 0 && ', '}
+                      <span className="text-muted line-through">{f.from}</span> → <span className="font-medium">{f.to}</span>
+                    </span>
+                  ))}
+                </p>
+              )}
               <p className="mt-1 font-mono text-[11px] text-muted">
                 {a.source} · {a.seconds.toFixed(1)}s
                 {a.bytes !== null && ` · ${(a.bytes / 1024).toFixed(0)}KB`} · {a.ms}ms
