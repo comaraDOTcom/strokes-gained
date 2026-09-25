@@ -6,6 +6,13 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.36 — 2026-09-25
+
+### Fix: the course map's background
+- The Played page's map showed "API KEY REQUIRED" tiles: CARTO's basemaps now need a key. It now
+  uses OpenStreetMap's standard map, which needs none. A different provider can be set with
+  `NEXT_PUBLIC_MAP_TILE_URL` (see `.env.example`) without a code change.
+
 ## 0.0.35 — 2026-09-25
 
 ### Courses played, on a map
