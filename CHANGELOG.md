@@ -5,6 +5,20 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.27 — 2026-09-25
+
+### Courses played, on a map
+- New **Played** page: every golf course in Ireland, North and South, on a map. Tick off the ones
+  you've played and build up your list, grouped by county, with counts: courses played, counties
+  out of 32, and 18- and 9-hole courses.
+- Search by name or county, or tap a dot on the map. Green = played.
+- Courses where you've **logged a round** count automatically (the admin links each scorecard
+  course to its map entry on the Courses page).
+- Your list is private to you, like your rounds.
+- The course list comes from OpenStreetMap (© OpenStreetMap contributors, ODbL), refreshed by a new
+  GitHub Actions workflow. Pitch & putt, driving ranges and duplicates are filtered out, and anything
+  it gets wrong can be corrected in `overrides.json`.
+
 ## 0.0.26 — 2026-09-23
 
 ### Sign in without Google: a link by email
