@@ -6,6 +6,15 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.35 — 2026-09-25
+
+### Backdrop choice moves to a new Profile page
+- **Rounds is back to just your rounds.** The scene banner and the Backdrop picker are gone from the
+  top of the page. The course scene at the bottom of every page stays.
+- **A new Profile page**, opened from your name (or initial, on a phone) in the top bar. It shows your
+  name and email, and the **Backdrop** setting: a preview of the current scene, then Auto or one of
+  the four seasons. It's still saved on this device.
+
 ## 0.0.34 — 2026-09-25
 
 ### Sign-up flow: a welcome tour, and the app on your home screen

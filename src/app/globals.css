@@ -86,7 +86,7 @@
   }
 }
 
-/* The Rounds page banner and the picker's thumbnails: the whole scene (sky, pines, green, creek),
+/* The Profile page preview and the picker's thumbnails: the whole scene (sky, pines, green, creek),
    cropped to fill the box, rather than the bottom-anchored strip. */
 .golf-scene-hero {
   background-size: cover;
