@@ -13,6 +13,7 @@
  * every sandbox. Data © OpenStreetMap contributors, ODbL — the app credits it wherever it's shown.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { resolve } from 'node:path';
 import {
   buildDirectory,
@@ -24,7 +25,18 @@ import {
   type Overrides,
 } from '../src/lib/directory/build';
 
-const OVERPASS = process.env.OVERPASS_URL ?? 'https://overpass-api.de/api/interpreter';
+// Public Overpass instances, tried in turn. OVERPASS_URL puts your own choice first.
+const ENDPOINTS = [
+  process.env.OVERPASS_URL,
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+].filter((u): u is string => Boolean(u));
+
+// Node's default 250 ms per-address connect attempt (IPv6 vs IPv4 racing) times out on some CI
+// runners before a slow Overpass host answers.
+setDefaultAutoSelectFamilyAttemptTimeout(5_000);
+
 const DATA = resolve(import.meta.dirname, '../src/lib/directory/data');
 const OUT = resolve(DATA, 'ireland.json');
 const OVERRIDES = resolve(DATA, 'overrides.json');
@@ -35,24 +47,32 @@ const AREAS: Record<Country, string> = {
 };
 
 async function overpass(query: string): Promise<any[]> {
-  for (let attempt = 1; ; attempt++) {
-    const res = await fetch(OVERPASS, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'strokes-gained course directory (https://github.com/comaraDOTcom/strokes-gained)',
-      },
-      body: new URLSearchParams({ data: query }),
-    });
-    if (res.ok) return ((await res.json()) as { elements: any[] }).elements;
-    if ((res.status === 429 || res.status >= 500) && attempt < 5) {
-      const wait = 15_000 * attempt;
-      console.warn(`Overpass HTTP ${res.status}; retrying in ${wait / 1000}s`);
-      await new Promise((r) => setTimeout(r, wait));
-      continue;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    for (const url of ENDPOINTS) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'strokes-gained course directory (https://github.com/comaraDOTcom/strokes-gained)',
+          },
+          body: new URLSearchParams({ data: query }),
+          signal: AbortSignal.timeout(10 * 60_000),
+        });
+        if (res.ok) return ((await res.json()) as { elements: any[] }).elements;
+        lastError = new Error(`${url} -> HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+        // A 4xx other than rate limiting means the query itself is wrong: don't retry it.
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) throw lastError;
+      } catch (err) {
+        if (err === lastError) throw err;
+        lastError = err;
+      }
+      console.warn(`Overpass attempt ${attempt} at ${url} failed: ${lastError instanceof Error ? lastError.message : lastError}`);
     }
-    throw new Error(`Overpass HTTP ${res.status}: ${(await res.text()).slice(0, 500)}`);
+    await new Promise((r) => setTimeout(r, 20_000 * attempt));
   }
+  throw lastError;
 }
 
 async function fetchCourses(country: Country): Promise<OsmElement[]> {
