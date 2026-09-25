@@ -16,6 +16,7 @@ import {
   type PuttBreak,
   type PuttSlope,
 } from '@/lib/rounds/entry';
+import { FirstShotTip } from './first-shot-tip';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
 
@@ -122,8 +123,11 @@ export function RoundEntry({
   holes,
   initialShotsByHole,
   initialHoleNo,
+  firstRound = false,
 }: {
   roundId: number;
+  /** The player's first round ever: show the how-to-log tip until a hole is finished. */
+  firstRound?: boolean;
   roundName: string | null;
   /** Round setting (Brief/Detailed): show the optional per-shot tags open by default? */
   detailedEntry: boolean;
@@ -159,6 +163,7 @@ export function RoundEntry({
   const hole = holes.find((h) => h.holeNo === currentHoleNo)!;
   const holeShots = shotsByHole[currentHoleNo] ?? [];
   const holeDone = holeShots.some((s) => s.holed);
+  const anyHoleDone = Object.values(shotsByHole).some((list) => list.some((s) => s.holed));
 
   const nextShotNo = editingShotNo ?? holeShots.length + 1;
 
@@ -343,6 +348,8 @@ export function RoundEntry({
           {playedOn} · Round score so far: {roundTotals.grossScore} · SG {roundTotals.sg.toFixed(2)}
         </p>
       </header>
+
+      {firstRound && !anyHoleDone && <FirstShotTip />}
 
       <nav ref={holeStripRef} className="flex gap-1 overflow-x-auto pb-1" aria-label="Holes">
         {holes.map((h) => {

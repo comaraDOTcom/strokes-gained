@@ -37,15 +37,38 @@ export default async function LoginPage({
     <main className="golf-scene flex-1 px-4 pt-10 sm:pt-16 pb-72">
       <div className="max-w-sm mx-auto space-y-6 rounded-2xl border bg-card/95 backdrop-blur-sm p-6 shadow-sm">
         <div className="space-y-3">
-          <Logo size={44} />
+          <div className="flex items-center justify-between gap-3">
+            <Logo size={44} />
+            {invited && (
+              <span className="rounded-full bg-pos-soft px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-pos">
+                You’re invited
+              </span>
+            )}
+          </div>
           <h1 className="text-3xl font-semibold leading-tight">Every shot, scored against a scratch baseline.</h1>
-          <p className="text-ink-2">
-            Log your rounds shot by shot and see where practice actually pays off.
-          </p>
+          {invited ? (
+            /* An invitation, not a login wall: say what they're joining before asking for an account. */
+            <ul className="space-y-1.5 text-ink-2">
+              {[
+                'Log each shot: where it finished and what you had left.',
+                'See which part of your game costs you strokes, against a scratch golfer.',
+                'Get a practice focus, not just a score.',
+              ].map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-ink-2">Log your rounds shot by shot and see where practice actually pays off.</p>
+          )}
         </div>
 
         {invited && (
-          <p className="text-sm rounded-lg bg-pos-soft text-pos px-3 py-2">You’re invited — sign in to join.</p>
+          <p className="text-sm text-ink-2">
+            Sign in with Google, or have a link emailed to you. No password, and a two-minute tour follows.
+          </p>
         )}
         {message && <p className="text-sm rounded-lg bg-neg-soft text-neg px-3 py-2">{message}</p>}
 

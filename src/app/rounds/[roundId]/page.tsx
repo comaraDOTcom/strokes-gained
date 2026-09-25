@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { asc, eq } from 'drizzle-orm';
+import { asc, count, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { db } from '@/db/client';
-import { courses, tees, teeHoles, shots, user as userTable } from '@/db/schema';
+import { courses, tees, teeHoles, shots, rounds as roundsTable, user as userTable } from '@/db/schema';
 import { requirePageUser } from '@/lib/auth/session';
 import { getRoundForViewer, HttpError } from '@/lib/auth/guards';
 import { fmtSg } from '@/lib/insights/chart-colors';
@@ -35,12 +35,15 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
     throw e;
   }
 
-  const [[course], [tee], holes, allShots] = await Promise.all([
+  const [[course], [tee], holes, allShots, [mine]] = await Promise.all([
     db.select().from(courses).where(eq(courses.id, round.courseId)),
     db.select().from(tees).where(eq(tees.id, round.teeId)),
     db.select().from(teeHoles).where(eq(teeHoles.teeId, round.teeId)),
     db.select().from(shots).where(eq(shots.roundId, roundId)).orderBy(asc(shots.holeNo), asc(shots.shotNo)),
+    // Is this the viewer's first round? (Drives the first-shot tip; the admin's read-only view never sees it.)
+    db.select({ n: count() }).from(roundsTable).where(eq(roundsTable.userId, viewer.id)),
   ]);
+  const firstRound = isOwner && (mine?.n ?? 0) <= 1;
   holes.sort((a, b) => a.holeNo - b.holeNo);
 
   const shotsByHole: Record<number, typeof allShots> = {};
@@ -98,6 +101,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
         holes={holes.map((h) => ({ holeNo: h.holeNo, par: h.par, strokeIndex: h.strokeIndex, yards: h.yards }))}
         initialShotsByHole={shotsByHole}
         initialHoleNo={computeResumeHole(shotsByHole)}
+        firstRound={firstRound}
       />
       <div className="mt-6">
         <RoundDetailsForm

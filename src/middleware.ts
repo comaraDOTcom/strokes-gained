@@ -23,5 +23,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|golf-scene-).*)'],
+  // Static assets that must load without a session: the sign-in page's artwork (every season), and
+  // everything a home-screen install fetches (manifest + icons).
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icon-192.png|icon-512.png|manifest.webmanifest|golf-scene-).*)'],
 };

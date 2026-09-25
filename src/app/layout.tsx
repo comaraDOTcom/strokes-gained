@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { cookies } from 'next/headers';
@@ -22,6 +22,18 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Strokes Gained',
   description: 'Strokes-gained golf tracking',
+  manifest: '/manifest.webmanifest',
+  // iOS: "Add to Home Screen" opens full screen, titled, with apple-icon.png.
+  appleWebApp: { capable: true, title: 'Strokes Gained', statusBarStyle: 'default' },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Lets the page extend under the iPhone notch and home indicator when installed; the nav and the
+  // welcome tour's bottom bar pad themselves with env(safe-area-inset-*).
+  viewportFit: 'cover',
+  themeColor: '#faf9f4',
 };
 
 const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
@@ -46,7 +58,7 @@ export default async function RootLayout({
         {/* Phone/tablet: logo + actions pinned on the first row, links on their own row below,
             wrapping rather than scrolling (nothing out of reach). From `lg` up it's a single row:
             logo · links · actions. */}
-        <nav className="border-b bg-card sticky top-0 z-10">
+        <nav className="border-b bg-card sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 max-w-5xl mx-auto text-sm font-medium">
             <Link href="/" className="flex items-center gap-2 mr-auto" aria-label="Strokes Gained home">
               <Logo size={28} />

@@ -5,6 +5,38 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.34 — 2026-09-25
+
+### Sign-up flow: a welcome tour, and the app on your home screen
+For a new player, the path is now: WhatsApp link → an invitation (not a login wall) → sign in →
+a two-minute welcome tour → their first round, with help at each step.
+- **The invite page says what you're joining:** three lines on what the app does, then Google or
+  an emailed link. No password, and it says a short tour follows.
+- **Welcome tour (`/welcome`)**, five swipeable screens after signing in, all skippable:
+  1. *Why:* "Your scorecard says 84. It doesn't say why." Counts vs strokes gained, with an
+     example split by area.
+  2. *How it's scored:* the one sum, and the Learn hub's bogey scored by the real engine
+     (drive +0.06, approach −0.55, … = −0.91).
+  3. *Logging a round:* where it finished, how far to the hole (not how far you hit it), Holed;
+     Brief first; nothing is final.
+  4. *What you get back:* a recap after one round, Insights after a few, Trends and What to work on
+     after four; honest about small samples.
+  5. *Set up your phone:* "Add to Home Screen" instructions for the phone in hand (iPhone Safari,
+     another iOS browser, Android, or a laptop), and a nudge to check the course library. Ends on
+     **Log your first round**.
+  It only appears unasked to a player with no rounds; Skip or finishing remembers that in the
+  browser, and Learn has a **Welcome tour** link to reopen it any time.
+- **Rounds, before the first round:** a three-step "Getting started" card (course, first round,
+  recap) instead of an empty list.
+- **The first shot:** on a player's first round, a dismissible card on the round page walks the
+  three inputs until the first hole is finished.
+- **Learn** gains a **Logging a round** topic (the same three steps, plus penalties, moving between
+  holes, editing and notes).
+- **Home-screen app:** a web app manifest, 192/512px icons (`scripts/make-pwa-icons.sh`), iOS
+  full-screen mode with a safe-area-aware nav, and a theme colour, so "Add to Home Screen" gives
+  an icon that opens straight to Rounds. Sign in *before* adding it: the emailed link opens in
+  Safari, not the home-screen app.
+
 ## 0.0.33 — 2026-09-25
 
 ### Seasonal backdrops on the Rounds page
