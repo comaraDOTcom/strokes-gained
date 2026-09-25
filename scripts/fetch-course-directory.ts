@@ -173,7 +173,7 @@ async function main() {
     { courses: [{ country: 'IE', elements: ie }, { country: 'NI', elements: ni }], holes, areaNames },
     overrides,
   );
-  const merged = mergeWithPrevious(courses, previous.courses, overrides);
+  const merged = mergeWithPrevious(courses, previous.courses, overrides, report.filteredKeys);
 
   const section = (title: string, items: string[]) => {
     if (items.length) console.log(`\n${title} (${items.length}):\n  ${items.join('\n  ')}`);

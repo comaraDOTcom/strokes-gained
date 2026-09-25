@@ -209,6 +209,8 @@ export type BuildReport = {
   tooSmall: string[];
   duplicates: string[];
   noCounty: string[];
+  /** Keys left out on purpose by a rule (not a course, too small, duplicate), for `mergeWithPrevious`. */
+  filteredKeys: Set<string>;
 };
 
 const round5 = (n: number) => Math.round(n * 1e5) / 1e5;
@@ -244,7 +246,7 @@ function sameWords(a: string, b: string): boolean {
 }
 
 export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { courses: DirectoryCourse[]; report: BuildReport } {
-  const report: BuildReport = { unnamed: 0, unnamedList: [], noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [] };
+  const report: BuildReport = { unnamed: 0, unnamedList: [], noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [], filteredKeys: new Set() };
   const mapped = countMappedHoles(input.courses.flatMap((c) => c.elements), input.holes);
 
   type Candidate = DirectoryCourse & { diag: number };
@@ -267,11 +269,13 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
       if (overrides.exclude?.[key]) continue;
       if (NOT_A_COURSE.test(name) || tags.golf === 'pitch_and_putt' || tags['golf:course'] === 'pitch_and_putt') {
         report.notACourse.push(`${key} ${name}`);
+        report.filteredKeys.add(key);
         continue;
       }
       const diag = e.bounds ? bboxDiagonal(e.bounds) : 0;
       if (e.bounds && diag < MIN_COURSE_DIAGONAL_M && !CLUB_NAME.test(name)) {
         report.tooSmall.push(`${key} ${name} (${Math.round(diag)}m)`);
+        report.filteredKeys.add(key);
         continue;
       }
       const p = position(e);
@@ -303,6 +307,7 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
     const dupe = kept.find((k) => sameClub(k.name, c.name) && metresBetween(k, c) < 3000);
     if (dupe) {
       report.duplicates.push(`${c.key} ${c.name} (same as ${dupe.key})`);
+      report.filteredKeys.add(c.key);
       if (dupe.holes === null && c.holes !== null) dupe.holes = c.holes;
       if (dupe.website === null && c.website !== null) dupe.website = c.website;
       continue;
@@ -340,16 +345,19 @@ export function sortDirectory(list: DirectoryCourse[]): DirectoryCourse[] {
  *
  * Keys are referenced by players' played lists, so a course that has disappeared from OSM (deleted,
  * re-drawn with a new id, or temporarily broken) is carried over from the previous directory and
- * flagged `stale` instead of silently vanishing. Excluding it in overrides.json drops it for real.
+ * flagged `stale` instead of silently vanishing. Excluding it in overrides.json drops it for real, and
+ * so does a filter rule that now leaves it out on purpose (`filtered`: a par 3, a pitch & putt, a
+ * duplicate) — those didn't vanish, they were judged not to be courses.
  */
 export function mergeWithPrevious(
   next: DirectoryCourse[],
   previous: DirectoryCourse[],
   overrides: Overrides = {},
+  filtered: ReadonlySet<string> = new Set(),
 ): { courses: DirectoryCourse[]; carried: DirectoryCourse[] } {
   const keys = new Set(next.map((c) => c.key));
   const carried = previous
-    .filter((p) => !keys.has(p.key) && !overrides.exclude?.[p.key])
+    .filter((p) => !keys.has(p.key) && !overrides.exclude?.[p.key] && !filtered.has(p.key))
     .map((p) => ({ ...p, stale: true as const }));
   const before = new Map(previous.map((p) => [p.key, p]));
   const fresh = next.map((c) => {

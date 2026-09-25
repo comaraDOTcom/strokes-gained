@@ -213,6 +213,11 @@ describe('mergeWithPrevious', () => {
     expect(carried).toHaveLength(1);
   });
 
+  it('does not carry over a course a filter rule now leaves out on purpose (e.g. a par 3)', () => {
+    const { courses } = mergeWithPrevious([c('osm:way/1', 'A')], [c('osm:way/1', 'A'), c('osm:way/2', 'Glen Par 3')], {}, new Set(['osm:way/2']));
+    expect(courses.map((x) => x.key)).toEqual(['osm:way/1']);
+  });
+
   it('keeps a known hole count when a later fetch has none, but takes a new count', () => {
     const prev = [{ ...c('osm:way/1', 'A'), holes: 18 }, { ...c('osm:way/2', 'B'), holes: 9 }];
     const { courses } = mergeWithPrevious([c('osm:way/1', 'A'), { ...c('osm:way/2', 'B'), holes: 18 }], prev);

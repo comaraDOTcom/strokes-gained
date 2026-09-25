@@ -1,6 +1,16 @@
 {
   "exclude": {},
-  "set": {},
+  "set": {
+    "osm:way/23017412": {
+      "holes": 18
+    },
+    "osm:way/28278009": {
+      "holes": 18
+    },
+    "osm:way/1413316758": {
+      "holes": 36
+    }
+  },
   "add": [
     {
       "key": "manual:lahinch",
