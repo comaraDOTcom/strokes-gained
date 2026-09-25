@@ -79,3 +79,83 @@
     mask-composite: intersect;
   }
 }
+
+/*
+ * Course map (/profile): flag pins and cluster bubbles, drawn as Leaflet divIcons
+ * (src/app/profile/course-map.tsx). Leaflet's own icon box is made transparent.
+ */
+.course-pin-icon,
+.course-cluster-icon {
+  background: none;
+  border: none;
+}
+.course-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-muted);
+  box-shadow: 0 1px 2px rgb(22 34 28 / 0.25);
+  transition: transform 120ms ease;
+}
+.course-pin svg {
+  width: 13px;
+  height: 13px;
+}
+.course-pin svg path:first-child {
+  stroke: var(--color-ink-2);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  fill: none;
+}
+.course-pin svg path:last-child {
+  fill: var(--color-ink-2);
+}
+.course-pin--played {
+  background: var(--color-pos);
+  border-color: var(--color-card);
+}
+.course-pin--played svg path:first-child {
+  stroke: var(--color-card);
+}
+.course-pin--played svg path:last-child {
+  fill: var(--color-card);
+}
+.course-pin--ranked {
+  border: 2.5px solid var(--color-eagle);
+}
+.leaflet-marker-icon:hover .course-pin {
+  transform: scale(1.15);
+}
+.course-cluster {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 0 0 3px rgb(22 34 28 / 0.14);
+  opacity: 0.92;
+}
+.course-cluster__played {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--color-pos);
+  color: var(--color-card);
+  border: 1.5px solid var(--color-card);
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+}

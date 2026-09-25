@@ -11,7 +11,8 @@ pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 - New **Played** page: every golf course in Ireland, North and South, on a map. Tick off the ones
   you've played and build up your list, grouped by county, with counts: courses played, counties
   out of 32, and 18- and 9-hole courses.
-- Search by name or county, or tap a dot on the map. Green = played.
+- Search by name or county, or tap a flag on the map. Green = played. Zoomed out, nearby courses
+  group into numbered bubbles, with a green badge counting the ones you've played.
 - Courses where you've **logged a round** count automatically (the admin links each scorecard
   course to its map entry on the Courses page).
 - Your list is private to you, like your rounds.

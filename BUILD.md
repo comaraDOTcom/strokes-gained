@@ -330,8 +330,10 @@ automatically.
 - **API:** `PUT /api/played-courses {key, played}` (own list only; key must be in the directory);
   `PATCH /api/courses/[courseId] {directoryKey | null}` (admin only, 404 otherwise).
 - **UI:** `/profile` (nav "Played"): stat tiles (played / total, counties / 32, 18-hole, 9-hole);
-  Leaflet map (CARTO Positron basemap, green dot = played, tap for details and a toggle;
-  wheel-zoom only after a click); search + county filter with Played toggles (optimistic);
+  Leaflet map (CARTO Positron basemap) with Leaflet.markercluster: zoomed out, count bubbles (a
+  green badge = played courses inside); from zoom 11, one flag pin per course (green = played, gold
+  ring = top 100), tap for details and a toggle; picking a course from a list zooms to its pin;
+  wheel-zoom only after a click; search + county filter with Played toggles (optimistic);
   "Your courses" grouped by county. Private to the player, like rounds.
 - **Tests required:** `normaliseCounty` table; website sanitising; hole counting (smallest box,
   distinct refs, unnumbered fallback); filters; duplicate merge vs. near-name neighbours;

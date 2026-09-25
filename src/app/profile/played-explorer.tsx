@@ -116,22 +116,25 @@ export function PlayedExplorer({
       <section ref={mapSection} className="border rounded-xl bg-card p-4 space-y-3 scroll-mt-28">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold text-lg">Map</h2>
-          <p className="flex items-center gap-3 font-mono text-xs text-muted">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted">
             <span className="flex items-center gap-1.5">
               <span className="inline-block size-3 rounded-full bg-pos" /> played
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block size-2 rounded-full border border-muted bg-card" /> not yet
+              <span className="inline-block size-3 rounded-full border-[1.5px] border-muted bg-card" /> not yet
             </span>
             {hasTop100 && (
               <span className="flex items-center gap-1.5">
                 <span className="inline-block size-3 rounded-full border-2 border-eagle bg-card" /> top 100
               </span>
             )}
+            <span className="flex items-center gap-1.5" title="Zoom in to split a group; the green number is how many you've played">
+              <span className="inline-flex size-4 items-center justify-center rounded-full bg-ink text-[8px] text-paper">5</span> group
+            </span>
           </p>
         </div>
         <CourseMap courses={mapCourses} onToggle={toggle} focus={focus} top100Label={top100.label} />
-        <p className="text-xs text-muted">Tap a dot to tick a course off. Click the map first to zoom with your scroll wheel.</p>
+        <p className="text-xs text-muted">Zoom in (or tap a group) to see each course; tap a flag to tick it off. Click the map first to zoom with your scroll wheel.</p>
       </section>
 
       {error && <p className="text-neg text-sm">{error}</p>}
