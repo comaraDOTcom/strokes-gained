@@ -238,6 +238,30 @@ Load the `dataviz` skill before writing any chart code.
 State plainly how many rounds are in the DB and what is not yet meaningful. With
 fewer than 4 rounds, say so instead of drawing a trend line.
 
+### What to work on (roadmap) — replaces "Practice priority" on `/trends`
+
+`src/lib/insights/roadmap.ts` (pure, tested), with Broadie's weights in
+`src/lib/insights/importance-broadie.ts` (one reviewable data file, like the baseline).
+Each area (the same buckets practice priority used: putting / short-game / approach
+bands, bunker greenside / fairway, off the tee, recovery) gets three numbers, kept apart:
+
+- **Importance**: Broadie's share of scoring differences for the area's part of the game
+  (driving / approach > 100y / short game ≤ 100y / putting — *his* 100-yard line, so the
+  app's "Approach <100y" band counts as short game), split across bands by how often you
+  hit each one, over all rounds. `weight` = share × 4, so an average part of the game is 1.
+  Tiers: high ≥ 1.2, mid ≥ 0.8, else lower.
+- **Opportunity**: strokes lost to scratch per 18 holes over the last 8 rounds,
+  `max(0, −ΣSG × 18 / holes played)`. Low < 0.25, medium < 0.75, high ≥ 0.75. Fewer than 10
+  shots = "treat it as a hint".
+- **Trend**: the later half of those rounds vs the earlier half, per-shot SG, labelled with
+  the same `classifySignalStrength` gate. A change under 0.1 strokes per 18 is flat.
+
+Ranked by **priority = importance weight × opportunity**. The group weight, not the band's
+share, because opportunity already counts how often you hit the shot. Penalty strokes stay
+inside the SG of the shot that caused them, so they are not an area of their own; each area
+reports its penalty count in its sentence. The importance shares are placeholders
+(`status: 'placeholder'`) until transcribed from the book, and the page says so.
+
 ### Cross-course caveat — must be surfaced in the UI
 
 The baseline is length-only. It calibrates to within 0.25 strokes at Elm Park

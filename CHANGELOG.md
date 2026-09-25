@@ -5,6 +5,27 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.27 — 2026-09-25
+
+### What to work on (Trends)
+"Practice priority" is now **What to work on**: every area of your game ranked by how much it
+matters *and* how much it costs you, with the trend alongside.
+- **Importance to scoring:** a bar showing how much each part of the game (driving, approach over
+  100 yards, short game, putting) separates golfers' scores, from Mark Broadie's *Every Shot
+  Counts*, with your own strokes a round against scratch in each.
+- **Three numbers per area** (a distance band, a bunker type, off the tee, recovery):
+  - **Importance**: that part of the game's share, split by how often you hit the shot.
+  - **Opportunity**: strokes a round you lose there against scratch over your last 8 rounds,
+    rated low, medium or high.
+  - **Trend**: your recent rounds against the ones before, with a small bar per round, and the
+    same "signal / limited data / too few shots" label as the category trend.
+- **The top five areas as cards**, ranked by importance × opportunity, each with one plain
+  sentence, e.g. "You lose 2.0 strokes a round here; it's a high-importance area and it may be
+  getting worse." An area with under 10 shots says to treat it as a hint.
+- **Holding up:** the areas where you gain on scratch. **All areas:** the full list, folded away.
+- The importance shares are **rounded placeholders** until they're checked against the book, and
+  the page says so.
+
 ## 0.0.26 — 2026-09-23
 
 ### Sign in without Google: a link by email
