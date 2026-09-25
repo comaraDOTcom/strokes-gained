@@ -8,9 +8,10 @@ snippets, not the page itself.
 
 ## TL;DR
 
-- The "Golf Ireland app" is not new: it launched in April 2021 and is built by **DotGolf**
-  (a Golf New Zealand subsidiary) on the same codebase as England's MyEG, My Scottish Golf and
-  the Golf NZ app. It got minor updates in June and July 2026.
+- The "Golf Ireland app" is not new: it launched in April 2021 and is built by **DotGolf**,
+  which since July 2026 is **wholly owned by The R&A** (Golf New Zealand founded it; The R&A took
+  50% in August 2023 and bought the rest in July 2026). It shares a codebase with England's MyEG,
+  My Scottish Golf and the Golf NZ app. It got minor updates in June and July 2026.
 - There is **no golfer-facing API, no data export and no "sign in with Golf Ireland"**. The only
   APIs are the DotGolf **ISV API** and **Union API** on `clubhouse.golfireland.ie`, which are
   licensed to club-software vendors and tournament organisers, priced per club, and not designed
@@ -32,7 +33,7 @@ snippets, not the page itself.
 
 | | |
 |---|---|
-| Publisher / developer | Golf Ireland; built and published by **DotGolf NZ LP** (Albany, Auckland; `apps@dotgolf.co.nz`) |
+| Publisher / developer | Golf Ireland; built and published by **DotGolf NZ LP** (Albany, Auckland; `apps@dotgolf.co.nz`). DotGolf was founded in 1999 and owned by Golf New Zealand; The R&A bought 50% in Aug 2023 and the remaining 50% in Jul 2026, so it is now an R&A subsidiary run as a standalone business (about 55 staff, 21 national-federation customers, 2.5m+ golfers) |
 | Package / store ids | Android `ie.golfireland.mygolf`; iOS id `1525650676` |
 | Launched | April 2021, alongside WHS |
 | Recent releases | 9 Jun 2026 and 15 Jul 2026 — "general improvements and bug fixes" (e.g. text when no active tees exist for scorecard creation) **verify** |
@@ -77,6 +78,13 @@ It standardises "retrieval of a Handicap Index and the return of away scores" be
 associations and accredited software, and says third-party products may verify golfer data
 programmatically "depending on the organisation's approved use case". In practice the national
 association (Golf Ireland) decides who gets in.
+
+The ownership change matters here: The R&A now owns the platform Golf Ireland runs on *and*
+co-governs WHS. When it took full ownership it stated that WHS "remains platform agnostic" and
+that all accredited ISVs keep "unfettered access". So the neutral, R&A-sanctioned door for a new
+entrant is the **accreditation programme**, with Golf Ireland's consent, rather than a private
+arrangement with DotGolf. DotGolf itself is also less likely to open bespoke access to a single
+small app now that it is inside the governing body.
 
 Course rating and slope data sits inside the same platform. There is no public Golf Ireland
 course-rating database; third-party sites (coursehandicap.com, golfpass, bluegolf) republish it
@@ -210,6 +218,9 @@ is the asset to make first.
   [Golf Ireland app FAQs](https://www.golfireland.ie/club-hub-detail/golf-ireland-app-faqs),
   [My golf app](https://www.golfireland.ie/my-golf-app),
   [Handicap system](https://www.golfireland.ie/handicap-system)
+- DotGolf ownership: [R&A and Golf NZ take 50% each, Aug 2023](https://www.randa.org/en/articles/the-r-a-and-golf-new-zealand-form-strategic-partnership-in-international-golf-technology-solutions-provider),
+  [R&A increases investment / full ownership, Jul 2026](https://www.randa.org/articles/the-r-a-increases-investment-in-dotgolf),
+  [Golf NZ completes sale of DotGolf](https://www.golf.co.nz/news-detail?newsarticleid=38971&tags=Golf+NZ%3BDotGolf%3BR&A=)
 - DotGolf APIs: [ISV API (Golf Ireland)](https://isvapi.clubhouse.golfireland.ie/index.html),
   [ISV API supplementary docs](https://isvapi.clubhouse.golfireland.ie/v1documentation),
   [Union API (Golf Ireland)](https://unionapi.clubhouse.golfireland.ie/index.html),
