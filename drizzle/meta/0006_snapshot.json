@@ -1,6 +1,6 @@
 {
-  "id": "0b4a627e-4639-4714-8e2c-aa530f7efa63",
-  "prevId": "a1035da4-c78f-4465-a236-333cbdc3d6c2",
+  "id": "59fb0edb-ee45-486d-a903-9ae440377c50",
+  "prevId": "0b4a627e-4639-4714-8e2c-aa530f7efa63",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -257,6 +257,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "directory_key": {
+          "name": "directory_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -302,6 +308,60 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.played_courses": {
+      "name": "played_courses",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_key": {
+          "name": "course_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "played_courses_user_id_user_id_fk": {
+          "name": "played_courses_user_id_user_id_fk",
+          "tableFrom": "played_courses",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "played_courses_user_id_course_key_pk": {
+          "name": "played_courses_user_id_course_key_pk",
+          "columns": [
+            "user_id",
+            "course_key"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

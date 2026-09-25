@@ -5,7 +5,7 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
-## 0.0.28 — 2026-09-25
+## 0.0.32 — 2026-09-25
 
 ### Courses played, on a map
 - New **Played** page: every golf course in Ireland, North and South, on a map. Tick off the ones
@@ -18,6 +18,71 @@ pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 - The course list comes from OpenStreetMap (© OpenStreetMap contributors, ODbL), refreshed by a new
   GitHub Actions workflow. Pitch & putt, driving ranges and duplicates are filtered out, and anything
   it gets wrong can be corrected in `overrides.json`.
+
+## 0.0.31 — 2026-09-25
+
+### Where you miss, and your putting profile (Insights)
+Two new sections built from the tags you log in **Detailed** entry. Neither changes strokes gained.
+- **Where you miss:** one sentence on your main tendency, e.g. "Approach shots that miss the green
+  mostly finish short (39% of 104 tagged misses); putts you miss tend to finish short." Under it:
+  - a **cross** for approach shots (over 30 yards) and another for short game and greenside bunkers:
+    long above, short below, left and right either side, and how often you found the green in the
+    middle. Your most common miss is highlighted;
+  - **approach misses by distance band**, so you can see whether a 150-yard miss is different from a
+    100-yard one;
+  - **off the tee:** one bar of missed left, fairway and missed right.
+- **Putting profile:** for each putt length, how many you hole, whether your misses finish **short or
+  long** (and which you lean to), and **high side or low side** on breaking putts. Then the same by
+  break: left-to-right, right-to-left and straight.
+- **Small samples say so.** Anything with fewer than 8 tagged misses is faded and tells you how many it
+  has. A course with no tags yet explains how to start.
+
+## 0.0.30 — 2026-09-25
+
+### Log where you missed, and how each putt broke
+- **Brief or Detailed:** starting a round now asks how much you want to log. **Brief** is lie and
+  distance, with the extra tags one tap away. **Detailed** opens them on every shot. It remembers
+  your last choice. (This replaces the "Track mentality" checkbox; old rounds keep their setting.)
+- **Where it missed**, tapped under the distance box once you've picked the result:
+  - **off the tee** on a par 4 or 5: left or right of the fairway;
+  - **any other shot that missed the green**: left, right, long or short of the hole;
+  - **a missed putt**: short, long, left or right.
+  Only the options that fit the shot appear, and nothing shows when you found the fairway or green.
+- **Putts:** **slope** (uphill, downhill, flat) and **break** (left-to-right, right-to-left,
+  straight), above the lie buttons. Once you've picked the break, the miss row says which side is
+  the high side.
+- Tap a selected tag again to clear it. Tags show on the shot list (e.g. "uphill · l→r · missed
+  left"), survive edits, and are cleared if an edit means they no longer fit (a putt that's now a
+  chip loses its slope and break).
+- **None of this changes strokes gained.** The charts that use it come next.
+
+## 0.0.29 — 2026-09-25
+
+### Shot quality over time (Trends)
+- A new **Shot quality over time** section on Trends: a chart for all your shots, then one for
+  each area (off the tee, approach, short game, bunker, putting, recovery).
+- **The line is your last 5 rounds pooled together**, so a round with one bunker shot doesn't swing
+  it like a round with six. Dots are single rounds, and a dashed line marks 100 (scratch).
+- **A hollow point has fewer than 10 shots behind it.** An area without 10 shots in its last 5
+  rounds shows a sentence instead of a chart, saying how many it has.
+- Covers **the last year**, or all your rounds until you have two in the last year.
+
+## 0.0.28 — 2026-09-25
+
+### Shot quality: one number for how well you hit it
+**100 = a scratch golfer's average shot.** Shot quality is your strokes gained per shot, scaled
+so each point is a hundredth of a stroke: `100 + 100 × SG per shot`. A 68 that gained 4 strokes
+over 68 shots scores 106. A round that gives up 20 strokes over 90 shots scores 78.
+- **On every round card**, a hexagon badge next to the score. Hover it for the strokes gained
+  per shot behind it.
+- **In the round recap:** the badge on the first slide, and a new **Shot quality** slide with
+  each area (off the tee, approach, short game, bunker, putting, recovery) as a bar either side
+  of 100.
+- **On Insights:** a Shot quality section for the course you've picked, across every round.
+- It's per shot, so it describes how well you hit each kind of shot, not how often you hit it.
+  A penalty stays with the shot that caused it.
+- **Areas with fewer than 10 shots are faded**: three bunker shots can read 36 or 148, and
+  neither means much yet.
 
 ## 0.0.27 — 2026-09-25
 

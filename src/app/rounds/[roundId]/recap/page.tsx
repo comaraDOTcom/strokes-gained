@@ -7,6 +7,7 @@ import { requirePageUser } from '@/lib/auth/session';
 import { getRoundForViewer, HttpError } from '@/lib/auth/guards';
 import { getAllEnrichedShots } from '@/lib/insights/queries';
 import { buildRoundRecap } from '@/lib/insights/recap';
+import { roundQuality } from '@/lib/insights/quality';
 import { RecapDeck } from './recap-deck';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,9 @@ export default async function RoundRecapPage({ params }: { params: Promise<{ rou
     db.select().from(tees).where(eq(tees.id, round.teeId)),
     getAllEnrichedShots(round.userId, round.courseId),
   ]);
-  const recap = buildRoundRecap(allShots.filter((s) => s.roundId === roundId));
+  const roundShots = allShots.filter((s) => s.roundId === roundId);
+  const recap = buildRoundRecap(roundShots);
+  const quality = roundQuality(roundShots);
   const where = `${course?.name ?? 'Unknown course'} — ${tee?.name ?? ''}`;
 
   if (recap.holesPlayed === 0) {
@@ -47,7 +50,7 @@ export default async function RoundRecapPage({ params }: { params: Promise<{ rou
 
   return (
     <main className="max-w-md mx-auto p-3 sm:p-6">
-      <RecapDeck roundId={roundId} title={round.name ?? where} subtitle={`${round.name ? `${where} · ` : ''}${round.playedOn}`} recap={recap} />
+      <RecapDeck roundId={roundId} title={round.name ?? where} subtitle={`${round.name ? `${where} · ` : ''}${round.playedOn}`} recap={recap} quality={quality} />
     </main>
   );
 }

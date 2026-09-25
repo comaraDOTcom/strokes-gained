@@ -16,6 +16,7 @@ import {
   LabelList,
   Legend,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -210,6 +211,93 @@ export function TrendBarChart({
         {rollingKey && (
           <Line type="monotone" dataKey={rollingKey} name={rollingLabel} stroke={CHROME.mutedInk} strokeWidth={2} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
         )}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+export type QualityTrendDatum = {
+  playedOn: string;
+  /** This round's shot quality. */
+  round: number;
+  roundShots: number;
+  /** Rolling (pooled) shot quality. */
+  rolling: number;
+  rollingShots: number;
+  /** Rolling window under the shot floor: drawn hollow. */
+  thin: boolean;
+};
+
+type DotProps = { cx?: number; cy?: number; index?: number; payload?: QualityTrendDatum };
+
+/**
+ * Shot quality over time: a dot per round, a solid rolling line through them, and a dashed line
+ * at 100 (scratch). A line, not bars: the axis doesn't start at zero, so bar length would lie.
+ * Axis domain and ticks come from the server (`qualityAxis`), as plain data.
+ */
+export function QualityTrendChart({
+  data,
+  domain,
+  ticks,
+  height = 180,
+}: {
+  data: QualityTrendDatum[];
+  domain: [number, number];
+  ticks: number[];
+  height?: number;
+}) {
+  const RollingDot = ({ cx, cy, index, payload }: DotProps) =>
+    cx === undefined || cy === undefined ? (
+      <g key={`r-${index}`} />
+    ) : (
+      <circle
+        key={`r-${index}`}
+        cx={cx}
+        cy={cy}
+        r={3.5}
+        fill={payload?.thin ? CHROME.surface : CATEGORICAL[0]}
+        stroke={CATEGORICAL[0]}
+        strokeWidth={1.5}
+      />
+    );
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ComposedChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid vertical={false} stroke={CHROME.gridline} />
+        <XAxis dataKey="playedOn" tick={AXIS_STYLE} axisLine={{ stroke: CHROME.baseline }} tickLine={false} tickFormatter={shortDate} />
+        <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={32} domain={domain} ticks={ticks} allowDataOverflow />
+        <ReferenceLine
+          y={100}
+          stroke={CHROME.secondaryInk}
+          strokeDasharray="4 3"
+          label={{ value: 'scratch', position: 'insideTopLeft', fontSize: 10, fill: CHROME.secondaryInk }}
+        />
+        <Tooltip
+          labelFormatter={shortDate}
+          contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
+          formatter={(v: number, name: string, item: { payload?: QualityTrendDatum }) => {
+            const d = item.payload;
+            const shots = name === 'This round' ? d?.roundShots : d?.rollingShots;
+            return [`${Math.round(v)}${shots !== undefined ? ` (${shots} shots)` : ''}`, name];
+          }}
+        />
+        <Line
+          dataKey="round"
+          name="This round"
+          stroke="none"
+          dot={{ r: 2.5, fill: CHROME.mutedInk, stroke: 'none' }}
+          activeDot={{ r: 4 }}
+          isAnimationActive={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="rolling"
+          name="Last 5 rounds"
+          stroke={CATEGORICAL[0]}
+          strokeWidth={2}
+          dot={RollingDot}
+          isAnimationActive={false}
+        />
       </ComposedChart>
     </ResponsiveContainer>
   );

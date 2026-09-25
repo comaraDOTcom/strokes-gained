@@ -38,7 +38,7 @@ not real app code, but should inform Phase 4's actual implementation. The course
 filter is speced in `BUILD.md` (Phase 4) and implemented on `/` and `/insights`
 via `?course=<id>` (`src/lib/insights/course-filter.ts`, `src/app/course-filter.tsx`).
 
-### Round notes and mentality
+### Round notes, mentality and shot tags
 
 **Per round** (edit any time on the round page under "Round notes", `PATCH /api/rounds/[roundId]`):
 a **name** (e.g. "Medal Final 2026"), free-text **commentary** (paste a transcribed
@@ -51,9 +51,22 @@ reset after every shot): **focus** — internal (swing thoughts) vs external (ta
 and **commitment** — committed vs hesitant (the "make a clear decision and commit"
 idea from Scott Fawcett's approach). Tap them *before* Save / Holed.
 
-Whether these inputs are open or collapsed-but-expandable is a per-round choice made on the
-new-round form (`rounds.track_mentality`; the form defaults to the player's last choice, off for a
-first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
+**Per shot, shot-shape tags, all optional:** where a shot **missed** (`shots.miss_direction`:
+left/right of the fairway off a par-4/5 tee; left/right/long/short of the hole for any other shot
+that missed the green; short/long/left/right for a missed putt), and for putts the **slope**
+(`putt_slope`: uphill/downhill/flat) and **break** (`putt_break`: L→R / R→L / straight). Slope and
+break sit above the lie buttons (known before the putt); the miss row appears under the distance box
+once the result is picked, and only offers what fits that shot (`tagGroupsFor` in `entry.ts`). A
+missed putt's high/low side isn't stored: it's derived from break + left/right (`sideOfMiss`). The
+server re-checks which tags apply (`normaliseShotTags`), so editing a shot's lie clears tags that no
+longer fit. Saving lives in `src/lib/rounds/save-shot.ts` (tested against a real DB).
+They're read back on `/insights` as **Where you miss** (approach and short-game crosses, misses by
+band, the tee split) and **Putting profile** (make %, short/long, high/low side, by length and break),
+from `src/lib/insights/dispersion.ts` (pure, tested). Fewer than 8 tagged misses = faded.
+
+Whether these inputs are open or collapsed-but-expandable is the round's **Brief / Detailed** choice
+on the new-round form (`rounds.detailedEntry`; the DB column is still `track_mentality`, same
+meaning, not renamed; the form defaults to the player's last choice, Brief for a first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
 `mental_balance/tempo/tension`) and `shots` (`focus`, `commitment`); validated in
 `src/lib/rounds/details.ts` and `src/lib/rounds/entry.ts`. The first-draft ratings
 (`mental_confidence/focus/composure`) are no longer shown but their columns are kept so
@@ -74,6 +87,13 @@ A link is only sent to a member, the admin, or an invited address; invited addre
 in `invited_emails` so the emailed link works in a mail app's own browser, where the `/join`
 cookie doesn't exist. Email goes through `sendEmail` in `src/lib/notify.ts` (Resend): set
 `RESEND_API_KEY`, plus `NOTIFY_FROM` on a verified domain to reach anyone but the account owner.
+
+**Shot quality** (`src/lib/insights/quality.ts`, pure and tested) is strokes gained per shot
+rescaled so 100 = scratch: `100 + 100 × ΣSG / shots`. k = 100 reproduces Clippd's own example
+(+4 over 68 shots → 106). It divides by shot rows, not strokes, because a penalty is already inside
+the causing shot's SG. It's derived at read time (no column), shown as a badge on round cards and the
+recap, a per-area slide in the recap, a section on `/insights`, and a last-year trend per area on
+`/trends` (rolling 5 rounds, pooled by shots, not averaged per round). Fewer than 10 shots = faded.
 
 **What to work on** (`/trends`, `src/lib/insights/roadmap.ts`) ranks every area of your game by
 Broadie's *importance* (how much that kind of shot separates golfers' scores) × your *opportunity*
