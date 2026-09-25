@@ -56,7 +56,7 @@ export const COUNTIES = [
   'Laois', 'Leitrim', 'Limerick', 'Longford', 'Louth', 'Mayo', 'Meath', 'Monaghan', 'Offaly',
   'Roscommon', 'Sligo', 'Tipperary', 'Waterford', 'Westmeath', 'Wexford', 'Wicklow',
   // Northern Ireland (6)
-  'Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry', 'Tyrone',
+  'Antrim', 'Armagh', 'Derry', 'Down', 'Fermanagh', 'Tyrone',
 ] as const;
 
 /** Local authorities whose name isn't simply "<County> County Council". */
@@ -72,7 +72,8 @@ const AUTHORITY_TO_COUNTY: Record<string, string> = {
   'waterford city and county': 'Waterford',
   'north tipperary': 'Tipperary',
   'south tipperary': 'Tipperary',
-  derry: 'Londonderry',
+  // Shown as Derry; OSM (and some councils) call it County Londonderry.
+  londonderry: 'Derry',
 };
 
 /**
@@ -94,13 +95,30 @@ export function normaliseCounty(raw: string | null | undefined): string | null {
   return COUNTIES.find((c) => c.toLowerCase() === s.toLowerCase()) ?? null;
 }
 
+/** The county a course's name names, as a whole word ("Waterford Golf Club", "County Sligo GC"), or null. */
+export function countyInName(name: string): string | null {
+  for (const word of name.split(/[^A-Za-z]+/)) {
+    const c = word === 'Londonderry' ? 'Derry' : word;
+    if ((COUNTIES as readonly string[]).includes(c)) return c;
+  }
+  return null;
+}
+
 export function elementKey(e: Pick<OsmElement, 'type' | 'id'>): string {
   return `osm:${e.type}/${e.id}`;
 }
 
 /** Names that are something other than a full golf course. Pitch & putt and par-3 courses are their own thing here. */
 const NOT_A_COURSE =
-  /pitch\s*(&|and|'?n'?|-)\s*putt?|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|adventure\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)|\bpar[\s-]*3\b/i;
+  /pitch\s*(&|and|'?n'?|-)\s*putt?|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|adventure\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)|\bpar[\s-]*3\b|football|(practice|golf)\s+academy|\b[1-8][\s-]*holes?\b/i;
+
+/** Words that make a name identify a venue on its own. */
+const CLUB_WORDS = /golf|links|club|resort|hotel|house|\bG\.?C\.?\b/i;
+
+/** "The O'Meara", "Old Course", "Lackabane Course": a course's own name, with no club in it. */
+export function isGenericName(name: string): boolean {
+  return !CLUB_WORDS.test(name) && (/\bcourse$/i.test(name.trim()) || /^the\s+/i.test(name.trim()));
+}
 
 /** A name that says it's a real club: a tiny outline with this name is the clubhouse, not the course. */
 const CLUB_NAME = /golf\s+(club|course|links)|\blinks\b|\bG\.?C\.?$/i;
@@ -209,6 +227,10 @@ export type BuildReport = {
   tooSmall: string[];
   duplicates: string[];
   noCounty: string[];
+  /** Venue-less course names given their venue's name ("The O'Meara" -> "Carton House – The O'Meara"). */
+  namedAfterVenue: string[];
+  /** Courses whose name names a different county than the boundary they sit in (the name wins). */
+  countyFromName: string[];
   /** Keys left out on purpose by a rule (not a course, too small, duplicate), for `mergeWithPrevious`. */
   filteredKeys: Set<string>;
 };
@@ -246,7 +268,7 @@ function sameWords(a: string, b: string): boolean {
 }
 
 export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { courses: DirectoryCourse[]; report: BuildReport } {
-  const report: BuildReport = { unnamed: 0, unnamedList: [], noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [], filteredKeys: new Set() };
+  const report: BuildReport = { unnamed: 0, unnamedList: [], noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [], countyFromName: [], namedAfterVenue: [], filteredKeys: new Set() };
   const mapped = countMappedHoles(input.courses.flatMap((c) => c.elements), input.holes);
 
   type Candidate = DirectoryCourse & { diag: number };
@@ -283,8 +305,13 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
         report.noPosition.push(`${key} ${name}`);
         continue;
       }
-      const county =
+      const areaCounty =
         (input.areaNames.get(key) ?? []).map(normaliseCounty).find((c) => c !== null) ?? normaliseCounty(tags['addr:county']);
+      // A club named after a county belongs to it, even when the course sits just over the boundary
+      // (Waterford GC is north of the Suir, inside Kilkenny's boundary).
+      const namedCounty = countyInName(name);
+      if (namedCounty && areaCounty && namedCounty !== areaCounty) report.countyFromName.push(`${key} ${name}: ${areaCounty} -> ${namedCounty}`);
+      const county = namedCounty ?? areaCounty;
       candidates.push({
         key,
         name,
@@ -313,6 +340,19 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
       continue;
     }
     kept.push(c);
+  }
+
+  // One course of a multi-course venue is often mapped with only its own name ("The O'Meara",
+  // "Old Course"). Put the venue in front: the nearest club-named course within 2 km.
+  for (const c of kept) {
+    if (!isGenericName(c.name)) continue;
+    const venue = kept
+      .filter((k) => k !== c && !isGenericName(k.name) && CLUB_WORDS.test(k.name) && metresBetween(k, c) < 2000)
+      .sort((a, b) => metresBetween(a, c) - metresBetween(b, c))[0];
+    if (!venue) continue;
+    const renamed = `${venue.name} – ${c.name.replace(/^the\s+/i, 'The ')}`;
+    report.namedAfterVenue.push(`${c.key} ${c.name} -> ${renamed}`);
+    c.name = renamed;
   }
 
   const byKey = new Map<string, DirectoryCourse>();

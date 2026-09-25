@@ -210,6 +210,8 @@ async function main() {
   section('Left out: too small to be a course', report.tooSmall);
   section('Merged duplicates', report.duplicates);
   section('No county found', report.noCounty);
+  section('County taken from the name, not the boundary', report.countyFromName);
+  section('Named after their venue', report.namedAfterVenue);
   section('Gone from OSM, carried over as stale', merged.carried.map((c) => `${c.key} ${c.name}`));
   section('Re-keyed in OSM (alias old -> new)', Object.entries(merged.aliases).filter(([k]) => !previous.aliases[k]).map(([a, b]) => `${a} -> ${b}`));
   const byHoles = new Map<string, number>();
