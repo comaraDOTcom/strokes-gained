@@ -50,50 +50,51 @@ const AREAS: Record<Country, string> = {
   NI: 'area["ISO3166-2"="GB-NIR"]',
 };
 
-async function overpass(query: string): Promise<any[]> {
+/**
+ * One query against ONE Overpass server, retried there (3 attempts, backing off). Mirrors differ
+ * slightly in what they hold, so a refresh never mixes servers — see `fetchAll`.
+ */
+async function overpass(url: string, query: string): Promise<any[]> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    for (const url of ENDPOINTS) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'strokes-gained course directory (https://github.com/comaraDOTcom/strokes-gained)',
-          },
-          body: new URLSearchParams({ data: query }),
-          signal: AbortSignal.timeout(10 * 60_000),
-        });
-        if (res.ok) {
-          const body = (await res.json()) as { elements: any[]; remark?: string };
-          // A timed-out or memory-limited query still answers 200, with PARTIAL elements and a remark.
-          if (!body.remark || !/error|timed out|out of memory/i.test(body.remark)) return body.elements;
-          lastError = new Error(`${url} -> partial result: ${body.remark}`);
-          throw lastError;
-        }
-        lastError = new Error(`${url} -> HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
-        // A 4xx other than rate limiting means the query itself is wrong: don't retry it.
-        if (res.status >= 400 && res.status < 500 && res.status !== 429) throw Object.assign(lastError as Error, { fatal: true });
-      } catch (err) {
-        if ((err as { fatal?: boolean }).fatal) throw err;
-        lastError = err;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'strokes-gained course directory (https://github.com/comaraDOTcom/strokes-gained)',
+        },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(10 * 60_000),
+      });
+      if (res.ok) {
+        const body = (await res.json()) as { elements: any[]; remark?: string };
+        // A timed-out or memory-limited query still answers 200, with PARTIAL elements and a remark.
+        if (!body.remark || !/error|timed out|out of memory/i.test(body.remark)) return body.elements;
+        throw new Error(`partial result: ${body.remark}`);
       }
-      console.warn(`Overpass attempt ${attempt} at ${url} failed: ${lastError instanceof Error ? lastError.message : lastError}`);
+      lastError = new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      // A 4xx other than rate limiting means the query itself is wrong: don't retry it.
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) throw Object.assign(lastError as Error, { fatal: true });
+    } catch (err) {
+      if ((err as { fatal?: boolean }).fatal) throw err;
+      lastError = err;
     }
-    await new Promise((r) => setTimeout(r, 20_000 * attempt));
+    console.warn(`Overpass ${url} attempt ${attempt} failed: ${lastError instanceof Error ? lastError.message : lastError}`);
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 20_000 * attempt));
   }
   throw lastError;
 }
 
-async function fetchCourses(country: Country): Promise<OsmElement[]> {
-  return overpass(`[out:json][timeout:300];
+async function fetchCourses(url: string, country: Country): Promise<OsmElement[]> {
+  return overpass(url, `[out:json][timeout:300];
 ${AREAS[country]}->.a;
 nwr["leisure"="golf_course"](area.a);
 out tags center bb;`);
 }
 
-async function fetchHoles(): Promise<OsmElement[]> {
-  return overpass(`[out:json][timeout:300];
+async function fetchHoles(url: string): Promise<OsmElement[]> {
+  return overpass(url, `[out:json][timeout:300];
 ${AREAS.IE}->.ie;
 ${AREAS.NI}->.ni;
 (way["golf"="hole"](area.ie); way["golf"="hole"](area.ni););
@@ -106,8 +107,8 @@ out tags center;`);
  * authorities, e.g. Fingal) and the North, so all are collected and `normaliseCounty` picks the one
  * that names a county.
  */
-async function fetchAreaNames(): Promise<Map<string, string[]>> {
-  const elements = await overpass(`[out:json][timeout:600];
+async function fetchAreaNames(url: string): Promise<Map<string, string[]>> {
+  const elements = await overpass(url, `[out:json][timeout:600];
 ${AREAS.IE}->.ie;
 ${AREAS.NI}->.ni;
 (
@@ -164,16 +165,34 @@ function serialise(fetchedAt: string, courses: DirectoryCourse[], aliases: Recor
   return `${JSON.stringify(head, null, 2).slice(0, -2)},\n  "courses": [\n${lines}\n  ]\n}\n`;
 }
 
+/**
+ * All four queries from the SAME server: the first that answers every one of them. Mixing servers
+ * made refreshes flip between a club's outline and its relation (different ids each run).
+ */
+async function fetchAll() {
+  let lastError: unknown;
+  for (const url of ENDPOINTS) {
+    try {
+      const ie = await fetchCourses(url, 'IE');
+      const ni = await fetchCourses(url, 'NI');
+      console.log(`Fetched ${ie.length} IE + ${ni.length} NI golf_course elements from ${url}`);
+      const holes = await fetchHoles(url);
+      console.log(`Fetched ${holes.length} mapped holes`);
+      const areaNames = await fetchAreaNames(url);
+      return { ie, ni, holes, areaNames };
+    } catch (err) {
+      lastError = err;
+      console.warn(`Giving up on ${url} for this refresh; trying the next server.`);
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   const overrides: Overrides = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, 'utf8')) : {};
   const previous = readPrevious();
 
-  const ie = await fetchCourses('IE');
-  const ni = await fetchCourses('NI');
-  console.log(`Fetched ${ie.length} IE + ${ni.length} NI golf_course elements`);
-  const holes = await fetchHoles();
-  console.log(`Fetched ${holes.length} mapped holes`);
-  const areaNames = await fetchAreaNames();
+  const { ie, ni, holes, areaNames } = await fetchAll();
 
   const { courses, report } = buildDirectory(
     { courses: [{ country: 'IE', elements: ie }, { country: 'NI', elements: ni }], holes, areaNames },
