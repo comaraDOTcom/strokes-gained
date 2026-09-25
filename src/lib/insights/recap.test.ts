@@ -5,7 +5,7 @@ import type { EnrichedShot } from './aggregate';
 const shot = (o: Partial<EnrichedShot> & { holeNo: number; shotNo: number; sg: number }): EnrichedShot => ({
   roundId: 1, playedOn: '2026-09-20', courseId: 1, courseName: 'Elm Park', teeId: 1, teeName: 'Blue',
   par: 4, startLie: 'FAIRWAY', startDistance: 150, endLie: 'GREEN', endDistance: 20, holed: false,
-  penaltyStrokes: 0, penaltyType: null, category: 'APPROACH', bunkerSubtype: null, ...o,
+  penaltyStrokes: 0, penaltyType: null, category: 'APPROACH', bunkerSubtype: null, missDirection: null, puttSlope: null, puttBreak: null, ...o,
 });
 /** A finished hole: `sgs` = SG of each shot, last one holed. */
 const hole = (holeNo: number, par: number, sgs: number[], cat: EnrichedShot['category'] = 'APPROACH') =>
