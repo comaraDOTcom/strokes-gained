@@ -27,6 +27,7 @@ const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
   { href: '/scoring', label: 'Scoring' },
   { href: '/insights', label: 'Insights' },
   { href: '/trends', label: 'Trends' },
+  { href: '/learn', label: 'Learn' },
   { href: '/courses', label: 'Courses' },
   { href: '/players', label: 'Players', adminOnly: true },
 ];

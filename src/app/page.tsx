@@ -10,7 +10,8 @@ import { roundSummaries } from '@/lib/insights/aggregate';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
 import { qualityStat } from '@/lib/insights/quality';
-import { QualityBadge } from './quality-badge';
+import { QualityInfo } from './quality-info';
+import { RoundsTip } from './rounds-tip';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,8 @@ export default async function Home({
       </header>
 
       <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/" />
+
+      {roundCount > 0 && <RoundsTip />}
 
       {roundCount === 0 ? (
         <p className="text-ink-2">
@@ -76,7 +79,7 @@ export default async function Home({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                  <QualityBadge stat={quality} />
+                  <QualityInfo stat={quality} />
                   <div className="text-right">
                     <p className="font-semibold">
                       {r.grossScore}{' '}
