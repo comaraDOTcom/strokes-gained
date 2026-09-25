@@ -5,6 +5,24 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.32 — 2026-09-25
+
+### Learn: what the numbers mean
+- **A new Learn page** (in the nav) that explains every score in the app, in plain words.
+- **Strokes gained, one shot at a time:** a scroll-through tour of one bogey on a 400-yard par 4.
+  As you scroll, each shot is drawn on the hole in green if it gained on a scratch golfer and red
+  if it lost, with the sum behind it (e.g. "3.03 − 2.58 − 1 = −0.55") and a running total. It ends
+  on −0.91, which is exactly 4.09 expected minus 5 taken. It shows that the drive and bunker shot
+  were fine, and the approach and missed six-footer cost the bogey. The numbers come from the app's
+  own strokes-gained engine.
+- **The hexagon, explained:** tap any hexagon to see what that number means for that round, e.g. "81
+  means your average shot lost 0.19 strokes to a scratch golfer's. Over these 85 shots that adds up
+  to 16.4 strokes lost." Learn also has a table of what each score works out to over a round, and
+  your latest round's score explained.
+- **How to read a round card**, What to work on, Where you miss, and a note on small samples.
+- **A first-visit tip on Rounds** with three pointers and a link to the tour. "Got it" hides it for
+  good in that browser, leaving a small "How to read these numbers" link.
+
 ## 0.0.31 — 2026-09-25
 
 ### Where you miss, and your putting profile (Insights)
