@@ -24,18 +24,63 @@ export default async function VoicePage() {
 
       <VoiceRecorder serverReady={serverReady} />
 
-      <section className="space-y-2 rounded-xl border bg-card p-4">
-        <h2 className="font-semibold">Try these</h2>
-        <ul className="space-y-1 text-sm text-ink-2">
-          <li>&ldquo;Driver into the left rough, 150 left, eight iron to twenty feet, two putts.&rdquo;</li>
-          <li>&ldquo;Drove it 250 down the fairway, seven iron to 15 feet, one putt.&rdquo;</li>
-          <li>&ldquo;Tee shot in the bunker, splashed out to 40 yards, wedge to six feet, holed it.&rdquo;</li>
+      <section className="space-y-3 rounded-xl border bg-card p-4">
+        <div>
+          <h2 className="font-semibold">How to say it</h2>
+          <p className="text-xs text-muted">
+            Say where each shot was played <strong>from</strong>. The app already knows where the last one finished, so
+            that&apos;s all it needs.
+          </p>
+        </div>
+
+        <ol className="space-y-2 text-sm">
+          <li className="rounded-lg bg-paper p-3">
+            <span className="font-mono text-[11px] uppercase tracking-wide text-muted">Start</span>
+            <p className="font-medium">&ldquo;Hole four, par four.&rdquo;</p>
+          </li>
+          <li className="rounded-lg bg-paper p-3">
+            <span className="font-mono text-[11px] uppercase tracking-wide text-muted">Each shot after the tee</span>
+            <p className="font-medium">&ldquo;Second shot, 157 yards from the fairway, left.&rdquo;</p>
+            <p className="text-xs text-muted">&ldquo;Third, 20 feet on the green.&rdquo;</p>
+          </li>
+          <li className="rounded-lg bg-paper p-3">
+            <span className="font-mono text-[11px] uppercase tracking-wide text-muted">Finish</span>
+            <p className="font-medium">&ldquo;Two putts.&rdquo; or &ldquo;Holed it.&rdquo;</p>
+          </li>
+        </ol>
+
+        <div className="space-y-1 rounded-lg border border-line-strong bg-paper p-3">
+          <p className="font-mono text-[11px] uppercase tracking-wide text-muted">A whole hole</p>
+          <p className="text-sm">
+            &ldquo;Hole four, par four. Second shot, 157 yards from the fairway, left. Third, 20 feet on the green. Two
+            putts.&rdquo;
+          </p>
+        </div>
+
+        <ul className="space-y-1.5 text-sm text-ink-2">
+          <li>
+            <strong>Number every shot.</strong> &ldquo;Second&rdquo;, &ldquo;third&rdquo;, &ldquo;fourth&rdquo; — if one goes
+            missing, the app can tell, rather than quietly logging a wrong score.
+          </li>
+          <li>
+            <strong>Always say the unit.</strong> &ldquo;157 <em>yards</em>&rdquo;, &ldquo;20 <em>feet</em>&rdquo;. A bare
+            number is the single hardest thing for any recogniser to get right.
+          </li>
+          <li>
+            <strong>Say the lie.</strong> Fairway, rough, bunker, green, or trees. Add a side if you like —
+            &ldquo;left&rdquo;, &ldquo;long&rdquo; — and it&apos;s recorded as your miss.
+          </li>
+          <li>
+            <strong>Penalties out loud.</strong> &ldquo;In the water, dropped&rdquo; or &ldquo;out of bounds,
+            reloaded&rdquo;.
+          </li>
         </ul>
+
         <p className="text-xs text-muted">
-          What matters is whether the <strong>numbers</strong> and the <strong>lies</strong> come back right — the rest
-          of the words don&apos;t affect your stats.
+          You don&apos;t have to say it this way — it just makes the numbers and lies far more likely to survive.
         </p>
       </section>
+
     </main>
   );
 }
