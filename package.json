@@ -17,7 +17,8 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "vercel-build": "tsx scripts/db-migrate.ts && next build",
     "db:import-sqlite": "tsx scripts/migrate-sqlite-to-pg.ts",
-    "courses:api": "tsx scripts/import-golfcourseapi.ts"
+    "courses:api": "tsx scripts/import-golfcourseapi.ts",
+    "directory:fetch": "tsx scripts/fetch-course-directory.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
