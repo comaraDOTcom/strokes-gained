@@ -17,7 +17,7 @@ export default async function VoicePage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Voice test</h1>
         <p className="text-sm text-ink-2">
-          Hold the button and say a hole the way you&apos;d say it to a mate. This only shows what was heard — it
+          Tap the button, say a hole the way you&apos;d say it to a mate, then tap Stop. This only shows what was heard — it
           doesn&apos;t log anything yet.
         </p>
       </div>

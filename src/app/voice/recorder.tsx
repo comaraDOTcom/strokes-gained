@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Hold to record, release to transcribe. Push-to-talk on purpose: it captures only speech you
- * meant to say, which keeps clips short, keeps the battery cost near zero, and avoids feeding
- * Whisper silence (which it answers with invented sentences).
+ * Tap to start, tap to stop. NOT hold-to-talk: on iOS a long press on any element starts text
+ * selection, which put a selection highlight and the "done" callout bubble over the button. Tap
+ * to toggle also survives a finger sliding off mid-sentence.
+ *
+ * It is still explicit capture — the mic only runs between the two taps, never open.
  *
  * Two routes to text, tried in order:
  *  1. the server (Cloudflare Whisper) — accurate, needs a key and a signal;
  *  2. the browser's own recogniser — free and instant, on-device on iOS, but can't be nudged
  *     towards golf words. Used when the server isn't configured, so this is testable today.
  */
+
+const MAX_SECONDS = 45;
 
 type Attempt = {
   id: number;
@@ -36,7 +40,10 @@ type SpeechRecognitionLike = {
 };
 
 function speechRecognition(): SpeechRecognitionLike | null {
-  const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
   const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
   return Ctor ? new Ctor() : null;
 }
@@ -51,24 +58,42 @@ function pickMimeType(): string | undefined {
 }
 
 export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
-  const [state, setState] = useState<'idle' | 'recording' | 'working'>('idle');
+  const [state, setState] = useState<'idle' | 'listening' | 'working'>('idle');
+  /** A problem worth a red box (permission, no support). */
   const [error, setError] = useState<string | null>(null);
+  /** "Didn't catch that" — expected, not alarming. */
+  const [nothing, setNothing] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [supported, setSupported] = useState<{ recorder: boolean; browserAsr: boolean } | null>(null);
+  const [canRecord, setCanRecord] = useState(true);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const startedAtRef = useRef(0);
   const asrRef = useRef<SpeechRecognitionLike | null>(null);
+  const gotResultRef = useRef(false);
 
   useEffect(() => {
-    setSupported({
-      recorder: typeof MediaRecorder !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia),
-      browserAsr: speechRecognition() !== null,
-    });
+    const recorder = typeof MediaRecorder !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
+    setCanRecord(recorder || speechRecognition() !== null);
   }, []);
 
-  const add = useCallback((a: Omit<Attempt, 'id'>) => setAttempts((prev) => [{ ...a, id: Date.now() }, ...prev].slice(0, 20)), []);
+  // Timer while listening, with a hard stop so a forgotten tap can't record all afternoon.
+  useEffect(() => {
+    if (state !== 'listening') return;
+    const id = setInterval(() => {
+      const s = (Date.now() - startedAtRef.current) / 1000;
+      setElapsed(s);
+      if (s >= MAX_SECONDS) stop();
+    }, 200);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  const add = useCallback(
+    (a: Omit<Attempt, 'id'>) => setAttempts((prev) => [{ ...a, id: Date.now() }, ...prev].slice(0, 20)),
+    [],
+  );
 
   async function sendToServer(blob: Blob, seconds: number) {
     setState('working');
@@ -79,9 +104,10 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
         headers: { 'Content-Type': blob.type || 'application/octet-stream' },
         body: blob,
       });
-      const data = (await res.json()) as { text?: string; error?: string };
+      const data = (await res.json()) as { text?: string; error?: string; reason?: string };
       if (!res.ok || !data.text) {
-        setError(data.error ?? 'Transcription failed.');
+        if (data.reason === 'empty') setNothing(true);
+        else setError(data.error ?? 'Transcription failed.');
         return;
       }
       add({ text: data.text, source: 'server', seconds, bytes: blob.size, ms: Math.round(performance.now() - started) });
@@ -100,28 +126,44 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
       return;
     }
     asr.lang = 'en-IE';
-    asr.continuous = false;
+    asr.continuous = true; // keep listening through the pauses between shots
     asr.interimResults = false;
     asr.maxAlternatives = 1;
-    const started = performance.now();
+    gotResultRef.current = false;
     asrRef.current = asr;
-    setError(null);
-    setState('recording');
+    startedAtRef.current = Date.now();
+    setState('listening');
 
     asr.onresult = (e) => {
       const text = e.results[0][0].transcript.trim();
-      if (text) add({ text, source: 'browser', seconds: (performance.now() - started) / 1000, bytes: null, ms: Math.round(performance.now() - started) });
+      if (!text) return;
+      gotResultRef.current = true;
+      const seconds = (Date.now() - startedAtRef.current) / 1000;
+      add({ text, source: 'browser', seconds, bytes: null, ms: Math.round(seconds * 1000) });
     };
-    asr.onerror = (e) => setError(e.error === 'not-allowed' ? 'Microphone permission was refused.' : `Recognition failed (${e.error ?? 'unknown'}).`);
+    asr.onerror = (e) => {
+      // "aborted" just means we stopped it, and "no-speech" means it heard nothing — neither is a fault.
+      if (e.error === 'aborted' || e.error === 'no-speech') return;
+      setError(
+        e.error === 'not-allowed'
+          ? 'Microphone permission was refused. Allow it in Settings, then try again.'
+          : e.error === 'network'
+            ? 'Speech recognition needs a connection on this browser.'
+            : `Recognition failed (${e.error ?? 'unknown'}).`,
+      );
+    };
     asr.onend = () => {
       asrRef.current = null;
+      if (!gotResultRef.current) setNothing(true);
       setState('idle');
     };
     asr.start();
   }
 
-  async function startRecording() {
+  async function start() {
     setError(null);
+    setNothing(false);
+    setElapsed(0);
     if (!serverReady) return listenInBrowser();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -137,7 +179,7 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
         const seconds = (Date.now() - startedAtRef.current) / 1000;
         const blob = new Blob(chunksRef.current, { type: rec.mimeType });
         if (blob.size < 1000) {
-          setError('That was too short to hear anything.');
+          setNothing(true);
           setState('idle');
           return;
         }
@@ -146,16 +188,16 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
       recorderRef.current = rec;
       startedAtRef.current = Date.now();
       rec.start();
-      setState('recording');
+      setState('listening');
     } catch {
-      setError('Microphone permission was refused.');
+      setError('Microphone permission was refused. Allow it in Settings, then try again.');
       setState('idle');
     }
   }
 
-  function stopRecording() {
+  function stop() {
     if (asrRef.current) {
-      asrRef.current.stop();
+      asrRef.current.stop(); // stop, never abort: stop still delivers what it heard
       return;
     }
     const rec = recorderRef.current;
@@ -163,37 +205,47 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
     recorderRef.current = null;
   }
 
-  const holding = state === 'recording';
+  const listening = state === 'listening';
+  const label = listening ? 'Stop' : state === 'working' ? 'Transcribing…' : 'Tap to speak';
 
   return (
     <div className="space-y-4">
       <button
         type="button"
-        disabled={state === 'working'}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          void startRecording();
-        }}
-        onPointerUp={() => stopRecording()}
-        onPointerLeave={() => holding && stopRecording()}
-        className={`w-full rounded-2xl py-10 text-lg font-semibold transition-colors ${
-          holding ? 'bg-neg text-paper' : state === 'working' ? 'bg-paper-2 text-muted' : 'bg-ink text-paper'
+        disabled={state === 'working' || !canRecord}
+        onClick={() => (listening ? stop() : void start())}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'manipulation' }}
+        className={`w-full touch-manipulation select-none rounded-2xl py-9 text-lg font-semibold transition-colors ${
+          listening
+            ? 'bg-accent-soft text-ink ring-2 ring-accent'
+            : state === 'working'
+              ? 'bg-paper-2 text-muted'
+              : 'bg-ink text-paper'
         }`}
       >
-        {holding ? 'Listening — release when done' : state === 'working' ? 'Transcribing…' : 'Hold to speak'}
+        <span className="flex items-center justify-center gap-3">
+          {listening && <span className="h-3 w-3 animate-pulse rounded-full bg-neg" aria-hidden="true" />}
+          {label}
+          {listening && <span className="font-mono text-base tabular-nums text-ink-2">{elapsed.toFixed(0)}s</span>}
+        </span>
       </button>
 
       <p className="text-xs text-muted">
-        {serverReady
-          ? 'Recorded here, transcribed on the server, then the audio is thrown away — nothing is stored.'
-          : 'Using your browser’s own speech recognition (no server key set). On an iPhone this runs on the phone itself.'}
+        {listening
+          ? 'Listening. Say the hole, then tap Stop.'
+          : serverReady
+            ? 'Recorded here, transcribed on the server, then the audio is thrown away — nothing is stored.'
+            : 'Using your browser’s own speech recognition (no server key set). On an iPhone this runs on the phone itself.'}
       </p>
 
       {error && <p className="rounded-lg bg-neg-soft px-3 py-2 text-sm text-neg">{error}</p>}
-
-      {supported && !supported.recorder && !supported.browserAsr && (
-        <p className="rounded-lg bg-neg-soft px-3 py-2 text-sm text-neg">This browser can’t record audio at all.</p>
+      {nothing && !error && (
+        <p className="rounded-lg bg-paper-2 px-3 py-2 text-sm text-ink-2">
+          Didn’t catch anything. Tap again and speak a little closer to the phone.
+        </p>
       )}
+      {!canRecord && <p className="rounded-lg bg-neg-soft px-3 py-2 text-sm text-neg">This browser can’t record audio.</p>}
 
       {attempts.length > 0 && (
         <ul className="space-y-2">
@@ -201,7 +253,7 @@ export function VoiceRecorder({ serverReady }: { serverReady: boolean }) {
             <li key={a.id} className="rounded-lg border bg-paper p-3">
               <p className="text-base">{a.text}</p>
               <p className="mt-1 font-mono text-[11px] text-muted">
-                {a.source === 'server' ? 'server' : 'browser'} · {a.seconds.toFixed(1)}s spoken
+                {a.source} · {a.seconds.toFixed(1)}s
                 {a.bytes !== null && ` · ${(a.bytes / 1024).toFixed(0)}KB`} · {a.ms}ms
               </p>
             </li>
