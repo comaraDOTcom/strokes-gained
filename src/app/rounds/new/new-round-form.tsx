@@ -9,7 +9,7 @@ type CourseOption = { id: number; name: string };
 export function NewRoundForm({
   courses,
   tees,
-  defaultTrackMentality,
+  defaultDetailedEntry,
   initialCourseId,
 }: {
   /** From `/rounds/new?course=<id>` (the Courses page's "Log a round here"). */
@@ -17,14 +17,14 @@ export function NewRoundForm({
   courses: CourseOption[];
   tees: TeeOption[];
   /** The player's choice on their most recent round, so they don't have to re-tick it. */
-  defaultTrackMentality: boolean;
+  defaultDetailedEntry: boolean;
 }) {
   const router = useRouter();
   const [courseId, setCourseId] = useState<number | ''>(initialCourseId ?? courses[0]?.id ?? '');
   const [teeId, setTeeId] = useState<number | ''>('');
   const [playedOn, setPlayedOn] = useState(() => new Date().toISOString().slice(0, 10));
   const [name, setName] = useState('');
-  const [trackMentality, setTrackMentality] = useState(defaultTrackMentality);
+  const [detailedEntry, setDetailedEntry] = useState(defaultDetailedEntry);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export function NewRoundForm({
       const res = await fetch('/api/rounds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, teeId, playedOn, name, trackMentality }),
+        body: JSON.stringify({ courseId, teeId, playedOn, name, detailedEntry }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -115,21 +115,39 @@ export function NewRoundForm({
         />
       </label>
 
-      <label className="flex items-start gap-3 border rounded-lg bg-card px-3 py-3">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4"
-          checked={trackMentality}
-          onChange={(e) => setTrackMentality(e.target.checked)}
-        />
-        <span className="text-sm">
-          <span className="font-medium">Track mentality this round</span>
-          <span className="block text-muted">
-            Shows focus and commitment on every shot, and balance / tempo / tension in the round notes. Leave it
-            off for a cleaner screen — they stay one tap away.
-          </span>
-        </span>
-      </label>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">How much do you want to log?</legend>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup">
+          {[
+            {
+              value: false,
+              title: 'Brief',
+              text: 'Lie and distance per shot. The extra tags stay one tap away.',
+            },
+            {
+              value: true,
+              title: 'Detailed',
+              text: "Also asks focus and commitment, where each shot missed, and each putt's slope, break and miss.",
+            },
+          ].map((o) => (
+            <button
+              key={o.title}
+              type="button"
+              role="radio"
+              aria-checked={detailedEntry === o.value}
+              aria-label={`${o.title}: ${o.text}`}
+              onClick={() => setDetailedEntry(o.value)}
+              className={[
+                'rounded-lg border px-3 py-3 text-left',
+                detailedEntry === o.value ? 'bg-accent-soft border-accent' : 'bg-card border-line-strong',
+              ].join(' ')}
+            >
+              <span className="block text-sm font-medium">{o.title}</span>
+              <span className="mt-0.5 block text-xs text-muted">{o.text}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       {error && <p className="text-neg text-sm">{error}</p>}
 
