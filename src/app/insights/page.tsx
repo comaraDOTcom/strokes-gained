@@ -26,7 +26,7 @@ import {
 import { fmtPct, fmtSg, CATEGORICAL } from '@/lib/insights/chart-colors';
 import { CourseFilter } from '../course-filter';
 import { Section } from '../section';
-import { QualityBadge } from '../quality-badge';
+import { QualityInfo } from '../quality-info';
 import { QualityBars } from '../recap-parts';
 import { roundQuality } from '@/lib/insights/quality';
 import {
@@ -197,7 +197,7 @@ export default async function InsightsPage({
         >
           <div className="grid items-center gap-4 sm:grid-cols-[auto_1fr]">
             <div className="flex flex-col items-center">
-              <QualityBadge stat={quality.overall} size="lg" />
+              <QualityInfo stat={quality.overall} size="lg" />
               <p className="mt-1 text-center font-mono text-[11px] text-muted">
                 {story.rounds} round{story.rounds === 1 ? '' : 's'}, {quality.overall.shots} shots
               </p>

@@ -1,11 +1,12 @@
 # Changelog
 
 Each shipped feature or fix gets its own release: bump `version` in `package.json`, add an
-entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publishes the GitHub
-release from this file (and refuses if the version or the entry is missing). While the app is
-pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
+entry here, then either push an annotated tag `vX.Y.Z` or run the Release workflow by hand on
+`main` (Actions → Release → Run workflow, give it a short title) — it creates the tag for you.
+Either way the workflow publishes the GitHub release from this file and refuses if the version or
+the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
-## 0.0.32 — 2026-09-25
+## 0.0.35 — 2026-09-25
 
 ### Courses played, on a map
 - New **Played** page: every golf course in Ireland, North and South, on a map. Tick off the ones
@@ -22,6 +23,79 @@ pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 - **Top 100 challenge:** courses in the Golf Digest Ireland Top 100 (2023) get a gold rank badge and
   a gold ring on the map, with a "Top 100" count and a filter that lists the ranking in order. (Shows
   once the ranking is loaded with `pnpm directory:top100`.)
+
+## 0.0.34 — 2026-09-25
+
+### Sign-up flow: a welcome tour, and the app on your home screen
+For a new player, the path is now: WhatsApp link → an invitation (not a login wall) → sign in →
+a two-minute welcome tour → their first round, with help at each step.
+- **The invite page says what you're joining:** three lines on what the app does, then Google or
+  an emailed link. No password, and it says a short tour follows.
+- **Welcome tour (`/welcome`)**, five swipeable screens after signing in, all skippable:
+  1. *Why:* "Your scorecard says 84. It doesn't say why." Counts vs strokes gained, with an
+     example split by area.
+  2. *How it's scored:* the one sum, and the Learn hub's bogey scored by the real engine
+     (drive +0.06, approach −0.55, … = −0.91).
+  3. *Logging a round:* where it finished, how far to the hole (not how far you hit it), Holed;
+     Brief first; nothing is final.
+  4. *What you get back:* a recap after one round, Insights after a few, Trends and What to work on
+     after four; honest about small samples.
+  5. *Set up your phone:* "Add to Home Screen" instructions for the phone in hand (iPhone Safari,
+     another iOS browser, Android, or a laptop), and a nudge to check the course library. Ends on
+     **Log your first round**.
+  It only appears unasked to a player with no rounds; Skip or finishing remembers that in the
+  browser, and Learn has a **Welcome tour** link to reopen it any time.
+- **Rounds, before the first round:** a three-step "Getting started" card (course, first round,
+  recap) instead of an empty list.
+- **The first shot:** on a player's first round, a dismissible card on the round page walks the
+  three inputs until the first hole is finished.
+- **Learn** gains a **Logging a round** topic (the same three steps, plus penalties, moving between
+  holes, editing and notes).
+- **Home-screen app:** a web app manifest, 192/512px icons (`scripts/make-pwa-icons.sh`), iOS
+  full-screen mode with a safe-area-aware nav, and a theme colour, so "Add to Home Screen" gives
+  an icon that opens straight to Rounds. Sign in *before* adding it: the emailed link opens in
+  Safari, not the home-screen app.
+
+## 0.0.33 — 2026-09-25
+
+### Seasonal backdrops on the Rounds page
+- **Four scenes** of the course: **windy spring** (azaleas, petals on the wind), **sunny summer**
+  (sun out, hydrangeas, flag hanging still), **windy autumn** (turning trees, leaves blowing across)
+  and **rainy winter** (grey sky, rain on the creek, puddles on the green, holly). Same course in each,
+  so the green and flag never move.
+- **A banner at the top of Rounds** shows the current scene, with a **Backdrop** picker underneath.
+- **Auto** (the default) follows the season: spring Mar–May, summer Jun–Aug, autumn Sep–Nov,
+  winter Dec–Feb. Pick a scene to keep it all year.
+- **One choice, everywhere:** the footer and the sign-in page switch to the same scene. It's saved
+  on this device (a cookie), not your account.
+
+### Voice: golf words put back, and how to say a hole
+- **Transcripts snap back onto golf words.** Recognisers hear the commoner English word, so
+  "eight iron" comes back as "eight hour", "two putts" as "two pots", "holed it" as "hold it"
+  and "40 yards" as "40 hours". Each is fixed only when the words around it make the golf reading
+  near-certain, the page shows every change ("hour → iron") next to what was actually heard, and
+  **numbers are never touched**.
+- **How to say it:** a guide on the Voice page. Say where each shot was played *from* ("second
+  shot, 157 yards from the fairway, left"), number every shot so a dropped one can be caught,
+  always say the unit, say the lie, and call penalties out loud.
+
+## 0.0.32 — 2026-09-25
+
+### Learn: what the numbers mean
+- **A new Learn page** (in the nav) that explains every score in the app, in plain words.
+- **Strokes gained, one shot at a time:** a scroll-through tour of one bogey on a 400-yard par 4.
+  As you scroll, each shot is drawn on the hole in green if it gained on a scratch golfer and red
+  if it lost, with the sum behind it (e.g. "3.03 − 2.58 − 1 = −0.55") and a running total. It ends
+  on −0.91, which is exactly 4.09 expected minus 5 taken. It shows that the drive and bunker shot
+  were fine, and the approach and missed six-footer cost the bogey. The numbers come from the app's
+  own strokes-gained engine.
+- **The hexagon, explained:** tap any hexagon to see what that number means for that round, e.g. "81
+  means your average shot lost 0.19 strokes to a scratch golfer's. Over these 85 shots that adds up
+  to 16.4 strokes lost." Learn also has a table of what each score works out to over a round, and
+  your latest round's score explained.
+- **How to read a round card**, What to work on, Where you miss, and a note on small samples.
+- **A first-visit tip on Rounds** with three pointers and a link to the tour. "Got it" hides it for
+  good in that browser, leaving a small "How to read these numbers" link.
 
 ## 0.0.31 — 2026-09-25
 

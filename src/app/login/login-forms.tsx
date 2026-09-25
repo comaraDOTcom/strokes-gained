@@ -10,7 +10,8 @@ export function GoogleButton({ label }: { label: string }) {
   async function go() {
     setBusy(true);
     setError(null);
-    const res = await authClient.signIn.social({ provider: 'google', callbackURL: '/' });
+    // New players land on the welcome tour; it sends anyone who already has rounds straight to Rounds.
+    const res = await authClient.signIn.social({ provider: 'google', callbackURL: '/welcome' });
     // On success the browser is already navigating to Google; only failures land here.
     if (res?.error) {
       setError(res.error.message ?? 'Could not start Google sign-in.');
@@ -48,7 +49,7 @@ export function MagicLinkForm({ invited }: { invited: boolean }) {
     setError(null);
     const res = await authClient.signIn.magicLink({
       email: email.trim(),
-      callbackURL: '/',
+      callbackURL: '/welcome',
       // A used or expired link lands back here with an explanation, not on a home page it can't open.
       errorCallbackURL: '/login?error=link_used',
     });
@@ -111,12 +112,12 @@ export function TestLoginForm() {
     const name = email.split('@')[0] || 'tester';
     const signedIn = await authClient.signIn.email({ email, password });
     if (!signedIn.error) {
-      window.location.href = '/';
+      window.location.href = '/welcome';
       return;
     }
     const signedUp = await authClient.signUp.email({ email, password, name });
     if (signedUp.error) setError(signedUp.error.message ?? 'Sign-in failed');
-    else window.location.href = '/';
+    else window.location.href = '/welcome';
   }
 
   return (
