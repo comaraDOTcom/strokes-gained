@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRoundDetailsPatch, roundTitle, MAX_NAME_LENGTH, MAX_NOTES_LENGTH } from './details';
+import { parseRoundDetailsPatch, roundTitle, defaultDetailedEntry, MAX_NAME_LENGTH, MAX_NOTES_LENGTH } from './details';
 
 describe('parseRoundDetailsPatch', () => {
   it('only includes keys that were sent, so a partial update cannot clear other fields', () => {
@@ -81,12 +81,12 @@ describe('playingHandicap', () => {
   });
 });
 
-describe('trackMentality', () => {
+describe('detailedEntry', () => {
   it('accepts booleans only', () => {
-    expect(parseRoundDetailsPatch({ trackMentality: false })).toEqual({ ok: true, patch: { trackMentality: false } });
-    expect(parseRoundDetailsPatch({ trackMentality: true })).toEqual({ ok: true, patch: { trackMentality: true } });
+    expect(parseRoundDetailsPatch({ detailedEntry: false })).toEqual({ ok: true, patch: { detailedEntry: false } });
+    expect(parseRoundDetailsPatch({ detailedEntry: true })).toEqual({ ok: true, patch: { detailedEntry: true } });
     for (const bad of ['true', 1, 0, null, 'no']) {
-      expect(parseRoundDetailsPatch({ trackMentality: bad }).ok).toBe(false);
+      expect(parseRoundDetailsPatch({ detailedEntry: bad }).ok).toBe(false);
     }
   });
   it('is left out of the patch when not sent', () => {
@@ -98,5 +98,15 @@ describe('roundTitle', () => {
   it('prefers the name, falls back otherwise', () => {
     expect(roundTitle({ name: 'St Georges Cup Rd 1' }, 'Elm Park — Blue')).toBe('St Georges Cup Rd 1');
     expect(roundTitle({ name: null }, 'Elm Park — Blue')).toBe('Elm Park — Blue');
+  });
+});
+
+describe('defaultDetailedEntry', () => {
+  it('is Brief for a first round', () => {
+    expect(defaultDetailedEntry(undefined)).toBe(false);
+  });
+  it('repeats the last choice', () => {
+    expect(defaultDetailedEntry({ detailedEntry: true })).toBe(true);
+    expect(defaultDetailedEntry({ detailedEntry: false })).toBe(false);
   });
 });

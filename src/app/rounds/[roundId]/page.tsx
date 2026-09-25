@@ -91,7 +91,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
       <RoundEntry
         roundId={roundId}
         roundName={round.name}
-        trackMentality={round.trackMentality}
+        detailedEntry={round.detailedEntry}
         courseName={course?.name ?? 'Unknown course'}
         teeName={tee?.name ?? ''}
         playedOn={round.playedOn}
@@ -104,7 +104,7 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
           roundId={roundId}
           playedOn={round.playedOn}
           playingHandicap={round.playingHandicap}
-          trackMentality={round.trackMentality}
+          detailedEntry={round.detailedEntry}
           initial={{
             name: round.name,
             notes: round.notes,
