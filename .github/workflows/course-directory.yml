@@ -12,6 +12,11 @@ name: Course directory
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_drops:
+        description: 'Write even if several courses vanished or lack a county (only when the change is real)'
+        type: boolean
+        default: false
   push:
     branches-ignore: [main]
     paths:
@@ -48,6 +53,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Fetch and build the directory
         run: pnpm directory:fetch
+        env:
+          DIRECTORY_ALLOW_DROPS: ${{ inputs.allow_drops && '1' || '' }}
       - name: Commit the refreshed directory
         env:
           REF_NAME: ${{ github.ref_name }} # via env, never inlined into the script

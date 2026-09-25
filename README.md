@@ -259,7 +259,9 @@ The directory is a static file, `src/lib/directory/data/ireland.json`, built fro
 (ODbL — keep the attribution). Refresh it with the **Course directory** workflow in GitHub Actions
 (Actions → Course directory → Run workflow; run from `main` it pushes a `course-directory-refresh`
 branch to open a PR from), or locally with `pnpm directory:fetch`. The run log lists what it left
-out (pitch & putt, ranges, duplicates, courses with no county). Fix anything wrong in
+out (pitch & putt, ranges, duplicates, courses with no county). A refresh that loses more than 3
+courses or can't place more than 3 in a county refuses to write (Overpass sometimes returns an
+incomplete result) — just run it again; tick **allow drops** only when the change is real. Fix anything wrong in
 `src/lib/directory/data/overrides.json` (`exclude` / `set` / `add`) and run it again. Keys are
 never silently dropped (see `BUILD.md` Phase 7).
 

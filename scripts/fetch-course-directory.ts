@@ -41,6 +41,10 @@ const DATA = resolve(import.meta.dirname, '../src/lib/directory/data');
 const OUT = resolve(DATA, 'ireland.json');
 const OVERRIDES = resolve(DATA, 'overrides.json');
 
+/** More than this many courses vanishing, or lacking a county, in one refresh means a bad fetch. */
+const MAX_VANISHED = 3;
+const MAX_NO_COUNTY = 3;
+
 const AREAS: Record<Country, string> = {
   IE: 'area["ISO3166-1"="IE"]["admin_level"="2"]',
   NI: 'area["ISO3166-2"="GB-NIR"]',
@@ -189,6 +193,22 @@ async function main() {
   const byHoles = new Map<string, number>();
   for (const c of merged.courses) byHoles.set(String(c.holes ?? 'unknown'), (byHoles.get(String(c.holes ?? 'unknown')) ?? 0) + 1);
   console.log(`\nHoles: ${[...byHoles].map(([h, n]) => `${h}: ${n}`).join(', ')}`);
+
+  // Overpass sometimes answers a query with a quietly incomplete result (no error remark). The
+  // symptoms are courses vanishing and courses the county query didn't cover. Refuse to write
+  // rather than commit that; the next run tries again. DIRECTORY_ALLOW_DROPS=1 overrides when the
+  // change is real (clubs closing, a big re-map in OSM).
+  const noCounty = merged.courses.filter((c) => c.county === null).length;
+  const suspect = previous.courses.length > 0 && (merged.carried.length > MAX_VANISHED || noCounty > MAX_NO_COUNTY);
+  if (suspect && process.env.DIRECTORY_ALLOW_DROPS !== '1') {
+    console.error(
+      `\nNot written: ${merged.carried.length} courses vanished (max ${MAX_VANISHED}) and ${noCounty} have no county ` +
+        `(max ${MAX_NO_COUNTY}) — this looks like an incomplete Overpass result. Run it again, or set ` +
+        'DIRECTORY_ALLOW_DROPS=1 if the change is real.',
+    );
+    process.exitCode = 1;
+    return;
+  }
 
   if (JSON.stringify(merged.courses) === JSON.stringify(previous.courses)) {
     console.log('\nNo changes — ireland.json left as it is.');
