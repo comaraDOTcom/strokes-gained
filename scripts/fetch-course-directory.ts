@@ -174,6 +174,7 @@ async function main() {
   };
   console.log(`\n${courses.length} courses built; ${report.unnamed} unnamed elements skipped.`);
   section('Left out: no position', report.noPosition);
+  section('Left out: unnamed (name one with overrides.json "set")', report.unnamedList);
   section('Left out: not a golf course by name/tag', report.notACourse);
   section('Left out: too small to be a course', report.tooSmall);
   section('Merged duplicates', report.duplicates);

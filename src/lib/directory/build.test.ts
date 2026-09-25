@@ -155,6 +155,20 @@ describe('buildDirectory', () => {
     expect(courses).toHaveLength(2);
   });
 
+  it('keeps a separate "Links" course next to the club of the same name', () => {
+    const { courses } = buildDirectory(input([way(1, 'Portmarnock Golf Club', 53.42, -6.12), way(2, 'Portmarnock Links', 53.41, -6.13)]));
+    expect(courses.map((c) => c.name)).toEqual(['Portmarnock Golf Club', 'Portmarnock Links']);
+  });
+
+  it('names an unnamed feature from another name tag, or from an override', () => {
+    const { courses, report } = buildDirectory(
+      input([way(1, null, 53, -7, { operator: 'Operated Golf Club' }), way(2, null, 52.94, -9.35), way(3, null, 54, -8)]),
+      { set: { 'osm:way/2': { name: 'Named By Override' } } },
+    );
+    expect(courses.map((c) => c.name)).toEqual(['Named By Override', 'Operated Golf Club']);
+    expect(report.unnamedList).toEqual(['osm:way/3 (54.0000, -8.0000)']);
+  });
+
   it('keeps same-named courses that are far apart', () => {
     const { courses } = buildDirectory(input([way(1, 'Castle Golf Club', 53.3, -6.3), way(2, 'Castle Golf Club', 52.0, -9.0)]));
     expect(courses).toHaveLength(2);

@@ -201,6 +201,8 @@ export type BuildInput = {
 
 export type BuildReport = {
   unnamed: number;
+  /** Unnamed features, with a position, so one that is a real course can be named in overrides.json. */
+  unnamedList: string[];
   /** No coordinates, no centre and no bounds — can't be put on a map. */
   noPosition: string[];
   notACourse: string[];
@@ -213,26 +215,36 @@ const round5 = (n: number) => Math.round(n * 1e5) / 1e5;
 const normName = (s: string) =>
   s
     .toLowerCase()
-    .replace(/\b(golf|club|course|links|gc|the|and|&|country|resort|hotel)\b/g, '')
+    .replace(/\b(golf|club|course|gc|the|and|&|country|resort|hotel)\b/g, '')
     .replace(/[^a-z0-9]/g, '');
 
-/** "Elm Park Golf Club" and "Elm Park Golf & Sports Club" are the same club; "Castle" and "Castlerock" aren't. */
+/**
+ * "Elm Park Golf Club" and "Elm Park Golf & Sports Club" are the same club; "Castle" and "Castlerock"
+ * aren't, and neither are "Portmarnock Golf Club" and "Portmarnock Links" ("links" is kept: it
+ * usually names a separate course).
+ */
 function sameClub(a: string, b: string): boolean {
   const [x, y] = [normName(a), normName(b)];
   if (x === y) return true;
   const [short, long] = x.length <= y.length ? [x, y] : [y, x];
   return short.length >= 5 && long.startsWith(short) && sameWords(a, b);
 }
-/** Every significant word of the shorter name appears in the longer one. */
+/**
+ * Every significant word of the shorter name appears in the longer one, and whatever the longer name
+ * adds is generic ("& Sports", "Resort") — not a word that names a different course ("Links", "North").
+ */
+const INSIGNIFICANT = /^(golf|club|course|gc|the|and|country|resort|hotel)$/;
+const GENERIC_EXTRA = /^(sports|leisure|spa|society|ltd|limited|estate|park|centre|center)$/;
 function sameWords(a: string, b: string): boolean {
-  const words = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w && !/^(golf|club|course|links|gc|the|and|country|resort|hotel)$/.test(w));
+  const words = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w && !INSIGNIFICANT.test(w));
   const [wa, wb] = [words(a), words(b)];
-  const [short, long] = wa.length <= wb.length ? [wa, new Set(wb)] : [wb, new Set(wa)];
-  return short.every((w) => long.has(w));
+  const [short, long] = wa.length <= wb.length ? [wa, wb] : [wb, wa];
+  const shortSet = new Set(short);
+  return short.every((w) => long.includes(w)) && long.filter((w) => !shortSet.has(w)).every((w) => GENERIC_EXTRA.test(w));
 }
 
 export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { courses: DirectoryCourse[]; report: BuildReport } {
-  const report: BuildReport = { unnamed: 0, noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [] };
+  const report: BuildReport = { unnamed: 0, unnamedList: [], noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [] };
   const mapped = countMappedHoles(input.courses.flatMap((c) => c.elements), input.holes);
 
   type Candidate = DirectoryCourse & { diag: number };
@@ -244,9 +256,12 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
       if (seenKeys.has(key)) continue; // an element on a border can come back in both countries
       seenKeys.add(key);
       const tags = e.tags ?? {};
-      const name = (tags['name:en'] ?? tags.name ?? '').trim();
+      // An override can name a feature OSM left unnamed (it's listed in the report with its key).
+      const name = (overrides.set?.[key]?.name ?? tags['name:en'] ?? tags.name ?? tags.official_name ?? tags.operator ?? '').trim();
       if (!name) {
         report.unnamed++;
+        const p = position(e);
+        report.unnamedList.push(`${key}${p ? ` (${p.lat.toFixed(4)}, ${p.lon.toFixed(4)})` : ''}`);
         continue;
       }
       if (overrides.exclude?.[key]) continue;
