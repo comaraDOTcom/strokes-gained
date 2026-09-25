@@ -161,7 +161,11 @@ load it.
 
 - Portmarnock has no course rating on file (only Elm Park does), so the
   cross-course `difficultyAdjustment` in Phase 5 has nothing to calibrate
-  against yet and must stay off/labelled until Conor supplies it.
+  against yet and must stay off/labelled until Conor supplies it. The Golf Ireland app shows
+  course rating and slope per tee on its score-detail screen — see `docs/golf-ireland-integration.md`.
+- No connector to Golf Ireland yet (issue #6). What exists (DotGolf ISV/Union APIs, licensing,
+  the manual options, and the Strokes Gained Ratings angle) is written up in
+  `docs/golf-ireland-integration.md`.
 - A fresh database needs `pnpm db:migrate` and then `pnpm db:seed` to load the
   seeded courses (Elm Park, Portmarnock).
 - Sessions are cached in a signed cookie for 5 minutes (`session.cookieCache` in
