@@ -96,6 +96,21 @@ describe('buildDirectory', () => {
     ]);
   });
 
+  it('places an outline Overpass returned with bounds but no centre at the middle of its box', () => {
+    const e: OsmElement = { type: 'way', id: 7, bounds: { minlat: 53.0, minlon: -7.02, maxlat: 53.02, maxlon: -7.0 }, tags: { leisure: 'golf_course', name: 'Box Only Golf Club' } };
+    const hole18 = Array.from({ length: 18 }, (_, i) => hole(100 + i, 53.01, -7.01, String(i + 1)));
+    const { courses, report } = buildDirectory(input([e], { holes: hole18 }));
+    expect(courses.map((c) => [c.lat, c.lng, c.holes])).toEqual([[53.01, -7.01, 18]]);
+    expect(report.noPosition).toEqual([]);
+  });
+
+  it('reports, rather than silently drops, a course with no position at all', () => {
+    const e: OsmElement = { type: 'relation', id: 8, tags: { leisure: 'golf_course', name: 'Nowhere Golf Club' } };
+    const { courses, report } = buildDirectory(input([e]));
+    expect(courses).toEqual([]);
+    expect(report.noPosition).toEqual(['osm:relation/8 Nowhere Golf Club']);
+  });
+
   it('prefers a tagged hole count and ignores a mapped count that isn’t a whole number of nines', () => {
     const tagged = way(1, 'Tagged', 53, -7, { holes: '9' });
     const partial = way(2, 'Partly mapped', 54, -8);
@@ -114,11 +129,14 @@ describe('buildDirectory', () => {
         way(4, 'City Driving Range', 53.3, -7),
         way(5, 'Tiny Practice Thing', 53.4, -7, {}, 0.001),
         way(6, 'Real Golf Club', 53.5, -7),
+        way(7, "Mitchelstown Pitch n' Put", 53.6, -7),
+        way(8, "Smuggler's Cove Adventure Golf", 53.7, -7),
+        way(9, 'Enniskillen Golf Club', 54.3, -7.6, {}, 0.0003), // only the clubhouse is mapped
       ]),
     );
-    expect(courses.map((c) => c.name)).toEqual(['Real Golf Club']);
+    expect(courses.map((c) => c.name)).toEqual(['Enniskillen Golf Club', 'Real Golf Club']);
     expect(report.unnamed).toBe(1);
-    expect(report.notACourse).toHaveLength(3);
+    expect(report.notACourse).toHaveLength(5);
     expect(report.tooSmall).toHaveLength(1);
   });
 

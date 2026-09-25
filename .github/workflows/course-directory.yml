@@ -65,5 +65,7 @@ jobs:
             git push --force origin HEAD:refs/heads/course-directory-refresh
             echo "::notice::Pushed to course-directory-refresh — open a pull request from it."
           else
+            # The branch may have moved while the fetch ran; this commit only touches ireland.json.
+            git pull --rebase origin "$REF_NAME"
             git push origin "HEAD:refs/heads/$REF_NAME"
           fi

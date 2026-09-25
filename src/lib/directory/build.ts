@@ -100,7 +100,10 @@ export function elementKey(e: Pick<OsmElement, 'type' | 'id'>): string {
 
 /** Names that are something other than a golf course. Pitch & putt is its own sport here. */
 const NOT_A_COURSE =
-  /pitch\s*(&|and|'?n'?|-)\s*putt|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)/i;
+  /pitch\s*(&|and|'?n'?|-)\s*putt?|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|adventure\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)/i;
+
+/** A name that says it's a real club: a tiny outline with this name is the clubhouse, not the course. */
+const CLUB_NAME = /golf\s+(club|course|links)|\blinks\b|\bG\.?C\.?$/i;
 
 /** Rough distance in metres (equirectangular — plenty for a few km at Irish latitudes). */
 export function metresBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
@@ -115,7 +118,22 @@ function bboxDiagonal(b: NonNullable<OsmElement['bounds']>): number {
   return metresBetween({ lat: b.minlat, lng: b.minlon }, { lat: b.maxlat, lng: b.maxlon });
 }
 
-/** Anything smaller corner-to-corner than this is a pitch & putt, range or practice area, not a course. */
+/**
+ * Where to put an element: a node's own position, else Overpass's `center`, else the middle of its
+ * bounding box. (`out center bb` returns only the bounds for ways and relations — `center` and
+ * `bb` are alternative geometry modes, and the last one wins.)
+ */
+export function position(e: OsmElement): { lat: number; lon: number } | null {
+  if (e.lat !== undefined && e.lon !== undefined) return { lat: e.lat, lon: e.lon };
+  if (e.center) return e.center;
+  if (e.bounds) return { lat: (e.bounds.minlat + e.bounds.maxlat) / 2, lon: (e.bounds.minlon + e.bounds.maxlon) / 2 };
+  return null;
+}
+
+/**
+ * Anything smaller corner-to-corner than this is a pitch & putt, range or practice area, not a course
+ * — unless it's named as a golf club, when it's the clubhouse outline standing in for the course.
+ */
 export const MIN_COURSE_DIAGONAL_M = 250;
 
 export function safeWebsite(raw: string | undefined): string | null {
@@ -151,7 +169,7 @@ export function countMappedHoles(courses: OsmElement[], holes: OsmElement[]): Ma
   const refs = new Map<string, Set<string>>();
   const ways = new Map<string, number>();
   for (const h of holes) {
-    const p = h.center ?? (h.lat !== undefined && h.lon !== undefined ? { lat: h.lat, lon: h.lon } : null);
+    const p = position(h);
     if (!p) continue;
     const box = boxes.find(({ b }) => p.lat >= b.minlat && p.lat <= b.maxlat && p.lon >= b.minlon && p.lon <= b.maxlon);
     if (!box) continue;
@@ -183,6 +201,8 @@ export type BuildInput = {
 
 export type BuildReport = {
   unnamed: number;
+  /** No coordinates, no centre and no bounds — can't be put on a map. */
+  noPosition: string[];
   notACourse: string[];
   tooSmall: string[];
   duplicates: string[];
@@ -212,7 +232,7 @@ function sameWords(a: string, b: string): boolean {
 }
 
 export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { courses: DirectoryCourse[]; report: BuildReport } {
-  const report: BuildReport = { unnamed: 0, notACourse: [], tooSmall: [], duplicates: [], noCounty: [] };
+  const report: BuildReport = { unnamed: 0, noPosition: [], notACourse: [], tooSmall: [], duplicates: [], noCounty: [] };
   const mapped = countMappedHoles(input.courses.flatMap((c) => c.elements), input.holes);
 
   type Candidate = DirectoryCourse & { diag: number };
@@ -235,12 +255,15 @@ export function buildDirectory(input: BuildInput, overrides: Overrides = {}): { 
         continue;
       }
       const diag = e.bounds ? bboxDiagonal(e.bounds) : 0;
-      if (e.bounds && diag < MIN_COURSE_DIAGONAL_M) {
+      if (e.bounds && diag < MIN_COURSE_DIAGONAL_M && !CLUB_NAME.test(name)) {
         report.tooSmall.push(`${key} ${name} (${Math.round(diag)}m)`);
         continue;
       }
-      const p = e.center ?? (e.lat !== undefined && e.lon !== undefined ? { lat: e.lat, lon: e.lon } : null);
-      if (!p) continue;
+      const p = position(e);
+      if (!p) {
+        report.noPosition.push(`${key} ${name}`);
+        continue;
+      }
       const county =
         (input.areaNames.get(key) ?? []).map(normaliseCounty).find((c) => c !== null) ?? normaliseCounty(tags['addr:county']);
       candidates.push({
