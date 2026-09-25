@@ -111,10 +111,15 @@ export function CourseMap({
       } else {
         mk.setStyle(style(c));
       }
-      if (c.played || c.rank !== null) mk.bringToFront();
       const popupOpen = mk.isPopupOpen();
       mk.unbindPopup().bindPopup(popupContent(c), { closeButton: true, minWidth: 200 });
       if (popupOpen) mk.openPopup();
+    }
+    // Raise ranked, then played, dots above the rest — AFTER every marker exists, or markers added
+    // later in the loop would sit on top of them (Dublin is dense enough to hide a played course).
+    const byKey = new Map(latest.current.courses.map((c) => [c.key, c]));
+    for (const pass of [(c: MapCourse) => c.rank !== null, (c: MapCourse) => c.played]) {
+      for (const [key, mk] of markers.current) if (byKey.has(key) && pass(byKey.get(key)!)) mk.bringToFront();
     }
     for (const [key, mk] of markers.current) {
       if (!seen.has(key)) {
