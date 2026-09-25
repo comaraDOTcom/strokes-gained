@@ -29,16 +29,44 @@ export type Focus = (typeof FOCUS_VALUES)[number];
 export const COMMITMENT_VALUES = ['COMMITTED', 'HESITANT'] as const;
 export type Commitment = (typeof COMMITMENT_VALUES)[number];
 
+// ---------------------------------------------------------------------------
+// Optional shot-shape tags (Detailed entry) — never feed SG
+// ---------------------------------------------------------------------------
+
+/** Where a shot finished relative to the target (for a tee shot, the fairway). */
+export const MISS_DIRECTION_VALUES = ['LEFT', 'RIGHT', 'LONG', 'SHORT'] as const;
+export type MissDirection = (typeof MISS_DIRECTION_VALUES)[number];
+
+export const PUTT_SLOPE_VALUES = ['UPHILL', 'DOWNHILL', 'FLAT'] as const;
+export type PuttSlope = (typeof PUTT_SLOPE_VALUES)[number];
+
+export const PUTT_BREAK_VALUES = ['LEFT_TO_RIGHT', 'RIGHT_TO_LEFT', 'STRAIGHT'] as const;
+export type PuttBreak = (typeof PUTT_BREAK_VALUES)[number];
+
 export type ShotTags = {
   /** `undefined` = not sent (on an edit, keep what's stored); `null` = explicitly cleared. */
   focus: Focus | null | undefined;
   commitment: Commitment | null | undefined;
+  missDirection: MissDirection | null | undefined;
+  puttSlope: PuttSlope | null | undefined;
+  puttBreak: PuttBreak | null | undefined;
 };
+
+/** Every tag, resolved: what gets stored. */
+export type StoredShotTags = { [K in keyof ShotTags]: Exclude<ShotTags[K], undefined> };
+
+export const SHOT_TAG_KEYS = ['focus', 'commitment', 'missDirection', 'puttSlope', 'puttBreak'] as const;
 
 export type ParseTagsResult = ({ ok: true } & ShotTags) | { ok: false; error: string };
 
-/** Validate the optional focus/commitment tags on a shot submission. */
-export function parseShotTags(input: { focus?: unknown; commitment?: unknown }): ParseTagsResult {
+/** Validate the optional tags on a shot submission (values only; see `normaliseShotTags` for which apply). */
+export function parseShotTags(input: {
+  focus?: unknown;
+  commitment?: unknown;
+  missDirection?: unknown;
+  puttSlope?: unknown;
+  puttBreak?: unknown;
+}): ParseTagsResult {
   const pick = <T extends string>(v: unknown, allowed: readonly T[], name: string) => {
     if (v === undefined) return { ok: true as const, value: undefined };
     if (v === null) return { ok: true as const, value: null };
@@ -49,7 +77,99 @@ export function parseShotTags(input: { focus?: unknown; commitment?: unknown }):
   if (!focus.ok) return focus;
   const commitment = pick(input.commitment, COMMITMENT_VALUES, 'commitment');
   if (!commitment.ok) return commitment;
-  return { ok: true, focus: focus.value, commitment: commitment.value };
+  const missDirection = pick(input.missDirection, MISS_DIRECTION_VALUES, 'missDirection');
+  if (!missDirection.ok) return missDirection;
+  const puttSlope = pick(input.puttSlope, PUTT_SLOPE_VALUES, 'puttSlope');
+  if (!puttSlope.ok) return puttSlope;
+  const puttBreak = pick(input.puttBreak, PUTT_BREAK_VALUES, 'puttBreak');
+  if (!puttBreak.ok) return puttBreak;
+  return {
+    ok: true,
+    focus: focus.value,
+    commitment: commitment.value,
+    missDirection: missDirection.value,
+    puttSlope: puttSlope.value,
+    puttBreak: puttBreak.value,
+  };
+}
+
+/** Which kind of miss a shot can have: off the fairway, around the green, or a missed putt. */
+export type MissKind = 'tee' | 'green' | 'putt';
+
+export type TagContext = {
+  startLie: Lie;
+  par: number;
+  /** Where it finished; null when holed (or not chosen yet). */
+  endLie: Lie | null;
+  holed: boolean;
+  penaltyType: string | null;
+};
+
+/**
+ * Which optional tag groups make sense for a shot.
+ * - `putt`: slope and break, for any shot from the green (known before the stroke, so a holed putt
+ *   keeps them).
+ * - `miss`: where it went wrong. A tee shot on a par 4/5 that missed the fairway (left/right only);
+ *   a putt that stayed on the green; any other shot that missed the green. Nothing for a holed
+ *   shot, a shot that found the green or fairway it was aimed at, or a stroke-and-distance replay.
+ */
+export function tagGroupsFor(ctx: TagContext): { putt: boolean; miss: MissKind | null } {
+  if (ctx.penaltyType === 'STROKE_AND_DISTANCE') return { putt: false, miss: null };
+  const putt = ctx.startLie === 'GREEN';
+  if (ctx.holed || ctx.endLie === null) return { putt, miss: null };
+  if (ctx.startLie === 'TEE' && ctx.par >= 4) {
+    return { putt, miss: ctx.endLie === 'FAIRWAY' || ctx.endLie === 'GREEN' ? null : 'tee' };
+  }
+  if (putt) return { putt, miss: ctx.endLie === 'GREEN' ? 'putt' : 'green' };
+  return { putt, miss: ctx.endLie === 'GREEN' ? null : 'green' };
+}
+
+/** The miss buttons offered for each kind of miss, in screen order. */
+export const MISS_OPTIONS: Record<MissKind, readonly MissDirection[]> = {
+  tee: ['LEFT', 'RIGHT'],
+  green: ['LEFT', 'RIGHT', 'LONG', 'SHORT'],
+  putt: ['SHORT', 'LONG', 'LEFT', 'RIGHT'],
+};
+
+/**
+ * Server-side: drop tag groups that don't apply to this shot (e.g. putt slope on a chip, after an
+ * edit changed the lie) and reject a miss that can't happen (long or short of a fairway).
+ * Mentality tags always apply. Pass the MERGED tags (stored row + this submission).
+ */
+export function normaliseShotTags(
+  tags: StoredShotTags,
+  ctx: TagContext,
+): { ok: true; tags: StoredShotTags } | { ok: false; error: string } {
+  const groups = tagGroupsFor(ctx);
+  const out: StoredShotTags = { ...tags };
+  if (!groups.putt) {
+    out.puttSlope = null;
+    out.puttBreak = null;
+  }
+  if (groups.miss === null) {
+    out.missDirection = null;
+  } else if (out.missDirection !== null && !MISS_OPTIONS[groups.miss].includes(out.missDirection)) {
+    return { ok: false, error: 'A tee shot can only miss LEFT or RIGHT of the fairway' };
+  }
+  return { ok: true, tags: out };
+}
+
+/**
+ * The side of the hole a missed putt finished on, from its break. On a left-to-right putt the
+ * ball comes from the left, so missing LEFT is the high (amateur) side; on right-to-left, RIGHT
+ * is high. Null for a straight putt, an unknown break, or a putt missed short or long.
+ */
+export function sideOfMiss(brk: PuttBreak | null, dir: MissDirection | null): 'HIGH' | 'LOW' | null {
+  if (dir !== 'LEFT' && dir !== 'RIGHT') return null;
+  if (brk === 'LEFT_TO_RIGHT') return dir === 'LEFT' ? 'HIGH' : 'LOW';
+  if (brk === 'RIGHT_TO_LEFT') return dir === 'RIGHT' ? 'HIGH' : 'LOW';
+  return null;
+}
+
+/** Button hint text for a putt miss: "high side" / "low side", or null. */
+export function puttSideLabel(brk: PuttBreak | null, dir: MissDirection): 'high side' | 'low side' | null {
+  const side = sideOfMiss(brk, dir);
+  return side === 'HIGH' ? 'high side' : side === 'LOW' ? 'low side' : null;
 }
 
 // ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ type CreateRoundBody = {
   notes?: string;
   name?: string;
   /** Open the mentality inputs by default for this round? Omitted = yes. */
-  trackMentality?: boolean;
+  detailedEntry?: boolean;
 };
 
 export async function POST(req: NextRequest) {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const details = parseRoundDetailsPatch({
       playedOn: body.playedOn,
       ...(body.name !== undefined && { name: body.name }),
-      ...(body.trackMentality !== undefined && { trackMentality: body.trackMentality }),
+      ...(body.detailedEntry !== undefined && { detailedEntry: body.detailedEntry }),
     });
     if (!details.ok) return NextResponse.json({ error: details.error }, { status: 400 });
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         weather: body.weather ?? null,
         notes: body.notes ?? null,
         name: details.patch.name ?? null,
-        trackMentality: details.patch.trackMentality ?? true,
+        detailedEntry: details.patch.detailedEntry ?? true,
       })
       .returning();
 

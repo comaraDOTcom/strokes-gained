@@ -176,10 +176,13 @@ export const rounds = pgTable(
     // full set of stroke indexes on the tee — the scorecard shows net score and Stableford points.
     // Negative = a plus handicap. Validated in src/lib/rounds/details.ts.
     playingHandicap: integer('playing_handicap'),
-    // Chosen when the round is started: does the player want the mentality inputs (per-shot
-    // focus/commitment, and balance/tempo/tension) open by default? False = collapsed but still
-    // expandable. Defaults to true so rounds from before this option keep their inputs open.
-    trackMentality: boolean('track_mentality').notNull().default(true),
+    // Chosen when the round is started: Brief or Detailed analysis. Detailed (true) = the optional
+    // per-shot inputs (focus/commitment, miss direction, putt slope/break) and balance/tempo/tension
+    // are open by default; Brief (false) = collapsed but still expandable. Defaults to true so rounds
+    // from before this option keep their inputs open.
+    // The DB column keeps its original name, `track_mentality` (it first covered mentality only):
+    // same meaning, so renaming it would be a migration with nothing to gain.
+    detailedEntry: boolean('track_mentality').notNull().default(true),
     mentalBalance: integer('mental_balance'),
     mentalTempo: integer('mental_tempo'),
     mentalTension: integer('mental_tension'),
@@ -222,6 +225,17 @@ export const shots = pgTable(
     focus: text('focus'),
     // 'COMMITTED' (clear decision, fully committed) | 'HESITANT'; null = not recorded.
     commitment: text('commitment'),
+
+    // Optional shot-shape tags, entered by the user (never derived, never feed SG). Validated in
+    // src/lib/rounds/entry.ts (values) and normaliseShotTags (which tags apply to which shot).
+    // Where the shot FINISHED relative to the target: 'LEFT' | 'RIGHT' | 'LONG' | 'SHORT'.
+    // Tee shots on par 4/5: LEFT/RIGHT of the fairway only (fairway hit = null). Putts: where a
+    // MISSED putt finished; its high/low side is derived from `putt_break`, not stored.
+    missDirection: text('miss_direction'),
+    // Putts only. 'UPHILL' | 'DOWNHILL' | 'FLAT'
+    puttSlope: text('putt_slope'),
+    // Putts only. 'LEFT_TO_RIGHT' | 'RIGHT_TO_LEFT' | 'STRAIGHT'
+    puttBreak: text('putt_break'),
   },
   (table) => ({
     roundHoleShotUnique: uniqueIndex('shots_round_id_hole_no_shot_no_unique').on(
