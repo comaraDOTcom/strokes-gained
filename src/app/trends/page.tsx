@@ -6,12 +6,15 @@ import {
   getTeeHoleYardages,
 } from '@/lib/insights/queries';
 import { roundSummaries } from '@/lib/insights/aggregate';
-import { categoryTrends, practicePriority, difficultyAdjustment } from '@/lib/insights/trends';
+import { categoryTrends, difficultyAdjustment } from '@/lib/insights/trends';
+import { buildRoadmap } from '@/lib/insights/roadmap';
 import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
 import { DifficultyToggle, type AdjustableRound } from './difficulty-toggle';
 import { buildPlayCalendar } from '@/lib/insights/calendar';
 import { PlayCalendarGrid } from './play-calendar';
+import { RoadmapSection } from './roadmap';
+import { SignalChip } from './signal-chip';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,18 +25,6 @@ const CATEGORY_LABEL: Record<string, string> = {
   BUNKER: 'Bunker',
   PUTTING: 'Putting',
   RECOVERY: 'Recovery',
-};
-
-const SIGNAL_STYLE: Record<string, string> = {
-  signal: 'bg-accent-soft text-accent',
-  limited: 'bg-amber-100 text-amber-800',
-  noise: 'bg-paper-2 text-ink-2',
-};
-
-const SIGNAL_LABEL: Record<string, string> = {
-  signal: 'signal',
-  limited: 'limited data',
-  noise: 'noise — too few shots to read anything into this',
 };
 
 const MIN_ROUNDS_FOR_TREND = 4;
@@ -56,7 +47,7 @@ export default async function TrendsPage() {
   const trends = roundCount >= MIN_ROUNDS_FOR_TREND ? categoryTrends(shots, 3) : [];
   // Today in Irish time, so a Saturday evening round lands on Saturday's square.
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin' }).format(new Date());
-  const priorities = practicePriority(shots, 4);
+  const roadmap = buildRoadmap(shots);
 
   const [courses, tees] = await Promise.all([getCoursesWithRounds(user.id), getTeesWithRounds(user.id)]);
   const summaries = roundSummaries(shots);
@@ -144,7 +135,7 @@ export default async function TrendsPage() {
                 </div>
                 <div className="text-right">
                   <p className={`font-semibold ${t.delta >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(t.delta)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded ${SIGNAL_STYLE[t.signal]}`}>{SIGNAL_LABEL[t.signal]}</span>
+                  <SignalChip signal={t.signal} />
                 </div>
               </li>
             ))}
@@ -152,29 +143,7 @@ export default async function TrendsPage() {
         )}
       </section>
 
-      <section className="border rounded-xl bg-card p-4 space-y-3">
-        <h2 className="font-semibold text-lg">Practice priority</h2>
-        <p className="text-xs text-muted">
-          Ranked by cumulative SG lost over the last 4 rounds, drilled down to the band — a stable signal worth
-          acting on, independent of whether the trend above happens to be moving right now.
-        </p>
-        {priorities.length === 0 ? (
-          <p className="text-sm text-ink-2">No net-negative band in the last {Math.min(4, roundCount)} round(s) — nothing to flag.</p>
-        ) : (
-          <ol className="space-y-1 text-sm">
-            {priorities.slice(0, 8).map((p, i) => (
-              <li key={p.label} className="flex justify-between border-t pt-1 first:border-t-0 first:pt-0">
-                <span>
-                  {i + 1}. {p.label}
-                </span>
-                <span className="text-neg font-medium">
-                  {fmtSg(p.sgLost)} over {p.roundsCovered} round{p.roundsCovered === 1 ? '' : 's'} ({p.attempts} attempt{p.attempts === 1 ? '' : 's'})
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <RoadmapSection roadmap={roadmap} />
 
       <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Cross-course difficulty adjustment</h2>

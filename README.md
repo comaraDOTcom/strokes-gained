@@ -25,7 +25,7 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 2 | Schema, course seed, `.xlsx` import, `/courses` editor | ✅ Done |
 | 3 | Round entry (`/rounds/new`, `/rounds/[roundId]`) | ✅ Built. Last full end-to-end validation pass was interrupted mid-way (session teardown) — re-verify against `BUILD.md`'s Phase 3 checklist before trusting it blindly |
 | 4 | Dashboard (`/insights`), incl. derived GIR/putts/fairways/sand-saves/up-and-downs, course filter | ✅ Built, verified in the browser. Not built: the 18-hole SG heatmap strip from the design mock |
-| 5 | Trends + practice priority, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
+| 5 | Trends + "What to work on" roadmap, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts` + `roadmap.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
 | — | Round notes, mentality (BTT + per-shot focus/commitment), in-place editing | ✅ Built (see below) |
 | 6 | Postgres + accounts + invite-only multiplayer (Google sign-in, shared course library, read-only friends' rounds) | ✅ Live on Vercel + Neon (v0.0.2); see "Deploying" below |
 | 7 | Course directory (every course in Ireland, from OpenStreetMap), courses-played profile + map (`/profile`) | ✅ Built. Directory data needs its first fetch — run the **Course directory** workflow |
@@ -74,6 +74,13 @@ A link is only sent to a member, the admin, or an invited address; invited addre
 in `invited_emails` so the emailed link works in a mail app's own browser, where the `/join`
 cookie doesn't exist. Email goes through `sendEmail` in `src/lib/notify.ts` (Resend): set
 `RESEND_API_KEY`, plus `NOTIFY_FROM` on a verified domain to reach anyone but the account owner.
+
+**What to work on** (`/trends`, `src/lib/insights/roadmap.ts`) ranks every area of your game by
+Broadie's *importance* (how much that kind of shot separates golfers' scores) × your *opportunity*
+(strokes a round you lose there against scratch, last 8 rounds), and shows the *trend* alongside.
+The importance shares live in `src/lib/insights/importance-broadie.ts` and are **placeholders** until
+transcribed from *Every Shot Counts*: fill in the shares, `where` and `comparison`, then set
+`status: 'transcribed'` to drop the caveat on the page. The formulas are in `BUILD.md` Phase 5.
 
 `/trends` opens with a 90-day play calendar (`buildPlayCalendar` in `src/lib/insights/calendar.ts`,
 pure and tested: Monday-first columns, UTC date maths, gap stats), coloured by course.
