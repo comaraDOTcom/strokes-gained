@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
+import { SCENE_COOKIE, parseScenePreference, resolveScene } from '@/lib/scene/scene';
 import { SignOutButton } from './sign-out-button';
 import { Logo } from './logo';
 import './globals.css';
@@ -48,9 +50,11 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await getSessionUser();
+  // Which illustrated backdrop to paint (sets --golf-scene for every .golf-scene below).
+  const scene = resolveScene(parseScenePreference((await cookies()).get(SCENE_COOKIE)?.value));
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
-      <body className="font-sans text-ink min-h-screen flex flex-col">
+      <body className={`scene-${scene} font-sans text-ink min-h-screen flex flex-col`}>
         {/* Phone/tablet: logo + actions pinned on the first row, links on their own row below,
             wrapping rather than scrolling (nothing out of reach). From `lg` up it's a single row:
             logo · links · actions. */}
