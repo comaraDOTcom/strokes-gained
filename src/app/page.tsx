@@ -11,6 +11,9 @@ import { fmtSg } from '@/lib/insights/chart-colors';
 import { requirePageUser } from '@/lib/auth/session';
 import { qualityStat } from '@/lib/insights/quality';
 import { QualityBadge } from './quality-badge';
+import { ScenePicker } from './scene-picker';
+import { cookies } from 'next/headers';
+import { SCENE_COOKIE, SCENE_LABELS, parseScenePreference, resolveScene } from '@/lib/scene/scene';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -29,6 +32,9 @@ export default async function Home({
   const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
   const rounds = roundSummaries(shots);
   const detailsById = await getRoundDetailsById(user.id);
+  const scenePref = parseScenePreference((await cookies()).get(SCENE_COOKIE)?.value);
+  const scene = resolveScene(scenePref);
+  const autoScene = resolveScene('auto');
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
@@ -38,6 +44,21 @@ export default async function Home({
           New round
         </Link>
       </header>
+
+      {/* The backdrop the player picked (or the season's, on Auto). The layout sets the scene
+          on <body>, so this banner, the footer and the sign-in page all show the same one. */}
+      <section className="space-y-3">
+        <div
+          role="img"
+          aria-label={`${SCENE_LABELS[scene].weather} ${SCENE_LABELS[scene].name.toLowerCase()} on the course`}
+          className="golf-scene golf-scene-hero h-40 sm:h-60 rounded-2xl border relative overflow-hidden"
+        >
+          <span className="absolute left-3 bottom-3 rounded-md bg-card/90 backdrop-blur-sm px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-2">
+            {SCENE_LABELS[scene].weather} {SCENE_LABELS[scene].name}
+          </span>
+        </div>
+        <ScenePicker preference={scenePref} autoScene={autoScene} />
+      </section>
 
       <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/" />
 

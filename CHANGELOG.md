@@ -5,6 +5,19 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.32 — 2026-09-25
+
+### Seasonal backdrops on the Rounds page
+- **Four scenes** of the course: **windy spring** (azaleas, petals on the wind), **sunny summer**
+  (sun out, hydrangeas, flag hanging still), **windy autumn** (turning trees, leaves blowing across)
+  and **rainy winter** (grey sky, rain on the creek, puddles on the green, holly). Same course in each,
+  so the green and flag never move.
+- **A banner at the top of Rounds** shows the current scene, with a **Backdrop** picker underneath.
+- **Auto** (the default) follows the season: spring Mar–May, summer Jun–Aug, autumn Sep–Nov,
+  winter Dec–Feb. Pick a scene to keep it all year.
+- **One choice, everywhere:** the footer and the sign-in page switch to the same scene. It's saved
+  on this device (a cookie), not your account.
+
 ## 0.0.31 — 2026-09-25
 
 ### Where you miss, and your putting profile (Insights)
