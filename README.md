@@ -78,7 +78,8 @@ cookie doesn't exist. Email goes through `sendEmail` in `src/lib/notify.ts` (Res
 rescaled so 100 = scratch: `100 + 100 × ΣSG / shots`. k = 100 reproduces Clippd's own example
 (+4 over 68 shots → 106). It divides by shot rows, not strokes, because a penalty is already inside
 the causing shot's SG. It's derived at read time (no column), shown as a badge on round cards and the
-recap, a per-area slide in the recap, and a section on `/insights`. Fewer than 10 shots = faded.
+recap, a per-area slide in the recap, a section on `/insights`, and a last-year trend per area on
+`/trends` (rolling 5 rounds, pooled by shots, not averaged per round). Fewer than 10 shots = faded.
 
 **What to work on** (`/trends`, `src/lib/insights/roadmap.ts`) ranks every area of your game by
 Broadie's *importance* (how much that kind of shot separates golfers' scores) × your *opportunity*

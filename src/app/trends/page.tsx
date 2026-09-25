@@ -15,6 +15,8 @@ import { buildPlayCalendar } from '@/lib/insights/calendar';
 import { PlayCalendarGrid } from './play-calendar';
 import { RoadmapSection } from './roadmap';
 import { SignalChip } from './signal-chip';
+import { QualityTrendsSection } from './quality-trends';
+import { isoDaysBefore, qualityTrends } from '@/lib/insights/quality';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +50,7 @@ export default async function TrendsPage() {
   // Today in Irish time, so a Saturday evening round lands on Saturday's square.
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin' }).format(new Date());
   const roadmap = buildRoadmap(shots);
+  const quality = qualityTrends(shots, { since: isoDaysBefore(today, 365) });
 
   const [courses, tees] = await Promise.all([getCoursesWithRounds(user.id), getTeesWithRounds(user.id)]);
   const summaries = roundSummaries(shots);
@@ -113,6 +116,8 @@ export default async function TrendsPage() {
         </p>
         <PlayCalendarGrid calendar={calendar} days={CALENDAR_DAYS} />
       </section>
+
+      <QualityTrendsSection trends={quality} />
 
       <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Trend — latest round vs. mean of prior 3</h2>

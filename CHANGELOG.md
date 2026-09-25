@@ -5,6 +5,17 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.29 — 2026-09-25
+
+### Shot quality over time (Trends)
+- A new **Shot quality over time** section on Trends: a chart for all your shots, then one for
+  each area (off the tee, approach, short game, bunker, putting, recovery).
+- **The line is your last 5 rounds pooled together**, so a round with one bunker shot doesn't swing
+  it like a round with six. Dots are single rounds, and a dashed line marks 100 (scratch).
+- **A hollow point has fewer than 10 shots behind it.** An area without 10 shots in its last 5
+  rounds shows a sentence instead of a chart, saying how many it has.
+- Covers **the last year**, or all your rounds until you have two in the last year.
+
 ## 0.0.28 — 2026-09-25
 
 ### Shot quality: one number for how well you hit it
