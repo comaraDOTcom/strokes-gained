@@ -16,10 +16,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
     const id = Number((await params).courseId);
     if (!Number.isInteger(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     const { directoryKey } = (await req.json().catch(() => ({}))) as { directoryKey?: unknown };
-    if (directoryKey !== null && (typeof directoryKey !== 'string' || !directoryCourse(directoryKey))) {
+    const linked = typeof directoryKey === 'string' ? directoryCourse(directoryKey) : undefined;
+    if (directoryKey !== null && !linked) {
       return NextResponse.json({ error: 'directoryKey must be a course in the directory, or null' }, { status: 400 });
     }
-    const [row] = await db.update(courses).set({ directoryKey }).where(eq(courses.id, id)).returning();
+    const [row] = await db
+      .update(courses)
+      .set({ directoryKey: linked?.key ?? null })
+      .where(eq(courses.id, id))
+      .returning();
     if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ id: row.id, directoryKey: row.directoryKey });
   } catch (e) {

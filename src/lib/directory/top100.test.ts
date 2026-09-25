@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { matchScore, matchTop100, parseRankedLines, rankByKey, validateTop100, type Top100File } from './top100';
 import type { DirectoryCourse } from './build';
-import { DIRECTORY, TOP100 } from './index';
+import { DIRECTORY, TOP100, resolveKey } from './index';
 
 const c = (key: string, name: string): DirectoryCourse => ({ key, name, county: null, country: 'IE', lat: 53, lng: -6, holes: 18, website: null });
 const DIR = [
@@ -70,7 +70,8 @@ describe('validateTop100', () => {
 });
 
 describe('the committed ranking', () => {
-  it('is consistent with the committed directory', () => {
-    expect(validateTop100(TOP100, DIRECTORY)).toEqual([]);
+  it('is consistent with the committed directory (old keys count once aliased)', () => {
+    const resolved = { ...TOP100, entries: TOP100.entries.map((e) => ({ ...e, key: e.key === null ? null : resolveKey(e.key) })) };
+    expect(validateTop100(resolved, DIRECTORY)).toEqual([]);
   });
 });

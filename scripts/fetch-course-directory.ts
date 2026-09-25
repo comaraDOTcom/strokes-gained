@@ -145,18 +145,20 @@ foreach.areas->.c(
   return names;
 }
 
-function readPrevious(): { fetchedAt: string | null; courses: DirectoryCourse[] } {
-  if (!existsSync(OUT)) return { fetchedAt: null, courses: [] };
+function readPrevious(): { fetchedAt: string | null; courses: DirectoryCourse[]; aliases: Record<string, string> } {
+  if (!existsSync(OUT)) return { fetchedAt: null, courses: [], aliases: {} };
   const j = JSON.parse(readFileSync(OUT, 'utf8'));
-  return { fetchedAt: j.fetchedAt ?? null, courses: j.courses ?? [] };
+  return { fetchedAt: j.fetchedAt ?? null, courses: j.courses ?? [], aliases: j.aliases ?? {} };
 }
 
 /** One course per line, so a refresh reads as a clean diff. */
-function serialise(fetchedAt: string, courses: DirectoryCourse[]): string {
+function serialise(fetchedAt: string, courses: DirectoryCourse[], aliases: Record<string, string>): string {
   const head = {
     source: 'OpenStreetMap (leisure=golf_course), via the Overpass API',
     licence: 'Data © OpenStreetMap contributors, ODbL 1.0 — https://www.openstreetmap.org/copyright',
     fetchedAt,
+    // Keys OSM re-numbered: old -> current, so players' ticks on the old key still count.
+    aliases,
   };
   const lines = courses.map((c) => `    ${JSON.stringify(c)}`).join(',\n');
   return `${JSON.stringify(head, null, 2).slice(0, -2)},\n  "courses": [\n${lines}\n  ]\n}\n`;
@@ -177,7 +179,7 @@ async function main() {
     { courses: [{ country: 'IE', elements: ie }, { country: 'NI', elements: ni }], holes, areaNames },
     overrides,
   );
-  const merged = mergeWithPrevious(courses, previous.courses, overrides, report.filteredKeys);
+  const merged = mergeWithPrevious(courses, previous.courses, overrides, report.filteredKeys, previous.aliases);
 
   const section = (title: string, items: string[]) => {
     if (items.length) console.log(`\n${title} (${items.length}):\n  ${items.join('\n  ')}`);
@@ -190,6 +192,7 @@ async function main() {
   section('Merged duplicates', report.duplicates);
   section('No county found', report.noCounty);
   section('Gone from OSM, carried over as stale', merged.carried.map((c) => `${c.key} ${c.name}`));
+  section('Re-keyed in OSM (alias old -> new)', Object.entries(merged.aliases).filter(([k]) => !previous.aliases[k]).map(([a, b]) => `${a} -> ${b}`));
   const byHoles = new Map<string, number>();
   for (const c of merged.courses) byHoles.set(String(c.holes ?? 'unknown'), (byHoles.get(String(c.holes ?? 'unknown')) ?? 0) + 1);
   console.log(`\nHoles: ${[...byHoles].map(([h, n]) => `${h}: ${n}`).join(', ')}`);
@@ -210,11 +213,11 @@ async function main() {
     return;
   }
 
-  if (JSON.stringify(merged.courses) === JSON.stringify(previous.courses)) {
+  if (JSON.stringify(merged.courses) === JSON.stringify(previous.courses) && JSON.stringify(merged.aliases) === JSON.stringify(previous.aliases)) {
     console.log('\nNo changes — ireland.json left as it is.');
     return;
   }
-  writeFileSync(OUT, serialise(new Date().toISOString(), merged.courses));
+  writeFileSync(OUT, serialise(new Date().toISOString(), merged.courses, merged.aliases));
   console.log(`\nWrote ${merged.courses.length} courses to ${OUT}`);
 }
 

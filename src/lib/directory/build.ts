@@ -341,7 +341,8 @@ export function sortDirectory(list: DirectoryCourse[]): DirectoryCourse[] {
 }
 
 /**
- * Also keeps a previously known hole count when the new fetch has none.
+ * Also keeps a previously known hole count when the new fetch has none, and turns a course that was
+ * re-keyed in OSM (same name, same place, new id) into an alias `old key -> new key`.
  *
  * Keys are referenced by players' played lists, so a course that has disappeared from OSM (deleted,
  * re-drawn with a new id, or temporarily broken) is carried over from the previous directory and
@@ -354,11 +355,29 @@ export function mergeWithPrevious(
   previous: DirectoryCourse[],
   overrides: Overrides = {},
   filtered: ReadonlySet<string> = new Set(),
-): { courses: DirectoryCourse[]; carried: DirectoryCourse[] } {
+  previousAliases: Readonly<Record<string, string>> = {},
+): { courses: DirectoryCourse[]; carried: DirectoryCourse[]; aliases: Record<string, string> } {
   const keys = new Set(next.map((c) => c.key));
-  const carried = previous
-    .filter((p) => !keys.has(p.key) && !overrides.exclude?.[p.key] && !filtered.has(p.key))
-    .map((p) => ({ ...p, stale: true as const }));
+  const aliases: Record<string, string> = {};
+  const carried: DirectoryCourse[] = [];
+  for (const p of previous) {
+    if (keys.has(p.key) || overrides.exclude?.[p.key] || filtered.has(p.key)) continue;
+    // Re-keyed in OSM (the same club, re-drawn with a new id): point the old key at the new one, so a
+    // tick on the old key still counts, instead of keeping a stale copy of the same course.
+    const successor = next.find((c) => sameClub(c.name, p.name) && metresBetween(c, p) < 3000);
+    if (successor) aliases[p.key] = successor.key;
+    else carried.push({ ...p, stale: true as const });
+  }
+  // Keep earlier aliases, following any chain (a -> b, b -> c) to a key that still exists.
+  const live = new Set([...keys, ...carried.map((c) => c.key)]);
+  for (const [from, to] of Object.entries({ ...previousAliases, ...aliases })) {
+    let target = to;
+    for (let hops = 0; !live.has(target) && (aliases[target] ?? previousAliases[target]) && hops < 10; hops++) {
+      target = aliases[target] ?? previousAliases[target]!;
+    }
+    if (live.has(target) && !live.has(from)) aliases[from] = target;
+    else delete aliases[from];
+  }
   const before = new Map(previous.map((p) => [p.key, p]));
   const fresh = next.map((c) => {
     const { stale: _stale, ...rest } = c;
@@ -367,5 +386,9 @@ export function mergeWithPrevious(
     if (rest.holes === null && was?.holes) rest.holes = was.holes;
     return rest;
   });
-  return { courses: sortDirectory([...fresh, ...carried]), carried };
+  return { courses: sortDirectory([...fresh, ...carried]), carried, aliases: sortKeys(aliases) };
+}
+
+function sortKeys(o: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
 }

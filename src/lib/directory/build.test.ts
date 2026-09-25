@@ -218,6 +218,19 @@ describe('mergeWithPrevious', () => {
     expect(courses.map((x) => x.key)).toEqual(['osm:way/1']);
   });
 
+  it('turns a course re-keyed in OSM (same name, same place) into an alias instead of a stale copy', () => {
+    const { courses, carried, aliases } = mergeWithPrevious(
+      [c('osm:way/9', 'County Sligo Golf Club')],
+      [c('osm:relation/1', 'County Sligo Golf Club'), c('osm:way/2', 'Gone Golf Club')],
+      {},
+      new Set(),
+      { 'osm:node/7': 'osm:relation/1' }, // an older alias to the key that just moved
+    );
+    expect(courses.map((x) => x.key)).toEqual(['osm:way/9', 'osm:way/2']);
+    expect(carried.map((x) => x.key)).toEqual(['osm:way/2']);
+    expect(aliases).toEqual({ 'osm:node/7': 'osm:way/9', 'osm:relation/1': 'osm:way/9' });
+  });
+
   it('keeps a known hole count when a later fetch has none, but takes a new count', () => {
     const prev = [{ ...c('osm:way/1', 'A'), holes: 18 }, { ...c('osm:way/2', 'B'), holes: 9 }];
     const { courses } = mergeWithPrevious([c('osm:way/1', 'A'), { ...c('osm:way/2', 'B'), holes: 18 }], prev);

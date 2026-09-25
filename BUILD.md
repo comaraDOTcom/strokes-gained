@@ -347,6 +347,12 @@ automatically.
   named "… Golf Club" is the clubhouse standing in for the course, so it's kept; features with no
   name fall back to `official_name`/`operator`, and the rest are listed so an override can name one.
   Courses OSM doesn't tag at all (Lahinch) go in `overrides.json` `add`.
+- **Re-keyed courses become aliases:** a previous key that's gone but has a same-club successor
+  within 3 km is written to `ireland.json` `aliases` (`old -> new`, chains followed), not kept as a
+  stale copy. `resolveKey` / `directoryCourse` / `keysFor` apply them at runtime, so ticks, course
+  links and top-100 keys stored under an old key keep working, and un-ticking removes either.
+- **Incomplete-fetch guard:** more than 3 courses vanishing (after aliasing) or more than 3 without
+  a county fails the run without writing; `allow_drops` on the workflow overrides it.
 - **Top 100 challenge** (`src/lib/directory/top100.ts`, tested): `data/top100.json`
   `{title, year, source, entries: [{rank, name, key|null}]}`. `matchTop100` scores ranked names
   against directory names (share of the ranked name's significant words found, minus 0.05 per extra
