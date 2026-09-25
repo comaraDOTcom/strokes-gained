@@ -6,7 +6,7 @@ const META: CardHoleMeta[] = Array.from({ length: 18 }, (_, i) => ({ holeNo: i +
 const shot = (holeNo: number, shotNo: number, holed: boolean, sg = 0, penaltyStrokes = 0): EnrichedShot => ({
   roundId: 1, playedOn: '2026-09-20', courseId: 1, courseName: 'C', teeId: 1, teeName: 'T', holeNo, par: 4, shotNo,
   startLie: 'FAIRWAY', startDistance: 100, endLie: holed ? null : 'GREEN', endDistance: holed ? 0 : 10, holed,
-  penaltyStrokes, penaltyType: penaltyStrokes ? 'LATERAL' : null, sg, category: 'APPROACH', bunkerSubtype: null,
+  penaltyStrokes, penaltyType: penaltyStrokes ? 'LATERAL' : null, sg, category: 'APPROACH', bunkerSubtype: null, missDirection: null, puttSlope: null, puttBreak: null,
 });
 /** `n` strokes on a hole, the last one holed. */
 const play = (holeNo: number, n: number, sgEach = 0) => Array.from({ length: n }, (_, i) => shot(holeNo, i + 1, i === n - 1, sgEach));

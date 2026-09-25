@@ -29,6 +29,14 @@ import { Section } from '../section';
 import { QualityBadge } from '../quality-badge';
 import { QualityBars } from '../recap-parts';
 import { roundQuality } from '@/lib/insights/quality';
+import {
+  approachDispersion,
+  dispersionHeadline,
+  puttingProfile,
+  shortGameDispersion,
+  teeDispersion,
+} from '@/lib/insights/dispersion';
+import { BandMissTable, MissCross, PuttingProfileTable, TeeSplitBar } from './dispersion';
 import { DivergingBarChart, GroupedBarChart, TrendBarChart } from './charts';
 
 export const dynamic = 'force-dynamic';
@@ -86,6 +94,18 @@ export default async function InsightsPage({
   const series = categorySeries(shots);
   const story = buildCourseStory(shots);
   const quality = roundQuality(shots);
+  const approachMiss = approachDispersion(shots);
+  const shortMiss = shortGameDispersion(shots);
+  const teeMiss = teeDispersion(shots);
+  const putting = puttingProfile(shots);
+  const missHeadline = dispersionHeadline(approachMiss, putting);
+  const anyMissTags = approachMiss.overall.tagged + shortMiss.overall.tagged + teeMiss.left + teeMiss.right > 0;
+  const anyPuttTags = putting.overall.tagged > 0 || putting.overall.byBreak.some((b) => b.break !== 'UNKNOWN');
+  const DETAILED_EMPTY = (
+    <p className="text-sm text-ink-2">
+      Nothing tagged yet. Start a round with <b>Detailed</b> entry (or tap &ldquo;+ Details&rdquo; on a shot) to build this.
+    </p>
+  );
 
   const summaries = roundSummaries(shots);
   const roundNames = new Map([...details].map(([id, d]) => [id, d.name]));
@@ -264,6 +284,13 @@ export default async function InsightsPage({
         />
       </Section>
 
+      <Section
+        title="Putting profile"
+        subtitle="Speed (short or long) and which side you miss, by putt length and break. From Detailed entry; doesn't affect strokes gained."
+      >
+        {anyPuttTags ? <PuttingProfileTable overall={putting.overall} bands={putting.bands} /> : DETAILED_EMPTY}
+      </Section>
+
       <Section title="Short game" subtitle="Shots ≤30y, not on the green, not sand — by band and by lie">
         <p className="text-sm font-medium mb-1">By band</p>
         <ChartOrEmpty data={shortGameBands}>
@@ -342,6 +369,25 @@ export default async function InsightsPage({
           domain={[0, 100]}
           height={180}
         />
+      </Section>
+
+      <Section
+        title="Where you miss"
+        subtitle="Where shots that miss the green finish, and which side tee shots miss the fairway. From Detailed entry; doesn't affect strokes gained."
+      >
+        {anyMissTags ? (
+          <div className="space-y-5">
+            {missHeadline && <p className="text-base font-medium">{missHeadline}</p>}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <MissCross p={approachMiss.overall} title="Approach (over 30 yards)" />
+              <MissCross p={shortMiss.overall} title="Short game and greenside bunkers" />
+            </div>
+            <BandMissTable rows={approachMiss.bands} />
+            <TeeSplitBar t={teeMiss} />
+          </div>
+        ) : (
+          DETAILED_EMPTY
+        )}
       </Section>
 
       <Section title="Strokes lost to penalties and recovery" subtitle="By hole">

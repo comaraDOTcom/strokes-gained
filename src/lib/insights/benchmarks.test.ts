@@ -65,7 +65,7 @@ describe('compareToBenchmark', () => {
   const shot = (holeNo: number, shotNo: number, holed: boolean): EnrichedShot => ({
     roundId: 1, playedOn: '2026-09-20', courseId: 1, courseName: 'C', teeId: 1, teeName: 'T', holeNo, par: 4, shotNo,
     startLie: 'FAIRWAY', startDistance: 100, endLie: holed ? null : 'GREEN', endDistance: holed ? 0 : 10, holed,
-    penaltyStrokes: 0, penaltyType: null, sg: 0, category: 'APPROACH', bunkerSubtype: null,
+    penaltyStrokes: 0, penaltyType: null, sg: 0, category: 'APPROACH', bunkerSubtype: null, missDirection: null, puttSlope: null, puttBreak: null,
   });
   const play = (holeNo: number, n: number) => Array.from({ length: n }, (_, i) => shot(holeNo, i + 1, i === n - 1));
   // 4 holes: birdie, par, double, triple.

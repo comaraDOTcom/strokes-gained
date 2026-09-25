@@ -59,6 +59,9 @@ once the result is picked, and only offers what fits that shot (`tagGroupsFor` i
 missed putt's high/low side isn't stored: it's derived from break + left/right (`sideOfMiss`). The
 server re-checks which tags apply (`normaliseShotTags`), so editing a shot's lie clears tags that no
 longer fit. Saving lives in `src/lib/rounds/save-shot.ts` (tested against a real DB).
+They're read back on `/insights` as **Where you miss** (approach and short-game crosses, misses by
+band, the tee split) and **Putting profile** (make %, short/long, high/low side, by length and break),
+from `src/lib/insights/dispersion.ts` (pure, tested). Fewer than 8 tagged misses = faded.
 
 Whether these inputs are open or collapsed-but-expandable is the round's **Brief / Detailed** choice
 on the new-round form (`rounds.detailedEntry`; the DB column is still `track_mentality`, same

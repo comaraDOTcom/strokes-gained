@@ -20,6 +20,7 @@ import type { PenaltyType } from '../sg/compute';
 import type { EnrichedShot } from './aggregate';
 import type { CourseOption } from './course-filter';
 import type { RoundDetails } from '../rounds/details';
+import type { MissDirection, PuttBreak, PuttSlope } from '../rounds/entry';
 
 /** Name / commentary / mentality per round for one user — kept out of `EnrichedShot`
  * (which is shot-level and SG-only) and joined in by round id where a screen needs it. */
@@ -122,6 +123,9 @@ export async function getAllEnrichedShots(userId: string, courseId?: number): Pr
       sg: s.sg,
       category: s.category as Category,
       bunkerSubtype: s.bunkerSubtype as BunkerSubtype | null,
+      missDirection: s.missDirection as MissDirection | null,
+      puttSlope: s.puttSlope as PuttSlope | null,
+      puttBreak: s.puttBreak as PuttBreak | null,
     });
   }
   return out;
