@@ -1,7 +1,7 @@
 # Trends page: review and redesign plan
 
 For [issue #5](https://github.com/comaraDOTcom/strokes-gained/issues/5) — "improve trend page visual clarity".
-Status: **draft for review**, nothing implemented yet.
+Status: **reviewed, decisions agreed (section 4)**, nothing implemented yet.
 
 Reviewed against a local build with 12 synthetic rounds (9 Elm Park, 3 Portmarnock, June–September)
 generated so that putting improves, approach worsens, and off-the-tee carries penalties. The shapes
@@ -104,8 +104,8 @@ Target: the answer on the first phone screen, ≤ 3 screens for everything a pla
 
 New order and content:
 
-1. **Hero: "Where you are"**. Last 4 rounds vs the 4 before (the default period; see Phase 2):
-   SG per round, the delta with an up/down colour, one sentence:
+1. **Hero: "Where you are"**. Last 2 rounds vs the 2 before (the default period; see Phase 2):
+   SG per round vs scratch, the change with an up/down colour, one sentence:
    *"−9.8 a round, 1.6 better than the four before. Putting is carrying it; approach play is giving
    it back."* Same treatment for shot quality (one number, one delta).
 2. **"Work on this"** — three cards, area-grouped, each: name · strokes a round · one-line cause and
@@ -114,7 +114,7 @@ New order and content:
 3. **"Over time"** — shot quality, one shared y-scale for every area, headline number coloured by
    direction (not vs scratch), delta badge, dots only on the "All shots" card, scratch as a dashed
    reference line. Six small multiples in a 2×3 grid.
-4. **"When you played"** — compact strip, one row of stats.
+4. **Rhythm** — one line (rounds in 90 days, days since the last). The calendar moves to Rounds.
 5. **"Methods and caveats"** — a `<details>`: cross-course note, importance placeholder note,
    signal rules. The adjustment toggle and table come back only when a course rating exists.
 
@@ -131,8 +131,8 @@ A period picker at the top of the page, kept in the URL (`?period=…`, like `?c
 
 | Option | Recent | Before |
 |---|---|---|
-| Last 4 rounds (default) | last 4 | the 4 before |
-| Last 8 rounds | last 8 | the 8 before |
+| Last 2 rounds (default) | last 2 | the 2 before |
+| Last 4 / 8 rounds | last 4 / 8 | the same number before |
 | Last 30 / 90 days | rounds in the window | the same length before it |
 | This year vs last year | calendar years | |
 | Custom | two date ranges | |
@@ -171,13 +171,21 @@ variance; (b) keep the gate but show direction with a confidence mark (●○○
 suppressing it; (c) loosen the z thresholds. Decide after looking at how the labels fall on real
 data. Whatever the choice, a `noise` label must never sit beside a printed direction.
 
-## 4. Decisions to make before Phase 1
+## 4. Decisions (agreed 2026-09-25)
 
-1. **What the hero compares against.** Your own previous period (recommended, it's what "trend"
-   means) or scratch (what every other page uses). The plan uses your own past, with scratch as
-   the reference line on charts.
-2. **Default period.** Last 4 rounds vs the 4 before, or last 8 vs 8. Four gives a faster signal,
-   eight a steadier one.
-3. **Calendar**: compact on Trends, or move to Rounds.
-4. **Cross-course adjustment**: hide entirely until Portmarnock has a rating, or keep the footnote.
-5. **Three or five cards** in "Work on this".
+1. **Hero numbers are vs scratch**, as on every other page: SG per round and shot quality over the
+   recent period. The *change* against the previous period is shown beside them and coloured by
+   direction (better / worse than your own past). Scratch stays the reference line on charts.
+2. **Default period: last 2 rounds vs the 2 before.** Getting to four rounds is an achievement in
+   itself, so the page must work from round 1: with fewer than 4 rounds the hero shows the recent
+   number only, no delta. Two rounds is ~160 shots, so most deltas will carry a "limited" mark; the
+   hero says "last 2 rounds" plainly and the Phase 2 picker lets you widen the window.
+3. **Calendar moves to the Rounds page** (top of the list, where "tap a day to open that round"
+   already lands you). Trends keeps one line: "9 rounds in 90 days · last 5 days ago".
+4. **Cross-course adjustment is hidden** until a tee has a course rating on file. One sentence in
+   "Methods and caveats" says so.
+5. **Three cards** in "Work on this".
+
+Phase 1 changes accordingly: `period.ts` defaults to 2 vs 2 and degrades to "recent only" under 4
+rounds; the calendar component moves to `src/app/page.tsx`; `difficulty-toggle.tsx` is only rendered
+when at least one round's tee has a rating.
