@@ -5,11 +5,16 @@ import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 import { yardsToFeet } from '@/lib/units';
 import {
+  MISS_OPTIONS,
   defaultResultLie,
   describeEntry,
   swipeToHoleDelta,
+  tagGroupsFor,
   type Commitment,
   type Focus,
+  type MissDirection,
+  type PuttBreak,
+  type PuttSlope,
 } from '@/lib/rounds/entry';
 
 const LIES: Lie[] = ['TEE', 'FAIRWAY', 'ROUGH', 'SAND', 'RECOVERY', 'GREEN'];
@@ -35,7 +40,33 @@ export type ShotRow = {
   bunkerSubtype: string | null;
   focus: string | null;
   commitment: string | null;
+  missDirection: string | null;
+  puttSlope: string | null;
+  puttBreak: string | null;
 };
+
+const MISS_TEXT: Record<MissDirection, string> = { LEFT: 'Left', RIGHT: 'Right', LONG: 'Long', SHORT: 'Short' };
+const BREAK_SHORT: Record<string, string> = { LEFT_TO_RIGHT: 'l→r', RIGHT_TO_LEFT: 'r→l', STRAIGHT: 'straight' };
+
+/** The optional tags on a saved shot, as a short muted suffix: "external · uphill · l→r · missed short". */
+function tagSummary(s: ShotRow): string {
+  return [
+    s.focus?.toLowerCase(),
+    s.commitment?.toLowerCase(),
+    s.puttSlope?.toLowerCase(),
+    s.puttBreak ? BREAK_SHORT[s.puttBreak] : null,
+    s.missDirection ? `missed ${s.missDirection.toLowerCase()}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/** One line under the putt miss buttons, once the break is known: which side is high. */
+function puttSideHint(brk: PuttBreak | null): string | null {
+  if (brk === 'LEFT_TO_RIGHT') return 'On a left-to-right putt, left is the high side.';
+  if (brk === 'RIGHT_TO_LEFT') return 'On a right-to-left putt, right is the high side.';
+  return null;
+}
 
 function displayDistance(lie: Lie, yards: number): number {
   const v = lie === 'GREEN' ? yardsToFeet(yards) : yards;
@@ -84,7 +115,7 @@ function TagRow<T extends string>({
 export function RoundEntry({
   roundId,
   roundName,
-  trackMentality,
+  detailedEntry,
   courseName,
   teeName,
   playedOn,
@@ -94,8 +125,8 @@ export function RoundEntry({
 }: {
   roundId: number;
   roundName: string | null;
-  /** Round setting: show the per-shot mentality tags open by default? */
-  trackMentality: boolean;
+  /** Round setting (Brief/Detailed): show the optional per-shot tags open by default? */
+  detailedEntry: boolean;
   courseName: string;
   teeName: string;
   playedOn: string;
@@ -116,8 +147,12 @@ export function RoundEntry({
   // Optional per-shot mentality tags. Reset after every shot: they describe *that* shot.
   const [focus, setFocus] = useState<Focus | null>(null);
   const [commitment, setCommitment] = useState<Commitment | null>(null);
-  // Collapsed-but-expandable when the round wasn't set up to track mentality.
-  const [tagsOpen, setTagsOpen] = useState(trackMentality);
+  // Shot-shape tags (Detailed entry). Also reset after every shot.
+  const [missDirection, setMissDirection] = useState<MissDirection | null>(null);
+  const [puttSlope, setPuttSlope] = useState<PuttSlope | null>(null);
+  const [puttBreak, setPuttBreak] = useState<PuttBreak | null>(null);
+  // Collapsed-but-expandable on a Brief round.
+  const [detailsOpen, setDetailsOpen] = useState(detailedEntry);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,6 +168,13 @@ export function RoundEntry({
     if (!prev || prev.endLie === null) return null;
     return { lie: prev.endLie as Lie, yards: prev.endYards };
   }, [nextShotNo, holeShots, hole.yards]);
+
+  // Which optional tags this shot can take, from where it started and the result picked so far.
+  const tagGroups = start
+    ? tagGroupsFor({ startLie: start.lie, par: hole.par, endLie: selectedLie, holed: false, penaltyType })
+    : { putt: false, miss: null };
+  const missOptions = tagGroups.miss ? MISS_OPTIONS[tagGroups.miss] : [];
+  const effectiveMiss = missDirection && missOptions.includes(missDirection) ? missDirection : null;
 
   const roundTotals = useMemo(() => {
     let shotsCount = 0;
@@ -160,6 +202,9 @@ export function RoundEntry({
     setSelectedLie(defaultResultLie(holeShots));
     setFocus(null);
     setCommitment(null);
+    setMissDirection(null);
+    setPuttSlope(null);
+    setPuttBreak(null);
     setDistance('');
     setPenaltyOn(false);
     setPenaltyType(null);
@@ -175,7 +220,11 @@ export function RoundEntry({
     setPenaltyType(shot.penaltyType as PenaltyType);
     setFocus(shot.focus as Focus | null);
     setCommitment(shot.commitment as Commitment | null);
-    if (shot.focus || shot.commitment) setTagsOpen(true); // never hide a value that's set
+    setMissDirection(shot.missDirection as MissDirection | null);
+    setPuttSlope(shot.puttSlope as PuttSlope | null);
+    setPuttBreak(shot.puttBreak as PuttBreak | null);
+    // Never hide a value that's set.
+    if (shot.focus || shot.commitment || shot.missDirection || shot.puttSlope || shot.puttBreak) setDetailsOpen(true);
     setError(null);
   }
 
@@ -200,6 +249,10 @@ export function RoundEntry({
           penaltyType: penaltyOn ? penaltyType : null,
           focus,
           commitment,
+          // Only the tags that apply to this shot as entered; the server normalises again.
+          missDirection: opts.holed ? null : effectiveMiss,
+          puttSlope: tagGroups.putt ? puttSlope : null,
+          puttBreak: tagGroups.putt ? puttBreak : null,
         }),
       });
       const data = await res.json();
@@ -353,12 +406,7 @@ export function RoundEntry({
                 {s.penaltyStrokes > 0 ? ` (+${s.penaltyStrokes} penalty)` : ''}
                 {' · SG '}
                 {(s.sg ?? 0).toFixed(2)}
-                {(s.focus || s.commitment) && (
-                  <span className="font-mono text-xs text-muted">
-                    {' · '}
-                    {[s.focus && s.focus.toLowerCase(), s.commitment && s.commitment.toLowerCase()].filter(Boolean).join(' · ')}
-                  </span>
-                )}
+                {tagSummary(s) && <span className="font-mono text-xs text-muted">{' · '}{tagSummary(s)}</span>}
               </span>
               <button className="text-accent underline text-xs" onClick={() => startEdit(s)} disabled={busy}>
                 Edit
@@ -430,14 +478,14 @@ export function RoundEntry({
 
             {!isStrokeAndDistance && (
               <>
-                {!tagsOpen ? (
+                {!detailsOpen ? (
                   <button
                     type="button"
-                    onClick={() => setTagsOpen(true)}
+                    onClick={() => setDetailsOpen(true)}
                     aria-expanded={false}
                     className="text-xs text-muted underline underline-offset-2"
                   >
-                    + Mentality (focus, commitment)
+                    + Details (mentality, miss, putt)
                   </button>
                 ) : (
                 <div className="space-y-1.5">
@@ -459,17 +507,44 @@ export function RoundEntry({
                     value={commitment}
                     onChange={setCommitment}
                   />
-                  {!trackMentality && (
+                  {tagGroups.putt && (
+                    <>
+                      <TagRow
+                        label="Slope"
+                        options={[
+                          { value: 'UPHILL', text: 'Uphill' },
+                          { value: 'DOWNHILL', text: 'Downhill' },
+                          { value: 'FLAT', text: 'Flat' },
+                        ]}
+                        value={puttSlope}
+                        onChange={setPuttSlope}
+                      />
+                      <TagRow
+                        label="Break"
+                        options={[
+                          { value: 'LEFT_TO_RIGHT', text: 'L→R' },
+                          { value: 'RIGHT_TO_LEFT', text: 'R→L' },
+                          { value: 'STRAIGHT', text: 'Straight' },
+                        ]}
+                        value={puttBreak}
+                        onChange={setPuttBreak}
+                      />
+                    </>
+                  )}
+                  {!detailedEntry && (
                     <button
                       type="button"
                       onClick={() => {
-                        setTagsOpen(false);
+                        setDetailsOpen(false);
                         setFocus(null);
                         setCommitment(null);
+                        setMissDirection(null);
+                        setPuttSlope(null);
+                        setPuttBreak(null);
                       }}
                       className="text-xs text-muted underline underline-offset-2"
                     >
-                      Hide mentality
+                      Hide details
                     </button>
                   )}
                 </div>
@@ -531,6 +606,25 @@ export function RoundEntry({
                       </span>
                     )}
                   </label>
+                )}
+
+                {/* The miss is only known once the result is: it sits between the distance and Save. */}
+                {detailsOpen && tagGroups.miss && (
+                  <div className="space-y-1">
+                    <TagRow
+                      label="Miss"
+                      options={missOptions.map((m) => ({ value: m, text: MISS_TEXT[m] }))}
+                      value={effectiveMiss}
+                      onChange={setMissDirection}
+                    />
+                    <p className="pl-16 text-xs text-muted">
+                      {tagGroups.miss === 'tee'
+                        ? 'Which side of the fairway it missed.'
+                        : tagGroups.miss === 'putt'
+                          ? (puttSideHint(puttBreak) ?? 'Where the putt finished: short, long, or which side of the hole.')
+                          : 'Where it finished relative to the hole.'}
+                    </p>
+                  </div>
                 )}
               </>
             )}

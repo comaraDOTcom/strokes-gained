@@ -37,7 +37,7 @@ not real app code, but should inform Phase 4's actual implementation. The course
 filter is speced in `BUILD.md` (Phase 4) and implemented on `/` and `/insights`
 via `?course=<id>` (`src/lib/insights/course-filter.ts`, `src/app/course-filter.tsx`).
 
-### Round notes and mentality
+### Round notes, mentality and shot tags
 
 **Per round** (edit any time on the round page under "Round notes", `PATCH /api/rounds/[roundId]`):
 a **name** (e.g. "Medal Final 2026"), free-text **commentary** (paste a transcribed
@@ -50,9 +50,19 @@ reset after every shot): **focus** — internal (swing thoughts) vs external (ta
 and **commitment** — committed vs hesitant (the "make a clear decision and commit"
 idea from Scott Fawcett's approach). Tap them *before* Save / Holed.
 
-Whether these inputs are open or collapsed-but-expandable is a per-round choice made on the
-new-round form (`rounds.track_mentality`; the form defaults to the player's last choice, off for a
-first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
+**Per shot, shot-shape tags, all optional:** where a shot **missed** (`shots.miss_direction`:
+left/right of the fairway off a par-4/5 tee; left/right/long/short of the hole for any other shot
+that missed the green; short/long/left/right for a missed putt), and for putts the **slope**
+(`putt_slope`: uphill/downhill/flat) and **break** (`putt_break`: L→R / R→L / straight). Slope and
+break sit above the lie buttons (known before the putt); the miss row appears under the distance box
+once the result is picked, and only offers what fits that shot (`tagGroupsFor` in `entry.ts`). A
+missed putt's high/low side isn't stored: it's derived from break + left/right (`sideOfMiss`). The
+server re-checks which tags apply (`normaliseShotTags`), so editing a shot's lie clears tags that no
+longer fit. Saving lives in `src/lib/rounds/save-shot.ts` (tested against a real DB).
+
+Whether these inputs are open or collapsed-but-expandable is the round's **Brief / Detailed** choice
+on the new-round form (`rounds.detailedEntry`; the DB column is still `track_mentality`, same
+meaning, not renamed; the form defaults to the player's last choice, Brief for a first round). None of this feeds strokes gained. Stored on `rounds` (`name`, `notes`,
 `mental_balance/tempo/tension`) and `shots` (`focus`, `commitment`); validated in
 `src/lib/rounds/details.ts` and `src/lib/rounds/entry.ts`. The first-draft ratings
 (`mental_confidence/focus/composure`) are no longer shown but their columns are kept so

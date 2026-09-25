@@ -32,14 +32,14 @@ export function RoundDetailsForm({
   roundId,
   playedOn,
   playingHandicap,
-  trackMentality,
+  detailedEntry,
   initial,
 }: {
   playingHandicap: number | null;
   roundId: number;
   playedOn: string;
   /** Round setting: show balance / tempo / tension open by default? */
-  trackMentality: boolean;
+  detailedEntry: boolean;
   initial: RoundDetails;
 }) {
   const router = useRouter();
@@ -50,7 +50,7 @@ export function RoundDetailsForm({
   const [justSaved, setJustSaved] = useState(false);
   // Collapsed when the round doesn't track mentality — unless a rating already exists.
   const [ratingsOpen, setRatingsOpen] = useState(
-    trackMentality || RATINGS.some(({ key }) => initial[key] !== null),
+    detailedEntry || RATINGS.some(({ key }) => initial[key] !== null),
   );
 
   const dirty = !same(saved, draft);

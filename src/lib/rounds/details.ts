@@ -31,7 +31,7 @@ export type RoundDetails = {
 /** Everything a round PATCH may change: the human layer plus the date played. */
 export type RoundPatch = Partial<RoundDetails> & {
   playedOn?: string;
-  trackMentality?: boolean;
+  detailedEntry?: boolean;
   playingHandicap?: number | null;
 };
 
@@ -75,11 +75,11 @@ export function parseRoundDetailsPatch(body: unknown): ParseResult {
     }
   }
 
-  if ('trackMentality' in input) {
-    if (typeof input.trackMentality !== 'boolean') {
-      return { ok: false, error: 'trackMentality must be true or false' };
+  if ('detailedEntry' in input) {
+    if (typeof input.detailedEntry !== 'boolean') {
+      return { ok: false, error: 'detailedEntry must be true or false' };
     }
-    patch.trackMentality = input.trackMentality;
+    patch.detailedEntry = input.detailedEntry;
   }
 
   for (const key of ['name', 'notes'] as const) {
@@ -124,4 +124,12 @@ export function isRealIsoDate(v: string): boolean {
 /** What to call a round in lists/headers: its name, else "Course — Tee". */
 export function roundTitle(round: { name: string | null }, fallback: string): string {
   return round.name ?? fallback;
+}
+
+/**
+ * Brief or Detailed for a new round: the player's last choice, or Brief for their first round
+ * (the extra inputs are one tap away either way).
+ */
+export function defaultDetailedEntry(lastRound: { detailedEntry: boolean } | undefined): boolean {
+  return lastRound?.detailedEntry ?? false;
 }

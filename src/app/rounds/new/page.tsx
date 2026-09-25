@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { courses, tees, rounds } from '@/db/schema';
 import { requirePageUser } from '@/lib/auth/session';
 import { NewRoundForm } from './new-round-form';
+import { defaultDetailedEntry } from '@/lib/rounds/details';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export default async function NewRoundPage({
     db.select().from(courses),
     db.select().from(tees),
     db
-      .select({ trackMentality: rounds.trackMentality })
+      .select({ detailedEntry: rounds.detailedEntry })
       .from(rounds)
       .where(eq(rounds.userId, user.id))
       .orderBy(desc(rounds.id))
@@ -38,7 +39,7 @@ export default async function NewRoundPage({
           courses={allCourses.map((c) => ({ id: c.id, name: c.name }))}
           tees={allTees.map((t) => ({ id: t.id, courseId: t.courseId, name: t.name }))}
           // First round ever: off — a new player sees the simplest screen.
-          defaultTrackMentality={lastRound?.trackMentality ?? false}
+          defaultDetailedEntry={defaultDetailedEntry(lastRound)}
           initialCourseId={
             rawCourse && /^\d+$/.test(rawCourse) && allCourses.some((c) => c.id === Number(rawCourse))
               ? Number(rawCourse)

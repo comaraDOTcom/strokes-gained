@@ -17,14 +17,13 @@
  * never be committed without its derived SG (or vice versa).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { and, asc, eq, gt, gte } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { shots, teeHoles } from '@/db/schema';
+import { shots } from '@/db/schema';
 import { requireApiUser, requireRoundOwner, toErrorResponse } from '@/lib/auth/guards';
 import { recomputeRound } from '@/lib/sg/recompute';
-import { feetToYards } from '@/lib/units';
 import { parseShotTags } from '@/lib/rounds/entry';
-import { propagateChain } from '@/lib/rounds/chain';
+import { saveShotResult } from '@/lib/rounds/save-shot';
 import type { Lie } from '@/lib/sg/baseline-scratch';
 import type { PenaltyType } from '@/lib/sg/compute';
 
@@ -37,9 +36,12 @@ type ShotResultBody = {
   holed: boolean;
   penaltyStrokes: number;
   penaltyType: PenaltyType;
-  /** Optional mentality tags; omitted on an edit = leave the stored value alone. */
+  /** Optional tags; omitted on an edit = leave the stored value alone. */
   focus?: unknown;
   commitment?: unknown;
+  missDirection?: unknown;
+  puttSlope?: unknown;
+  puttBreak?: unknown;
 };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ roundId: string }> }) {
@@ -65,119 +67,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
       return NextResponse.json({ error: 'endLie is required unless the shot is holed' }, { status: 400 });
     }
 
-    const tags = parseShotTags({ focus: body.focus, commitment: body.commitment });
+    const tags = parseShotTags({
+      focus: body.focus,
+      commitment: body.commitment,
+      missDirection: body.missDirection,
+      puttSlope: body.puttSlope,
+      puttBreak: body.puttBreak,
+    });
     if (!tags.ok) return NextResponse.json({ error: tags.error }, { status: 400 });
 
-    const outcome = await db.transaction(async (tx) => {
-      const [teeHole] = await tx
-        .select()
-        .from(teeHoles)
-        .where(and(eq(teeHoles.teeId, round.teeId), eq(teeHoles.holeNo, holeNo)));
-      if (!teeHole) return { error: `No tee_holes row for hole ${holeNo}` } as const;
-
-      // Derive this shot's START from the chain — never from the client.
-      let startLie: Lie;
-      let startYards: number;
-      if (shotNo === 1) {
-        startLie = 'TEE';
-        startYards = teeHole.yards;
-      } else {
-        const [prev] = await tx
-          .select()
-          .from(shots)
-          .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), eq(shots.shotNo, shotNo - 1)));
-        if (!prev) return { error: `Shot ${shotNo - 1} hasn't been entered yet for hole ${holeNo}` } as const;
-        if (prev.holed) return { error: `Hole ${holeNo} was already finished at shot ${shotNo - 1}` } as const;
-        startLie = prev.endLie as Lie;
-        startYards = prev.endYards;
-      }
-
-      // STROKE_AND_DISTANCE is enforced here too (defence in depth — compute.ts
-      // enforces it again at recompute time regardless of what's stored).
-      let endLie: Lie | null;
-      let endYards: number;
-      let finalHoled: boolean;
-      if (penaltyType === 'STROKE_AND_DISTANCE') {
-        endLie = startLie;
-        endYards = startYards;
-        finalHoled = false;
-      } else if (holed) {
-        endLie = null;
-        endYards = 0;
-        finalHoled = true;
-      } else {
-        const lie = body.endLie as Lie;
-        endLie = lie;
-        endYards = lie === 'GREEN' ? feetToYards(body.endDistance ?? 0) : (body.endDistance ?? 0);
-        finalHoled = false;
-      }
-
-      const [existing] = await tx
-        .select()
-        .from(shots)
-        .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), eq(shots.shotNo, shotNo)));
-
-      if (!existing) {
-        await tx.insert(shots).values({
-          roundId,
-          holeNo,
-          shotNo,
-          startLie,
-          startYards,
-          endLie,
-          endYards,
-          holed: finalHoled,
-          penaltyStrokes: penaltyStrokes ?? 0,
-          penaltyType: penaltyType ?? null,
-          focus: tags.focus ?? null,
-          commitment: tags.commitment ?? null,
-        });
-      } else {
-        // Edit in place. Tags that weren't sent keep their stored value.
-        const updated = {
-          ...existing,
-          startLie,
-          startYards,
-          endLie,
-          endYards,
-          holed: finalHoled,
-          penaltyStrokes: penaltyStrokes ?? 0,
-          penaltyType: penaltyType ?? null,
-          focus: tags.focus === undefined ? existing.focus : tags.focus,
-          commitment: tags.commitment === undefined ? existing.commitment : tags.commitment,
-        };
-        await tx.update(shots).set(updated).where(eq(shots.id, existing.id));
-
-        // Re-derive every later shot's start from this one (and drop them if this shot is now holed).
-        const chain = await tx
-          .select()
-          .from(shots)
-          .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), gte(shots.shotNo, shotNo)))
-          .orderBy(asc(shots.shotNo));
-        chain[0] = updated;
-        const tail = propagateChain(chain, 0);
-        if (updated.holed) {
-          await tx
-            .delete(shots)
-            .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo), gt(shots.shotNo, shotNo)));
-        }
-        for (const t of tail) {
-          await tx
-            .update(shots)
-            .set({ startLie: t.startLie, startYards: t.startYards, endLie: t.endLie, endYards: t.endYards })
-            .where(eq(shots.id, t.id));
-        }
-      }
-
-      await recomputeRound(roundId, tx);
-
-      const holeShots = await tx
-        .select()
-        .from(shots)
-        .where(and(eq(shots.roundId, roundId), eq(shots.holeNo, holeNo)))
-        .orderBy(asc(shots.shotNo));
-      return { shots: holeShots } as const;
-    });
+    const outcome = await db.transaction((tx) =>
+      saveShotResult(tx, round, {
+        holeNo,
+        shotNo,
+        endLie: body.endLie ?? null,
+        endDistance: body.endDistance ?? 0,
+        holed: Boolean(holed),
+        penaltyStrokes: penaltyStrokes ?? 0,
+        penaltyType: penaltyType ?? null,
+        tags,
+      }),
+    );
 
     if ('error' in outcome) return NextResponse.json({ error: outcome.error }, { status: 400 });
     return NextResponse.json({ shots: outcome.shots });

@@ -5,6 +5,25 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.30 — 2026-09-25
+
+### Log where you missed, and how each putt broke
+- **Brief or Detailed:** starting a round now asks how much you want to log. **Brief** is lie and
+  distance, with the extra tags one tap away. **Detailed** opens them on every shot. It remembers
+  your last choice. (This replaces the "Track mentality" checkbox; old rounds keep their setting.)
+- **Where it missed**, tapped under the distance box once you've picked the result:
+  - **off the tee** on a par 4 or 5: left or right of the fairway;
+  - **any other shot that missed the green**: left, right, long or short of the hole;
+  - **a missed putt**: short, long, left or right.
+  Only the options that fit the shot appear, and nothing shows when you found the fairway or green.
+- **Putts:** **slope** (uphill, downhill, flat) and **break** (left-to-right, right-to-left,
+  straight), above the lie buttons. Once you've picked the break, the miss row says which side is
+  the high side.
+- Tap a selected tag again to clear it. Tags show on the shot list (e.g. "uphill · l→r · missed
+  left"), survive edits, and are cleared if an edit means they no longer fit (a putt that's now a
+  chip loses its slope and break).
+- **None of this changes strokes gained.** The charts that use it come next.
+
 ## 0.0.29 — 2026-09-25
 
 ### Shot quality over time (Trends)
