@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Work out the tag (by hand: create and push it from package.json's version)
+      - name: Work out the tag, creating and pushing it from package.json's version when run by hand
         env:
           EVENT: ${{ github.event_name }}
           REF: ${{ github.ref }}
