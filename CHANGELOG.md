@@ -1,9 +1,10 @@
 # Changelog
 
 Each shipped feature or fix gets its own release: bump `version` in `package.json`, add an
-entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publishes the GitHub
-release from this file (and refuses if the version or the entry is missing). While the app is
-pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
+entry here, then either push an annotated tag `vX.Y.Z` or run the Release workflow by hand on
+`main` (Actions → Release → Run workflow, give it a short title) — it creates the tag for you.
+Either way the workflow publishes the GitHub release from this file and refuses if the version or
+the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
 ## 0.0.33 — 2026-09-25
 
@@ -17,6 +18,16 @@ pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
   winter Dec–Feb. Pick a scene to keep it all year.
 - **One choice, everywhere:** the footer and the sign-in page switch to the same scene. It's saved
   on this device (a cookie), not your account.
+
+### Voice: golf words put back, and how to say a hole
+- **Transcripts snap back onto golf words.** Recognisers hear the commoner English word, so
+  "eight iron" comes back as "eight hour", "two putts" as "two pots", "holed it" as "hold it"
+  and "40 yards" as "40 hours". Each is fixed only when the words around it make the golf reading
+  near-certain, the page shows every change ("hour → iron") next to what was actually heard, and
+  **numbers are never touched**.
+- **How to say it:** a guide on the Voice page. Say where each shot was played *from* ("second
+  shot, 157 yards from the fairway, left"), number every shot so a dropped one can be caught,
+  always say the unit, say the lie, and call penalties out loud.
 
 ## 0.0.32 — 2026-09-25
 
