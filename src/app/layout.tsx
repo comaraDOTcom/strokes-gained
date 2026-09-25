@@ -43,6 +43,7 @@ const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
   { href: '/trends', label: 'Trends' },
   { href: '/learn', label: 'Learn' },
   { href: '/courses', label: 'Courses' },
+  { href: '/profile', label: 'Played' },
   { href: '/players', label: 'Players', adminOnly: true },
 ];
 
@@ -83,10 +84,10 @@ export default async function RootLayout({
                     + Log a round
                   </Link>
                   <Link
-                    href="/profile"
+                    href="/profile#settings"
                     className="flex items-center gap-2 text-ink-2 hover:text-ink"
-                    title={`${user.email} · Profile`}
-                    aria-label="Profile"
+                    title={`${user.email} · Settings`}
+                    aria-label="Settings"
                   >
                     <span
                       aria-hidden="true"

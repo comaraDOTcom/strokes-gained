@@ -288,6 +288,86 @@ group trends by course, or warn when a comparison mixes courses.
 - **Data migration:** `scripts/migrate-sqlite-to-pg.ts` — one transaction, preserves ids, resets identity sequences, recomputes SG and asserts each round's gross score and SG total equal the SQLite values or rolls everything back.
 - **Tests required:** golden SG values unchanged on Postgres; invite gate through the real Better Auth sign-up path (stranger rejected, invited accepted, unverified "admin" not admin, fails closed with no token); guard matrix (owner / other player / admin / ownerless / missing); tee-edit cascade incl. stroke-and-distance and rollback; `claimLegacyData` idempotent.
 
+## Phase 7 — Course directory, courses played, map (issue #3)
+
+**Goal:** every golf course on the island of Ireland (18- and 9-hole, North and South) on a map; each
+player ticks off the ones they've played and gets a private "courses played" profile. Start with
+Ireland; other countries later as more data files.
+
+**Directory ≠ scorecard library.** A directory entry is just "this course exists, here" (name,
+county, position, hole count, website). The scorecard library (`courses`/`tees`/`tee_holes`) stays
+as it is: SG needs verified yardages, which the directory never has. The two are joined by
+`courses.directory_key` (admin sets it on `/courses`), so a logged round ticks its course off
+automatically.
+
+- **Data:** OpenStreetMap (`leisure=golf_course`), ODbL — attribution shown on `/profile` and in the map.
+  `scripts/fetch-course-directory.ts` (`pnpm directory:fetch`) queries Overpass and writes
+  `src/lib/directory/data/ireland.json`, one course per line so refreshes diff cleanly. The
+  **Course directory** workflow runs it on GitHub Actions (Overpass isn't reachable from every
+  sandbox) and commits the result: on its own branch, or to `course-directory-refresh` when run
+  from `main` (never straight to `main`, which deploys).
+- **Static, not a table:** the directory is bundled JSON (`src/lib/directory/index.ts`). No seed
+  step; a refresh ships with the next deploy.
+- **Builder** (`src/lib/directory/build.ts`, pure, tested):
+  - drop unnamed features, pitch & putt, driving ranges/practice areas/mini golf (by name or tag),
+    and outlines under 250 m corner to corner;
+  - merge the same club mapped twice (same name, or one name extending the other word-for-word,
+    within 3 km), keeping the biggest outline;
+  - county = the first administrative area containing the course that normalises to one of the 32
+    traditional counties (`normaliseCounty`: "Fingal" → Dublin, "Cork City" → Cork, bilingual names…),
+    else `addr:county`;
+  - holes = a `holes` tag, else `golf=hole` ways inside the course's bounding box (smallest box
+    wins; distinct `ref`s) — trusted only when it's a whole number of nines;
+  - websites only if http(s);
+  - `data/overrides.json`: `exclude` (key → reason), `set` (key → corrected fields), `add`
+    (courses OSM lacks; keys `manual:<slug>`).
+- **Stable keys:** `osm:<type>/<id>` / `manual:<slug>`, stored in `played_courses`. A key that
+  disappears from OSM is carried over flagged `stale` (`mergeWithPrevious`) rather than breaking
+  anyone's list; only an explicit `exclude` removes it.
+- **Schema:** `played_courses (user_id, course_key, added_at)`, PK (user, key); `courses.directory_key`.
+- **Played =** ticked in `played_courses` OR a round on a linked course (`buildPlayedProfile`,
+  pure). Only ticked ones can be un-ticked; a round is proof.
+- **API:** `PUT /api/played-courses {key, played}` (own list only; key must be in the directory);
+  `PATCH /api/courses/[courseId] {directoryKey | null}` (admin only, 404 otherwise).
+- **UI:** `/profile` (nav "Played"): stat tiles (played / total, counties / 32, 18-hole, 9-hole);
+  Leaflet map (CARTO Positron basemap) with Leaflet.markercluster: zoomed out, count bubbles (a
+  green badge = played courses inside); from zoom 11, one flag pin per course (green = played, gold
+  ring = top 100), tap for details and a toggle; picking a course from a list zooms to its pin;
+  wheel-zoom only after a click; search + county filter with Played toggles (optimistic);
+  "Your courses" grouped by county. Private to the player, like rounds.
+- **Tests required:** `normaliseCounty` table; website sanitising; hole counting (smallest box,
+  distinct refs, unnumbered fallback); filters; duplicate merge vs. near-name neighbours;
+  overrides incl. refusing a bad `add` key or non-county; `mergeWithPrevious` stale/un-stale/exclude;
+  `buildPlayedProfile` (ticked ∪ rounds, per-county, unknown keys); DB: tick/untick idempotent and
+  per player; only the player's rounds on linked courses count.
+
+- **Data-quality rules learned from the first fetches:** Overpass `out tags center bb` returns
+  only bounds for ways (use the box middle); a 200 response can carry PARTIAL results plus a
+  `remark` (treat as a failure and retry); a known hole count never reverts to unknown on refresh;
+  "Links" names a separate course (Portmarnock Links ≠ Portmarnock GC) so only generic extra words
+  ("& Sports", "Estate") merge names; par-3 courses are excluded like pitch & putt; a tiny outline
+  named "… Golf Club" is the clubhouse standing in for the course, so it's kept; features with no
+  name fall back to `official_name`/`operator`, and the rest are listed so an override can name one.
+  Courses OSM doesn't tag at all (Lahinch) go in `overrides.json` `add`.
+- **Re-keyed courses become aliases:** a previous key that's gone but has a same-club successor
+  within 3 km is written to `ireland.json` `aliases` (`old -> new`, chains followed), not kept as a
+  stale copy. `resolveKey` / `directoryCourse` / `keysFor` apply them at runtime, so ticks, course
+  links and top-100 keys stored under an old key keep working, and un-ticking removes either.
+- **Incomplete-fetch guard:** more than 3 courses vanishing (after aliasing) or more than 3 without
+  a county fails the run without writing; `allow_drops` on the workflow overrides it.
+- **Top 100 challenge** (`src/lib/directory/top100.ts`, tested): `data/top100.json`
+  `{title, year, source, entries: [{rank, name, key|null}]}`. `matchTop100` scores ranked names
+  against directory names (share of the ranked name's significant words found, minus 0.05 per extra
+  word; parenthesised course names like "(Old)" ignored); a match needs ≥ 0.75, must beat the
+  runner-up outright, and must not already be ranked — otherwise it's left `null` with guesses.
+  `validateTop100` (duplicate ranks/keys, unknown keys) runs as a test against the committed files.
+  UI: gold `#n` badge, gold map ring, "Top 100" stat tile, "Top 100 only, in rank order" filter —
+  all hidden while the list is empty.
+
+**Not built yet (follow-ups):** sharing a profile with friends; other countries; a per-county
+"completion" view; letting players suggest directory fixes in-app (today: course requests →
+admin edits `overrides.json`).
+
 ## Verification
 
 1. `pnpm test` — all Phase 1 tests green, including the invariant property test.
@@ -301,4 +381,4 @@ group trends by course, or warn when a comparison mixes courses.
 
 ## Out of scope
 
-GPS tracking, handicap calculation, course maps, offline PWA sync. (Auth and cloud deploy were out of scope for Phases 1–5 and are the subject of Phase 6.)
+GPS tracking, handicap calculation, hole-level course maps, offline PWA sync. (Auth and cloud deploy were out of scope for Phases 1–5 and are the subject of Phase 6.)

@@ -1,0 +1,29 @@
+{
+  "exclude": {},
+  "set": {
+    "osm:way/23017412": {
+      "holes": 18
+    },
+    "osm:way/28278009": {
+      "holes": 18
+    },
+    "osm:way/1413316758": {
+      "holes": 36
+    },
+    "osm:way/85612311": {
+      "county": "Kildare"
+    }
+  },
+  "add": [
+    {
+      "key": "manual:lahinch",
+      "name": "Lahinch Golf Club",
+      "county": "Clare",
+      "country": "IE",
+      "lat": 52.938,
+      "lng": -9.346,
+      "holes": 36,
+      "website": "https://www.lahinchgolf.com/"
+    }
+  ]
+}

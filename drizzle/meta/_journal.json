@@ -43,6 +43,13 @@
       "when": 1790359704191,
       "tag": "0005_absurd_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790361990843,
+      "tag": "0006_colossal_juggernaut",
+      "breakpoints": true
     }
   ]
 }

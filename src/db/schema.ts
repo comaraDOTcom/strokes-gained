@@ -30,6 +30,7 @@ import {
   timestamp,
   uniqueIndex,
   index,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 // ---------------------------------------------------------------------------
@@ -108,6 +109,9 @@ export const courses = pgTable('courses', {
   location: text('location'),
   // Who added the course (they, and the admin, may edit it). Null = seeded / legacy.
   createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+  // Its entry in the course directory (src/lib/directory, e.g. 'osm:way/123'), set by the admin.
+  // A round here then counts the directory course as played. Null = not linked yet.
+  directoryKey: text('directory_key'),
 });
 
 export const tees = pgTable(
@@ -276,9 +280,27 @@ export const courseRequests = pgTable(
   (t) => ({ statusIdx: index('course_requests_status_idx').on(t.status) }),
 );
 
+/**
+ * Courses a player has ticked off as played — any course in the directory, whether or not it has a
+ * scorecard here. `course_key` is a directory key (src/lib/directory), not a foreign key: the
+ * directory is a static file. Courses with a logged round count as played without a row here.
+ */
+export const playedCourses = pgTable(
+  'played_courses',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    courseKey: text('course_key').notNull(),
+    addedAt: timestamp('added_at').notNull().defaultNow(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.userId, t.courseKey] }) }),
+);
+
 export type User = typeof user.$inferSelect;
 export type InvitedEmail = typeof invitedEmails.$inferSelect;
 export type CourseRequest = typeof courseRequests.$inferSelect;
+export type PlayedCourse = typeof playedCourses.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type NewCourse = typeof courses.$inferInsert;
 export type Tee = typeof tees.$inferSelect;

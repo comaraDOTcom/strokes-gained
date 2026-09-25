@@ -6,14 +6,33 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
-## 0.0.35 — 2026-09-25
+## 0.0.36 — 2026-09-25
 
-### Backdrop choice moves to a new Profile page
+### Backdrop choice moves off Rounds, into Settings on your profile
 - **Rounds is back to just your rounds.** The scene banner and the Backdrop picker are gone from the
   top of the page. The course scene at the bottom of every page stays.
-- **A new Profile page**, opened from your name (or initial, on a phone) in the top bar. It shows your
-  name and email, and the **Backdrop** setting: a preview of the current scene, then Auto or one of
-  the four seasons. It's still saved on this device.
+- **Settings, at the bottom of your profile (the Played page):** your name and email, and the
+  **Backdrop** setting, with a preview of the current scene, then Auto or one of the four seasons.
+  It's still saved on this device.
+- **Your name (or initial, on a phone) in the top bar** now opens those settings.
+
+## 0.0.35 — 2026-09-25
+
+### Courses played, on a map
+- New **Played** page: every golf course in Ireland, North and South, on a map. Tick off the ones
+  you've played and build up your list, grouped by county, with counts: courses played, counties
+  out of 32, and 18- and 9-hole courses.
+- Search by name or county, or tap a flag on the map. Green = played. Zoomed out, nearby courses
+  group into numbered bubbles, with a green badge counting the ones you've played.
+- Courses where you've **logged a round** count automatically (the admin links each scorecard
+  course to its map entry on the Courses page).
+- Your list is private to you, like your rounds.
+- The course list comes from OpenStreetMap (© OpenStreetMap contributors, ODbL), refreshed by a new
+  GitHub Actions workflow. Pitch & putt, par-3 courses, driving ranges and duplicates are filtered
+  out, and anything it gets wrong can be corrected in `overrides.json`.
+- **Top 100 challenge:** courses in the Golf Digest Ireland Top 100 (2023) get a gold rank badge and
+  a gold ring on the map, with a "Top 100" count and a filter that lists the ranking in order. (Shows
+  once the ranking is loaded with `pnpm directory:top100`.)
 
 ## 0.0.34 — 2026-09-25
 
