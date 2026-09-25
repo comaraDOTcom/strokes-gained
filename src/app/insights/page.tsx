@@ -26,6 +26,9 @@ import {
 import { fmtPct, fmtSg, CATEGORICAL } from '@/lib/insights/chart-colors';
 import { CourseFilter } from '../course-filter';
 import { Section } from '../section';
+import { QualityBadge } from '../quality-badge';
+import { QualityBars } from '../recap-parts';
+import { roundQuality } from '@/lib/insights/quality';
 import { DivergingBarChart, GroupedBarChart, TrendBarChart } from './charts';
 
 export const dynamic = 'force-dynamic';
@@ -82,6 +85,7 @@ export default async function InsightsPage({
 
   const series = categorySeries(shots);
   const story = buildCourseStory(shots);
+  const quality = roundQuality(shots);
 
   const summaries = roundSummaries(shots);
   const roundNames = new Map([...details].map(([id, d]) => [id, d.name]));
@@ -165,6 +169,24 @@ export default async function InsightsPage({
           </div>
         </div>
       </Section>
+
+      {quality.overall && (
+        <Section
+          title="Shot quality"
+          subtitle="Strokes gained per shot, scaled so 100 is a scratch golfer's average shot. Unlike the totals, it doesn't depend on how many of each shot you hit."
+        >
+          <div className="grid items-center gap-4 sm:grid-cols-[auto_1fr]">
+            <div className="flex flex-col items-center">
+              <QualityBadge stat={quality.overall} size="lg" />
+              <p className="mt-1 text-center font-mono text-[11px] text-muted">
+                {story.rounds} round{story.rounds === 1 ? '' : 's'}, {quality.overall.shots} shots
+              </p>
+            </div>
+            <QualityBars areas={quality.byCategory} />
+          </div>
+          <p className="text-xs text-muted">Faded rows have fewer than 10 shots, so read them as a hint.</p>
+        </Section>
+      )}
 
       <p className="text-sm text-ink-2">
         Scores, how your holes finish vs scratch golfers, par 3s/4s/5s and your eclectic are on{' '}
