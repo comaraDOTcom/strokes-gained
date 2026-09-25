@@ -4,6 +4,7 @@
  */
 import { CATEGORY_LABEL, type RecapArea, type RecapHole, type RecapShot, type ShotGroups, type StoryHole } from '@/lib/insights/recap';
 import { fmtSg } from '@/lib/insights/chart-colors';
+import { formatQuality, qualityTone, SCRATCH_QUALITY, type CategoryQuality } from '@/lib/insights/quality';
 
 export const sgClass = (v: number) => (v >= 0 ? 'text-pos' : 'text-neg');
 
@@ -131,6 +132,44 @@ export function SkillBars({ areas }: { areas: readonly RecapArea[] }) {
               <span className="flex w-1/2 border-l border-line-strong">{a.sg >= 0 && <span className="h-3.5 rounded-r-sm bg-pos/70" style={{ width: `${pct}%` }} />}</span>
             </span>
             <span className={`text-right font-mono tabular-nums ${shown < 0 ? 'text-neg' : shown > 0 ? 'text-pos' : 'text-muted'}`}>{text}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Shot quality per area as bars either side of 100 (scratch), on one shared scale. Rows with fewer
+ * than 10 shots are faded: one great bunker shot doesn't make a 148.
+ */
+export function QualityBars({ areas }: { areas: readonly CategoryQuality[] }) {
+  const scale = Math.max(10, ...areas.map((a) => Math.abs(a.quality - SCRATCH_QUALITY)));
+  return (
+    <ul className="space-y-2">
+      {areas.map((a) => {
+        const d = a.quality - SCRATCH_QUALITY;
+        const pct = Math.max(3, (Math.abs(d) / scale) * 100);
+        const tone = qualityTone(a.quality);
+        return (
+          <li
+            key={a.category}
+            className={`grid grid-cols-[6rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-sm ${a.thin ? 'opacity-60' : ''}`}
+            title={`${fmtSg(a.sg / a.shots)} strokes gained per shot over ${a.shots} shot${a.shots === 1 ? '' : 's'}`}
+          >
+            <span className="leading-tight text-ink-2">
+              {a.label}
+              <span className="block font-mono text-[10px] text-muted">
+                {a.shots} shot{a.shots === 1 ? '' : 's'}
+              </span>
+            </span>
+            <span className="flex items-center">
+              <span className="flex w-1/2 justify-end">{d < 0 && <span className="h-3.5 rounded-l-sm bg-neg/70" style={{ width: `${pct}%` }} />}</span>
+              <span className="flex w-1/2 border-l border-line-strong">{d >= 0 && <span className="h-3.5 rounded-r-sm bg-pos/70" style={{ width: `${pct}%` }} />}</span>
+            </span>
+            <span className={`text-right font-mono tabular-nums ${tone === 'pos' ? 'text-pos' : tone === 'neg' ? 'text-neg' : 'text-muted'}`}>
+              {formatQuality(a.quality)}
+            </span>
           </li>
         );
       })}
