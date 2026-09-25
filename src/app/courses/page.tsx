@@ -7,6 +7,15 @@ import { canEditTee } from '@/lib/auth/guards';
 import { AdminBadge } from '../admin-badge';
 import { CoursePicker } from './course-picker';
 import { CourseRequestForm, RequestDoneButton } from './course-request-form';
+import { DirectoryLink } from './directory-link';
+import { DIRECTORY, directoryCourse } from '@/lib/directory';
+
+/** "Portmarnock Golf Club — Dublin", plus the key in the rare case two share that. */
+const baseLabel = (c: { name: string; county: string | null; key: string }) => `${c.name} — ${c.county ?? c.key}`;
+const labelCounts = new Map<string, number>();
+for (const d of DIRECTORY) labelCounts.set(baseLabel(d), (labelCounts.get(baseLabel(d)) ?? 0) + 1);
+const directoryLabel = (c: { name: string; county: string | null; key: string }) =>
+  labelCounts.get(baseLabel(c))! > 1 ? `${baseLabel(c)} (${c.key})` : baseLabel(c);
 
 // Live DB state (courses change via import, the editor and the API importer).
 export const dynamic = 'force-dynamic';
@@ -127,6 +136,18 @@ export default async function CoursesPage({
                   </Link>
                 )}
               </div>
+
+              {me.isAdmin && DIRECTORY.length > 0 && (
+                <DirectoryLink
+                  key={selected.id}
+                  courseId={selected.id}
+                  current={(() => {
+                    const d = selected.directoryKey ? directoryCourse(selected.directoryKey) : undefined;
+                    return d ? { key: d.key, label: directoryLabel(d) } : null;
+                  })()}
+                  options={DIRECTORY.map((d) => ({ key: d.key, label: directoryLabel(d) }))}
+                />
+              )}
 
               <ul className="space-y-2">
                 {courseTees.map((t, i) => {

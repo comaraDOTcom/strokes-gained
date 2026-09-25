@@ -43,6 +43,7 @@ const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
   { href: '/trends', label: 'Trends' },
   { href: '/learn', label: 'Learn' },
   { href: '/courses', label: 'Courses' },
+  { href: '/profile', label: 'Played' },
   { href: '/players', label: 'Players', adminOnly: true },
 ];
 

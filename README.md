@@ -28,6 +28,7 @@ assume any phase is complete just because a file exists. Verify with `pnpm test`
 | 5 | Trends + "What to work on" roadmap, cross-course difficulty caveat | ✅ Built (`/trends`, `src/lib/insights/trends.ts` + `roadmap.ts`, tested). Needs ≥4 rounds before it shows a trend; difficulty adjustment stays off until Portmarnock has a course rating |
 | — | Round notes, mentality (BTT + per-shot focus/commitment), in-place editing | ✅ Built (see below) |
 | 6 | Postgres + accounts + invite-only multiplayer (Google sign-in, shared course library, read-only friends' rounds) | ✅ Live on Vercel + Neon (v0.0.2); see "Deploying" below |
+| 7 | Course directory (every course in Ireland, from OpenStreetMap), courses-played profile + map (`/profile`) | ✅ Built. Directory data needs its first fetch — run the **Course directory** workflow |
 
 **Design direction**: two mockups (landing + dashboard) are published at
 <https://claude.ai/artifact/5xuDRDUxDhpTwrbsYixSLB> — analytical/data-tool
@@ -255,6 +256,31 @@ apply to a new deployment, so redeploy after adding them. Runtime logs:
 
 Backups are now Neon's (point-in-time restore on the free tier is short — export
 occasionally with `pg_dump "$DATABASE_URL" > backup.sql`).
+
+## Courses played and the course directory
+
+`/profile` (nav **Played**) maps every golf course on the island of Ireland and lets each player
+tick off the ones they've played. The list is private to them, like their rounds. Courses where they've
+logged a round count automatically once the admin links the scorecard course to its directory
+entry ("On the course map as", on `/courses`).
+
+The directory is a static file, `src/lib/directory/data/ireland.json`, built from OpenStreetMap
+(ODbL — keep the attribution). Refresh it with the **Course directory** workflow in GitHub Actions
+(Actions → Course directory → Run workflow; run from `main` it pushes a `course-directory-refresh`
+branch to open a PR from), or locally with `pnpm directory:fetch`. The run log lists what it left
+out (pitch & putt, ranges, duplicates, courses with no county). A refresh that loses more than 3
+courses or can't place more than 3 in a county refuses to write (Overpass sometimes returns an
+incomplete result) — just run it again; tick **allow drops** only when the change is real. Fix anything wrong in
+`src/lib/directory/data/overrides.json` (`exclude` / `set` / `add`) and run it again. Keys are
+never silently dropped (see `BUILD.md` Phase 7).
+
+**Top 100 challenge.** `src/lib/directory/data/top100.json` holds a ranking (currently the Golf
+Digest Ireland Top 100, 2023). Ranked courses get a gold `#n` badge and a gold ring on the map,
+`/profile` shows "Top 100: played / ranked" and a "Top 100 only, in rank order" filter. It's empty
+until the list is added: paste it into a text file, one course per line (`1. Royal County Down`),
+then `pnpm directory:top100 list.txt --source "<where it's from>"`. The script matches each name to
+a directory course and lists any it couldn't match confidently (set those `key`s by hand, or add the
+course to `overrides.json` first). A test keeps the file consistent with the directory.
 
 ## Inviting someone: the sign-up flow
 
