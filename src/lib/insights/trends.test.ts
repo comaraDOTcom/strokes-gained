@@ -30,6 +30,9 @@ function shot(overrides: Partial<EnrichedShot>): EnrichedShot {
     sg: 0,
     category: 'OFF_THE_TEE',
     bunkerSubtype: null,
+    missDirection: null,
+    puttSlope: null,
+    puttBreak: null,
     ...overrides,
   };
 }

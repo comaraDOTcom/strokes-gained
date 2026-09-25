@@ -10,6 +10,7 @@ import { expectedStrokes } from '../sg/interpolate';
 import type { Lie } from '../sg/baseline-scratch';
 import type { Category, BunkerSubtype } from '../sg/categorise';
 import type { PenaltyType } from '../sg/compute';
+import type { MissDirection, PuttBreak, PuttSlope } from '../rounds/entry';
 import {
   computeHoleTraditionalStats,
   aggregateTraditionalStats,
@@ -37,6 +38,10 @@ export type EnrichedShot = {
   sg: number;
   category: Category;
   bunkerSubtype: BunkerSubtype | null;
+  /** Optional tags from Detailed entry (see src/lib/rounds/entry.ts); never feed SG. */
+  missDirection: MissDirection | null;
+  puttSlope: PuttSlope | null;
+  puttBreak: PuttBreak | null;
 };
 
 const ALL_CATEGORIES: Category[] = [

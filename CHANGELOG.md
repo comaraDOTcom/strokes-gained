@@ -5,6 +5,24 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.31 — 2026-09-25
+
+### Where you miss, and your putting profile (Insights)
+Two new sections built from the tags you log in **Detailed** entry. Neither changes strokes gained.
+- **Where you miss:** one sentence on your main tendency, e.g. "Approach shots that miss the green
+  mostly finish short (39% of 104 tagged misses); putts you miss tend to finish short." Under it:
+  - a **cross** for approach shots (over 30 yards) and another for short game and greenside bunkers:
+    long above, short below, left and right either side, and how often you found the green in the
+    middle. Your most common miss is highlighted;
+  - **approach misses by distance band**, so you can see whether a 150-yard miss is different from a
+    100-yard one;
+  - **off the tee:** one bar of missed left, fairway and missed right.
+- **Putting profile:** for each putt length, how many you hole, whether your misses finish **short or
+  long** (and which you lean to), and **high side or low side** on breaking putts. Then the same by
+  break: left-to-right, right-to-left and straight.
+- **Small samples say so.** Anything with fewer than 8 tagged misses is faded and tells you how many it
+  has. A course with no tags yet explains how to start.
+
 ## 0.0.30 — 2026-09-25
 
 ### Log where you missed, and how each putt broke
