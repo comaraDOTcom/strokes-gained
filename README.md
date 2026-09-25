@@ -74,6 +74,12 @@ in `invited_emails` so the emailed link works in a mail app's own browser, where
 cookie doesn't exist. Email goes through `sendEmail` in `src/lib/notify.ts` (Resend): set
 `RESEND_API_KEY`, plus `NOTIFY_FROM` on a verified domain to reach anyone but the account owner.
 
+**Shot quality** (`src/lib/insights/quality.ts`, pure and tested) is strokes gained per shot
+rescaled so 100 = scratch: `100 + 100 × ΣSG / shots`. k = 100 reproduces Clippd's own example
+(+4 over 68 shots → 106). It divides by shot rows, not strokes, because a penalty is already inside
+the causing shot's SG. It's derived at read time (no column), shown as a badge on round cards and the
+recap, a per-area slide in the recap, and a section on `/insights`. Fewer than 10 shots = faded.
+
 **What to work on** (`/trends`, `src/lib/insights/roadmap.ts`) ranks every area of your game by
 Broadie's *importance* (how much that kind of shot separates golfers' scores) × your *opportunity*
 (strokes a round you lose there against scratch, last 8 rounds), and shows the *trend* alongside.

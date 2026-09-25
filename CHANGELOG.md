@@ -5,6 +5,23 @@ entry here, then push an annotated tag `vX.Y.Z` — the Release workflow publish
 release from this file (and refuses if the version or the entry is missing). While the app is
 pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.28 — 2026-09-25
+
+### Shot quality: one number for how well you hit it
+**100 = a scratch golfer's average shot.** Shot quality is your strokes gained per shot, scaled
+so each point is a hundredth of a stroke: `100 + 100 × SG per shot`. A 68 that gained 4 strokes
+over 68 shots scores 106. A round that gives up 20 strokes over 90 shots scores 78.
+- **On every round card**, a hexagon badge next to the score. Hover it for the strokes gained
+  per shot behind it.
+- **In the round recap:** the badge on the first slide, and a new **Shot quality** slide with
+  each area (off the tee, approach, short game, bunker, putting, recovery) as a bar either side
+  of 100.
+- **On Insights:** a Shot quality section for the course you've picked, across every round.
+- It's per shot, so it describes how well you hit each kind of shot, not how often you hit it.
+  A penalty stays with the shot that caused it.
+- **Areas with fewer than 10 shots are faded**: three bunker shots can read 36 or 148, and
+  neither means much yet.
+
 ## 0.0.27 — 2026-09-25
 
 ### What to work on (Trends)

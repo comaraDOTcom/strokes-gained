@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RoundRecap } from '@/lib/insights/recap';
-import { AreaCard, HoleRow, ShotGroupsBody, SkillBars, sgClass } from '@/app/recap-parts';
+import { AreaCard, HoleRow, QualityBars, ShotGroupsBody, SkillBars, sgClass } from '@/app/recap-parts';
+import { QualityBadge } from '@/app/quality-badge';
+import { formatQuality, type RoundQuality } from '@/lib/insights/quality';
 import { swipeToHoleDelta } from '@/lib/rounds/entry';
 import { fmtSg } from '@/lib/insights/chart-colors';
 
@@ -14,11 +16,13 @@ export function RecapDeck({
   title,
   subtitle,
   recap,
+  quality,
 }: {
   roundId: number;
   title: string;
   subtitle: string;
   recap: RoundRecap;
+  quality: RoundQuality;
 }) {
   const gained = recap.sgTotal >= 0;
   const slides: Slide[] = [
@@ -39,6 +43,11 @@ export function RecapDeck({
             <p className={`font-mono text-4xl font-medium ${sgClass(recap.sgTotal)}`}>{fmtSg(recap.sgTotal)}</p>
             <p className="font-mono text-xs uppercase tracking-wide text-muted">strokes gained vs scratch</p>
           </div>
+          {quality.overall && (
+            <div className="flex justify-center">
+              <QualityBadge stat={quality.overall} size="lg" />
+            </div>
+          )}
           <p className="text-ink-2">
             {gained
               ? `You beat a scratch golfer by ${Math.abs(recap.sgTotal).toFixed(1)} strokes. Here's how.`
@@ -81,6 +90,32 @@ export function RecapDeck({
           kicker: 'Shots to forget',
           heading: 'Your worst shots',
           body: <ShotGroupsBody groups={recap.worstShots} />,
+        } satisfies Slide]
+      : []),
+    ...(quality.overall && quality.byCategory.length > 0
+      ? [{
+          key: 'quality',
+          kicker: 'Shot quality',
+          heading: `Shot quality ${formatQuality(quality.overall.quality)}`,
+          body: (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <QualityBadge stat={quality.overall} size="lg" />
+                <p className="text-ink-2">
+                  {quality.overall.sg >= 0
+                    ? 'Shot for shot, you played better than a scratch golfer today.'
+                    : `Shot for shot, a scratch golfer would have gained ${Math.abs(quality.overall.sg).toFixed(1)} strokes on you over these ${quality.overall.shots} shots.`}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-paper p-4">
+                <QualityBars areas={quality.byCategory} />
+              </div>
+              <p className="text-xs text-muted">
+                100 is a scratch golfer&apos;s average shot; each point is a hundredth of a stroke per shot. Faded rows have
+                fewer than 10 shots — one great bunker shot doesn&apos;t make a 148.
+              </p>
+            </div>
+          ),
         } satisfies Slide]
       : []),
     ...(recap.strongArea && recap.weakArea
