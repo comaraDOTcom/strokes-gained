@@ -112,7 +112,10 @@ export function RecapDeck({
               </div>
               <p className="text-xs text-muted">
                 100 is a scratch golfer&apos;s average shot; each point is a hundredth of a stroke per shot. Faded rows have
-                fewer than 10 shots — one great bunker shot doesn&apos;t make a 148.
+                fewer than 10 shots — one great bunker shot doesn&apos;t make a 148.{' '}
+                <Link href="/learn#shot-quality" className="underline underline-offset-2">
+                  More on shot quality
+                </Link>
               </p>
             </div>
           ),

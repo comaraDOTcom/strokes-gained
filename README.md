@@ -94,6 +94,12 @@ the causing shot's SG. It's derived at read time (no column), shown as a badge o
 recap, a per-area slide in the recap, a section on `/insights`, and a last-year trend per area on
 `/trends` (rolling 5 rounds, pooled by shots, not averaged per round). Fewer than 10 shots = faded.
 
+**Learn** (`/learn`) explains the numbers: a scroll-through strokes-gained tour of one bogey
+(`src/app/learn/sg-tour.tsx`, data from `buildTour` in `src/lib/learn/tour.ts`, which runs the real
+engine so the tour can't drift from the app), what the shot-quality hexagon means (`explainQuality`,
+`qualityLadder` in `src/lib/learn/explain.ts`), and short guides to each page. Every hexagon is
+tappable (`src/app/quality-info.tsx`) and Rounds shows a dismissible first-visit tip.
+
 **What to work on** (`/trends`, `src/lib/insights/roadmap.ts`) ranks every area of your game by
 Broadie's *importance* (how much that kind of shot separates golfers' scores) × your *opportunity*
 (strokes a round you lose there against scratch, last 8 rounds), and shows the *trend* alongside.
