@@ -98,9 +98,9 @@ export function elementKey(e: Pick<OsmElement, 'type' | 'id'>): string {
   return `osm:${e.type}/${e.id}`;
 }
 
-/** Names that are something other than a golf course. Pitch & putt is its own sport here. */
+/** Names that are something other than a full golf course. Pitch & putt and par-3 courses are their own thing here. */
 const NOT_A_COURSE =
-  /pitch\s*(&|and|'?n'?|-)\s*putt?|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|adventure\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)/i;
+  /pitch\s*(&|and|'?n'?|-)\s*putt?|p\s*&\s*p\b|driving\s+range|golf\s+range|practice\s+(ground|range|area)|mini(ature)?\s*golf|crazy\s+golf|adventure\s+golf|foot\s*golf|disc\s+golf|putting\s+(green|course)|\bpar[\s-]*3\b/i;
 
 /** A name that says it's a real club: a tiny outline with this name is the clubhouse, not the course. */
 const CLUB_NAME = /golf\s+(club|course|links)|\blinks\b|\bG\.?C\.?$/i;
@@ -336,6 +336,8 @@ export function sortDirectory(list: DirectoryCourse[]): DirectoryCourse[] {
 }
 
 /**
+ * Also keeps a previously known hole count when the new fetch has none.
+ *
  * Keys are referenced by players' played lists, so a course that has disappeared from OSM (deleted,
  * re-drawn with a new id, or temporarily broken) is carried over from the previous directory and
  * flagged `stale` instead of silently vanishing. Excluding it in overrides.json drops it for real.
@@ -349,8 +351,12 @@ export function mergeWithPrevious(
   const carried = previous
     .filter((p) => !keys.has(p.key) && !overrides.exclude?.[p.key])
     .map((p) => ({ ...p, stale: true as const }));
+  const before = new Map(previous.map((p) => [p.key, p]));
   const fresh = next.map((c) => {
     const { stale: _stale, ...rest } = c;
+    // Mapped holes come and go with how complete the fetch was; a known count never reverts to unknown.
+    const was = before.get(c.key);
+    if (rest.holes === null && was?.holes) rest.holes = was.holes;
     return rest;
   });
   return { courses: sortDirectory([...fresh, ...carried]), carried };

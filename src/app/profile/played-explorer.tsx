@@ -18,11 +18,17 @@ export function PlayedExplorer({
   directory,
   initialTicked,
   roundCourses,
+  top100,
 }: {
   directory: DirectoryCourse[];
   initialTicked: string[];
   roundCourses: RoundCourse[];
+  /** The top-100 challenge: key -> rank pairs and a label ("Golf Digest Ireland Top 100 (2023)"). */
+  top100: { ranks: [string, number][]; label: string };
 }) {
+  const rankOf = useMemo(() => new Map(top100.ranks), [top100.ranks]);
+  const hasTop100 = rankOf.size > 0;
+  const [onlyTop100, setOnlyTop100] = useState(false);
   const [ticked, setTicked] = useState(() => new Set(initialTicked));
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -36,16 +42,19 @@ export function PlayedExplorer({
     mapSection.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const profile = useMemo(() => buildPlayedProfile(directory, [...ticked], roundCourses), [directory, ticked, roundCourses]);
+  const profile = useMemo(
+    () => buildPlayedProfile(directory, [...ticked], roundCourses, rankOf),
+    [directory, ticked, roundCourses, rankOf],
+  );
   const playedByKey = useMemo(() => new Map(profile.played.map((p) => [p.course.key, p])), [profile]);
 
   const mapCourses: MapCourse[] = useMemo(
     () =>
       directory.map((c) => {
         const p = playedByKey.get(c.key);
-        return { ...c, played: Boolean(p), ticked: p?.ticked ?? false, rounds: p?.rounds ?? 0 };
+        return { ...c, played: Boolean(p), ticked: p?.ticked ?? false, rounds: p?.rounds ?? 0, rank: rankOf.get(c.key) ?? null };
       }),
-    [directory, playedByKey],
+    [directory, playedByKey, rankOf],
   );
 
   async function toggle(key: string, played: boolean) {
@@ -80,17 +89,25 @@ export function PlayedExplorer({
   }
 
   const results = useMemo(() => {
-    const hits = directory.filter((c) => (!county || c.county === county) && matchesQuery(c, query));
+    const hits = directory.filter(
+      (c) => (!county || c.county === county) && (!onlyTop100 || rankOf.has(c.key)) && matchesQuery(c, query),
+    );
+    // The top-100 view reads as the ranking itself: in rank order, all of it.
+    if (onlyTop100) {
+      hits.sort((a, b) => rankOf.get(a.key)! - rankOf.get(b.key)!);
+      return { total: hits.length, shown: hits };
+    }
     return { total: hits.length, shown: hits.slice(0, SEARCH_LIMIT) };
-  }, [directory, query, county]);
+  }, [directory, query, county, onlyTop100, rankOf]);
 
   const { stats } = profile;
   const countiesWithCourses = profile.byCounty.filter((b) => b.total > 0);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${hasTop100 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
         <Stat label="Courses played" value={stats.played} of={stats.total} />
+        {hasTop100 && <Stat label="Top 100" value={stats.top100} of={stats.totalTop100} title={top100.label} />}
         <Stat label="Counties" value={stats.counties} of={stats.totalCounties} />
         <Stat label="18-hole" value={stats.eighteen} />
         <Stat label="9-hole" value={stats.nine} />
@@ -106,9 +123,14 @@ export function PlayedExplorer({
             <span className="flex items-center gap-1.5">
               <span className="inline-block size-2 rounded-full border border-muted bg-card" /> not yet
             </span>
+            {hasTop100 && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block size-3 rounded-full border-2 border-eagle bg-card" /> top 100
+              </span>
+            )}
           </p>
         </div>
-        <CourseMap courses={mapCourses} onToggle={toggle} focus={focus} />
+        <CourseMap courses={mapCourses} onToggle={toggle} focus={focus} top100Label={top100.label} />
         <p className="text-xs text-muted">Tap a dot to tick a course off. Click the map first to zoom with your scroll wheel.</p>
       </section>
 
@@ -140,6 +162,12 @@ export function PlayedExplorer({
               ))}
             </select>
           </div>
+          {hasTop100 && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={onlyTop100} onChange={(e) => setOnlyTop100(e.target.checked)} />
+              {top100.label} only, in rank order
+            </label>
+          )}
           <ul className="divide-y">
             {results.shown.map((c) => {
               const p = playedByKey.get(c.key);
@@ -147,7 +175,10 @@ export function PlayedExplorer({
               return (
                 <li key={c.key} className="flex items-center justify-between gap-3 py-2">
                   <button type="button" onClick={() => focusOn(c.key)} className="min-w-0 text-left" title="Show on the map">
-                    <p className="text-sm font-medium truncate">{c.name}</p>
+                    <p className="text-sm font-medium truncate">
+                      <RankBadge rank={rankOf.get(c.key)} />
+                      {c.name}
+                    </p>
                     <p className="font-mono text-xs text-muted">
                       {[c.county, c.holes ? `${c.holes} holes` : null].filter(Boolean).join(' · ') || '—'}
                     </p>
@@ -189,7 +220,7 @@ export function PlayedExplorer({
           {profile.played.length === 0 ? (
             <p className="text-sm text-muted">None yet. Search for a course or tap one on the map to start your list.</p>
           ) : (
-            <PlayedByCounty profile={profile} onFocus={focusOn} />
+            <PlayedByCounty profile={profile} onFocus={focusOn} rankOf={rankOf} />
           )}
         </section>
       </div>
@@ -197,9 +228,19 @@ export function PlayedExplorer({
   );
 }
 
-function Stat({ label, value, of }: { label: string; value: number; of?: number }) {
+/** "#12" in the top-100 gold, before a ranked course's name. */
+function RankBadge({ rank }: { rank: number | undefined }) {
+  if (rank === undefined) return null;
   return (
-    <div className="border rounded-xl bg-card px-4 py-3">
+    <span className="mr-1.5 inline-block rounded bg-eagle/20 px-1 font-mono text-[11px] text-ink align-[1px]" title={`Top 100: #${rank}`}>
+      #{rank}
+    </span>
+  );
+}
+
+function Stat({ label, value, of, title }: { label: string; value: number; of?: number; title?: string }) {
+  return (
+    <div className="border rounded-xl bg-card px-4 py-3" title={title}>
       <p className="font-mono text-xs text-muted uppercase tracking-wide">{label}</p>
       <p className="font-mono text-2xl">
         {value}
@@ -212,9 +253,11 @@ function Stat({ label, value, of }: { label: string; value: number; of?: number 
 function PlayedByCounty({
   profile,
   onFocus,
+  rankOf,
 }: {
   profile: ReturnType<typeof buildPlayedProfile>;
   onFocus: (key: string) => void;
+  rankOf: ReadonlyMap<string, number>;
 }) {
   const groups = new Map<string, typeof profile.played>();
   for (const p of profile.played) {
@@ -234,6 +277,7 @@ function PlayedByCounty({
             {list.map((p) => (
               <li key={p.course.key} className="flex items-baseline justify-between gap-3 py-0.5">
                 <button type="button" onClick={() => onFocus(p.course.key)} className="text-sm text-left hover:underline truncate">
+                  <RankBadge rank={rankOf.get(p.course.key)} />
                   {p.course.name}
                 </button>
                 <span className="shrink-0 font-mono text-xs text-muted">

@@ -1,5 +1,5 @@
 import { requirePageUser } from '@/lib/auth/session';
-import { DIRECTORY, DIRECTORY_FETCHED_AT } from '@/lib/directory';
+import { DIRECTORY, DIRECTORY_FETCHED_AT, TOP100, TOP100_RANK } from '@/lib/directory';
 import { loadPlayedInputs } from '@/lib/directory/queries';
 import { PlayedExplorer } from './played-explorer';
 
@@ -36,7 +36,12 @@ export default async function ProfilePage() {
           )}
         </section>
       ) : (
-        <PlayedExplorer directory={[...DIRECTORY]} initialTicked={tickedKeys} roundCourses={roundCourses} />
+        <PlayedExplorer
+          directory={[...DIRECTORY]}
+          initialTicked={tickedKeys}
+          roundCourses={roundCourses}
+          top100={{ ranks: [...TOP100_RANK], label: `${TOP100.title}${TOP100.year ? ` (${TOP100.year})` : ''}` }}
+        />
       )}
 
       <p className="text-xs text-muted">

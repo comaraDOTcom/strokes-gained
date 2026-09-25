@@ -263,6 +263,14 @@ out (pitch & putt, ranges, duplicates, courses with no county). Fix anything wro
 `src/lib/directory/data/overrides.json` (`exclude` / `set` / `add`) and run it again. Keys are
 never silently dropped (see `BUILD.md` Phase 7).
 
+**Top 100 challenge.** `src/lib/directory/data/top100.json` holds a ranking (currently the Golf
+Digest Ireland Top 100, 2023). Ranked courses get a gold `#n` badge and a gold ring on the map,
+`/profile` shows "Top 100: played / ranked" and a "Top 100 only, in rank order" filter. It's empty
+until the list is added: paste it into a text file, one course per line (`1. Royal County Down`),
+then `pnpm directory:top100 list.txt --source "<where it's from>"`. The script matches each name to
+a directory course and lists any it couldn't match confidently (set those `key`s by hand, or add the
+course to `overrides.json` first). A test keeps the file consistent with the directory.
+
 ## Course requests
 
 Players ask for a course from the Courses page (`course_requests` table, `POST /api/course-requests`,

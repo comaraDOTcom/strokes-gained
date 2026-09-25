@@ -60,12 +60,18 @@ async function overpass(query: string): Promise<any[]> {
           body: new URLSearchParams({ data: query }),
           signal: AbortSignal.timeout(10 * 60_000),
         });
-        if (res.ok) return ((await res.json()) as { elements: any[] }).elements;
+        if (res.ok) {
+          const body = (await res.json()) as { elements: any[]; remark?: string };
+          // A timed-out or memory-limited query still answers 200, with PARTIAL elements and a remark.
+          if (!body.remark || !/error|timed out|out of memory/i.test(body.remark)) return body.elements;
+          lastError = new Error(`${url} -> partial result: ${body.remark}`);
+          throw lastError;
+        }
         lastError = new Error(`${url} -> HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
         // A 4xx other than rate limiting means the query itself is wrong: don't retry it.
-        if (res.status >= 400 && res.status < 500 && res.status !== 429) throw lastError;
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) throw Object.assign(lastError as Error, { fatal: true });
       } catch (err) {
-        if (err === lastError) throw err;
+        if ((err as { fatal?: boolean }).fatal) throw err;
         lastError = err;
       }
       console.warn(`Overpass attempt ${attempt} at ${url} failed: ${lastError instanceof Error ? lastError.message : lastError}`);

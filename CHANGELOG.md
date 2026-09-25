@@ -16,8 +16,11 @@ pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
   course to its map entry on the Courses page).
 - Your list is private to you, like your rounds.
 - The course list comes from OpenStreetMap (© OpenStreetMap contributors, ODbL), refreshed by a new
-  GitHub Actions workflow. Pitch & putt, driving ranges and duplicates are filtered out, and anything
-  it gets wrong can be corrected in `overrides.json`.
+  GitHub Actions workflow. Pitch & putt, par-3 courses, driving ranges and duplicates are filtered
+  out, and anything it gets wrong can be corrected in `overrides.json`.
+- **Top 100 challenge:** courses in the Golf Digest Ireland Top 100 (2023) get a gold rank badge and
+  a gold ring on the map, with a "Top 100" count and a filter that lists the ranking in order. (Shows
+  once the ranking is loaded with `pnpm directory:top100`.)
 
 ## 0.0.31 — 2026-09-25
 

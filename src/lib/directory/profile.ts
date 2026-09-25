@@ -32,6 +32,9 @@ export type PlayedProfile = {
     other: number;
     counties: number;
     totalCounties: number;
+    /** Ranked courses played / ranked courses in the directory (0 / 0 when there's no ranking). */
+    top100: number;
+    totalTop100: number;
   };
   /** Every county, with how many of its courses the player has played. */
   byCounty: { county: string; played: number; total: number }[];
@@ -41,6 +44,7 @@ export function buildPlayedProfile(
   directory: readonly DirectoryCourse[],
   tickedKeys: readonly string[],
   roundCourses: readonly RoundCourse[],
+  top100Rank: ReadonlyMap<string, number> = new Map(),
 ): PlayedProfile {
   const byKey = new Map(directory.map((c) => [c.key, c]));
   const entries = new Map<string, PlayedEntry>();
@@ -83,6 +87,8 @@ export function buildPlayedProfile(
       other: played.filter((p) => p.course.holes !== 18 && p.course.holes !== 9).length,
       counties: counties.size,
       totalCounties: COUNTIES.length,
+      top100: played.filter((p) => top100Rank.has(p.course.key)).length,
+      totalTop100: directory.filter((c) => top100Rank.has(c.key)).length,
     },
     byCounty,
   };

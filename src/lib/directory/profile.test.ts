@@ -32,7 +32,7 @@ describe('buildPlayedProfile', () => {
       ['Lahinch Golf Club', true, 0, null],
       ['Portmarnock Golf Club', false, 1, '2026-06-01'],
     ]);
-    expect(p.stats).toEqual({ played: 3, total: 5, eighteen: 2, nine: 0, other: 1, counties: 2, totalCounties: 32 });
+    expect(p.stats).toEqual({ played: 3, total: 5, eighteen: 2, nine: 0, other: 1, counties: 2, totalCounties: 32, top100: 0, totalTop100: 0 });
   });
 
   it('counts per county across all 32, including counties with no courses played', () => {
@@ -48,6 +48,12 @@ describe('buildPlayedProfile', () => {
     expect(p.unknownKeys).toEqual(['osm:way/999']);
     expect(p.played.map((e) => e.course.key)).toEqual(['osm:way/5']);
     expect(p.stats.counties).toBe(0); // no county on file doesn't count as one
+  });
+
+  it('counts ranked courses played against ranked courses in the directory', () => {
+    const rank = new Map([['osm:way/1', 3], ['osm:way/3', 7], ['osm:way/999', 1]]);
+    const p = buildPlayedProfile(DIR, ['osm:way/3', 'osm:way/2'], [], rank);
+    expect([p.stats.top100, p.stats.totalTop100]).toEqual([1, 2]);
   });
 
   it('is empty for a new player', () => {

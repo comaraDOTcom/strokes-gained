@@ -16,3 +16,10 @@ const byKey = new Map(DIRECTORY.map((c) => [c.key, c]));
 export function directoryCourse(key: string): DirectoryCourse | undefined {
   return byKey.get(key);
 }
+
+import top100 from './data/top100.json';
+import { rankByKey, type Top100File } from './top100';
+
+/** The top-100 ranking used as the /profile challenge (empty until its list is added). */
+export const TOP100 = top100 as Top100File;
+export const TOP100_RANK: ReadonlyMap<string, number> = rankByKey(TOP100);

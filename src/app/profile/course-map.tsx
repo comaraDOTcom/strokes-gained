@@ -12,15 +12,26 @@ const IRELAND_BOUNDS: [[number, number], [number, number]] = [
   [55.45, -5.35],
 ];
 
-export type MapCourse = DirectoryCourse & { played: boolean; ticked: boolean; rounds: number };
+export type MapCourse = DirectoryCourse & {
+  played: boolean;
+  ticked: boolean;
+  rounds: number;
+  /** Position in the top-100 ranking, or null. */
+  rank: number | null;
+};
 
-const style = (played: boolean) =>
-  played
-    ? { radius: 7, color: CHROME.surface, weight: 1.5, fillColor: DIVERGING.positive, fillOpacity: 1 }
-    : { radius: 4, color: CHROME.mutedInk, weight: 1, fillColor: CHROME.surface, fillOpacity: 0.9 };
+/** Gold ring = in the top 100 (the eagle colour from globals.css). */
+const TOP100_RING = '#e9b31c';
+
+const style = (c: Pick<MapCourse, 'played' | 'rank'>) => {
+  const ranked = c.rank !== null;
+  return c.played
+    ? { radius: ranked ? 8 : 7, color: ranked ? TOP100_RING : CHROME.surface, weight: ranked ? 3 : 1.5, fillColor: DIVERGING.positive, fillOpacity: 1 }
+    : { radius: ranked ? 6 : 4, color: ranked ? TOP100_RING : CHROME.mutedInk, weight: ranked ? 2.5 : 1, fillColor: CHROME.surface, fillOpacity: 0.9 };
+};
 
 /**
- * Every course in the directory as a dot — green when played. Tap one for its details and a
+ * Every course in the directory as a dot — green when played, gold-ringed when in the top 100. Tap one for its details and a
  * played / not-played toggle. Leaflet is loaded on the client only (it touches `window`).
  *
  * Basemap: CARTO "Positron" (light, low-contrast, so the dots carry the colour), © OpenStreetMap
@@ -30,11 +41,14 @@ export function CourseMap({
   courses,
   onToggle,
   focus,
+  top100Label = 'Top 100',
 }: {
   courses: MapCourse[];
   onToggle: (key: string, played: boolean) => void;
   /** Pan to this course and open its popup (set when a course is picked from the list). */
   focus: { key: string; n: number } | null;
+  /** e.g. "Golf Digest Ireland Top 100 (2023)" — shown in the popup of a ranked course. */
+  top100Label?: string;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
@@ -91,13 +105,13 @@ export function CourseMap({
       seen.add(c.key);
       let mk = markers.current.get(c.key);
       if (!mk) {
-        mk = L.circleMarker([c.lat, c.lng], style(c.played)).addTo(m);
+        mk = L.circleMarker([c.lat, c.lng], style(c)).addTo(m);
         mk.bindTooltip(c.name, { direction: 'top', offset: [0, -4] });
         markers.current.set(c.key, mk);
       } else {
-        mk.setStyle(style(c.played));
+        mk.setStyle(style(c));
       }
-      if (c.played) mk.bringToFront();
+      if (c.played || c.rank !== null) mk.bringToFront();
       const popupOpen = mk.isPopupOpen();
       mk.unbindPopup().bindPopup(popupContent(c), { closeButton: true, minWidth: 200 });
       if (popupOpen) mk.openPopup();
@@ -123,6 +137,12 @@ export function CourseMap({
       .filter(Boolean)
       .join(' · ');
     root.append(title, meta);
+    if (c.rank !== null) {
+      const r = document.createElement('p');
+      r.className = 'font-mono text-xs !m-0';
+      r.textContent = `#${c.rank} · ${top100Label}`;
+      root.append(r);
+    }
     if (c.rounds > 0) {
       const r = document.createElement('p');
       r.className = 'text-xs text-pos !m-0';

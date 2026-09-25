@@ -132,11 +132,13 @@ describe('buildDirectory', () => {
         way(7, "Mitchelstown Pitch n' Put", 53.6, -7),
         way(8, "Smuggler's Cove Adventure Golf", 53.7, -7),
         way(9, 'Enniskillen Golf Club', 54.3, -7.6, {}, 0.0003), // only the clubhouse is mapped
+        way(10, 'Liffey Valley Par 3', 53.35, -6.4),
+        way(11, 'Parknasilla Golf Club', 51.8, -9.9), // "Par…" in a name isn't a par 3
       ]),
     );
-    expect(courses.map((c) => c.name)).toEqual(['Enniskillen Golf Club', 'Real Golf Club']);
+    expect(courses.map((c) => c.name)).toEqual(['Enniskillen Golf Club', 'Parknasilla Golf Club', 'Real Golf Club']);
     expect(report.unnamed).toBe(1);
-    expect(report.notACourse).toHaveLength(5);
+    expect(report.notACourse).toHaveLength(6);
     expect(report.tooSmall).toHaveLength(1);
   });
 
@@ -209,6 +211,12 @@ describe('mergeWithPrevious', () => {
       ['osm:way/2', true],
     ]);
     expect(carried).toHaveLength(1);
+  });
+
+  it('keeps a known hole count when a later fetch has none, but takes a new count', () => {
+    const prev = [{ ...c('osm:way/1', 'A'), holes: 18 }, { ...c('osm:way/2', 'B'), holes: 9 }];
+    const { courses } = mergeWithPrevious([c('osm:way/1', 'A'), { ...c('osm:way/2', 'B'), holes: 18 }], prev);
+    expect(courses.map((x) => x.holes)).toEqual([18, 18]);
   });
 
   it('un-stales a course that came back, and drops one that was excluded on purpose', () => {

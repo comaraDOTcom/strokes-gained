@@ -339,6 +339,23 @@ automatically.
   `buildPlayedProfile` (ticked ∪ rounds, per-county, unknown keys); DB: tick/untick idempotent and
   per player; only the player's rounds on linked courses count.
 
+- **Data-quality rules learned from the first fetches:** Overpass `out tags center bb` returns
+  only bounds for ways (use the box middle); a 200 response can carry PARTIAL results plus a
+  `remark` (treat as a failure and retry); a known hole count never reverts to unknown on refresh;
+  "Links" names a separate course (Portmarnock Links ≠ Portmarnock GC) so only generic extra words
+  ("& Sports", "Estate") merge names; par-3 courses are excluded like pitch & putt; a tiny outline
+  named "… Golf Club" is the clubhouse standing in for the course, so it's kept; features with no
+  name fall back to `official_name`/`operator`, and the rest are listed so an override can name one.
+  Courses OSM doesn't tag at all (Lahinch) go in `overrides.json` `add`.
+- **Top 100 challenge** (`src/lib/directory/top100.ts`, tested): `data/top100.json`
+  `{title, year, source, entries: [{rank, name, key|null}]}`. `matchTop100` scores ranked names
+  against directory names (share of the ranked name's significant words found, minus 0.05 per extra
+  word; parenthesised course names like "(Old)" ignored); a match needs ≥ 0.75, must beat the
+  runner-up outright, and must not already be ranked — otherwise it's left `null` with guesses.
+  `validateTop100` (duplicate ranks/keys, unknown keys) runs as a test against the committed files.
+  UI: gold `#n` badge, gold map ring, "Top 100" stat tile, "Top 100 only, in rank order" filter —
+  all hidden while the list is empty.
+
 **Not built yet (follow-ups):** sharing a profile with friends; other countries; a per-county
 "completion" view; letting players suggest directory fixes in-app (today: course requests →
 admin edits `overrides.json`).
