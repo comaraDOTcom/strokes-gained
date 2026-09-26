@@ -32,7 +32,9 @@ The rule that makes the rest work: **the cook who made the plate never checks it
 ### 1. Mise en place (before any cook is spawned)
 
 1. Confirm the kitchen is clean: `.claude/skills/verify/scripts/ci-local.sh fast` is green on
-   the base commit. Never start service on a red base; you won't be able to tell whose fault a
+   the base commit, and **everything a cook needs is committed** (`git status` clean, skills
+   included): a worktree branches from HEAD, so an uncommitted skill or script is missing
+   inside it. Never start service on a red base; you won't be able to tell whose fault a
    failure is.
 2. If you don't already know the area, run `/how` on it. Runners are cheap; a cook working
    from a wrong mental model is not.
