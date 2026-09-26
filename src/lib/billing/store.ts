@@ -64,3 +64,25 @@ export async function assignMemberNumber(userId: string, conn: DbOrTx = db): Pro
   const [existing] = await conn.select({ memberNo: subscriptions.memberNo }).from(subscriptions).where(eq(subscriptions.userId, userId));
   return existing?.memberNo ?? null;
 }
+
+/**
+ * The player's Stripe customer id: the one on their row, or a new customer (and a row with no
+ * status yet) the first time. Reused on every later Checkout so a player is one customer in Stripe.
+ */
+export async function ensureCustomer(
+  viewer: { id: string; email: string; name: string },
+  createCustomer: (p: { email: string; name: string; metadata: { userId: string } }) => Promise<{ id: string }>,
+  conn: DbOrTx = db,
+): Promise<string> {
+  const existing = await customerIdOf(viewer.id, conn);
+  if (existing) return existing;
+  const customer = await createCustomer({ email: viewer.email, name: viewer.name, metadata: { userId: viewer.id } });
+  // Two taps can both get here; the first row wins and the spare Stripe customer is never used.
+  await conn.insert(subscriptions).values({ userId: viewer.id, stripeCustomerId: customer.id }).onConflictDoNothing();
+  return (await customerIdOf(viewer.id, conn))!;
+}
+
+async function customerIdOf(userId: string, conn: DbOrTx): Promise<string | null> {
+  const [row] = await conn.select({ id: subscriptions.stripeCustomerId }).from(subscriptions).where(eq(subscriptions.userId, userId));
+  return row?.id ?? null;
+}
