@@ -2,7 +2,7 @@
 
 For [issue #54](https://github.com/comaraDOTcom/strokes-gained/issues/54) (Stripe subscription). It
 reshapes [issue #53](https://github.com/comaraDOTcom/strokes-gained/issues/53) (free tier).
-Status: **decisions made (section 5)**. The schema and entitlement rules are built. No Stripe calls yet.
+Status: **decisions made (section 5)**. Built: schema, entitlement rules, Stripe client, webhook, Checkout route. Next: the Member's card screens.
 Design mock: [`member-card.html`](member-card.html). Open it in a browser.
 
 ## 1. What changes from the handover
@@ -87,6 +87,54 @@ Viewing is never gated. A lapsed player can open every round they logged. Friend
 the viewer's entitlement (#53). A failed payment blocks **new rounds** only. Shots can still be added to
 a round that was started before the payment failed.
 
+## 3a. Checkout Studio settings
+
+Conor configured these in Stripe's Checkout Studio. They are used as given in
+`src/lib/billing/checkout.ts`, alongside the plan's own parameters above.
+
+| Parameter | Value | Note |
+|---|---|---|
+| `ui_mode` | `hosted_page` | Stripe's hosted page. No Stripe.js, so the **publishable key isn't used**. |
+| `billing_address_collection` | `auto` | |
+| `phone_number_collection` | enabled | Adds a field to the form. Worth reviewing: we don't use the number. |
+| `automatic_tax` | off | So D7 (VAT) is "off for now". Turn it on here and in the dashboard when VAT is sorted. |
+| `allow_promotion_codes` | false | |
+| `payment_method_collection` | `always` | Also what the free-rounds trial needs. |
+| `submit_type` | `auto` | Check in test mode that Stripe accepts it in subscription mode. |
+| `name_collection.individual` | enabled, optional | |
+| `integration_identifier`, `origin_context` | `hosted_web_0001`, `web` | Checkout Studio's own tags. |
+
+Not set yet: `consent_collection.terms_of_service` needs a terms URL in the Stripe dashboard, and
+that waits on D6.
+
+## 3b. Setup (Conor)
+
+Test mode first. Nothing here charges a real card.
+
+1. **Keys, in `.env.local`:** `STRIPE_SECRET_KEY` (`sk_test_…`) is done. The publishable key isn't
+   needed.
+2. **Price:** create the product "Player" with a €7 monthly recurring price. Put its id in
+   `STRIPE_PRICE_PLAYER`.
+3. **Webhook secret:** install the Stripe CLI (`brew install stripe/stripe-cli/stripe`) and run
+   `stripe login`. Then run `stripe listen --forward-to localhost:3000/api/billing/webhook` and put
+   the `whsec_…` it prints in `STRIPE_WEBHOOK_SECRET`.
+4. **Switch it on locally:** `BILLING_ENABLED=1`.
+5. **Test cards:**
+
+   | Card | What it does |
+   |---|---|
+   | `4242 4242 4242 4242` | Succeeds |
+   | `4000 0025 0000 3155` | Asks for 3-D Secure |
+   | `4000 0000 0000 0341` | Attaches fine, then fails when charged (for the failed-payment gate) |
+
+   Use any future expiry date and any CVC.
+6. **Before live:**
+   - activate the account with your business details and a bank account;
+   - add a webhook endpoint in the dashboard for `https://<site>/api/billing/webhook`, with the events in section 3;
+   - set up the customer portal;
+   - add the terms and privacy pages (D6), and decide VAT (D7);
+   - set the live keys in Vercel Production only.
+
 ## 4. Build steps
 
 Each step is a commit on this PR's branch. Tests run against PGlite as usual.
@@ -95,9 +143,9 @@ Each step is a commit on this PR's branch. Tests run against PGlite as usual.
 - [x] 2. `subscriptions` and `stripe_events` tables and `member_no_seq`, in migration `0007`.
 - [x] 3. Entitlement rules (`entitlement.ts`), store (`store.ts`: `getEntitlement`, `spendFreeRound`, `assignMemberNumber`) and member numbers (`member-number.ts`). Tests cover the round 4 to round 5 boundary, deleting rounds, the double-tap race, failed payments, and each kind of exemption.
 - [x] 4. `.env.example` entries for billing, left empty so the secret scan stays green.
-- [ ] 5. Add the `stripe` dependency, and `src/lib/billing/stripe.ts`: the client, which refuses to run without a key, and a pure `subscriptionToRow()` mapper tested against fixture objects.
-- [ ] 6. Webhook route, the middleware allowlist, and an idempotency test (the same event twice, and events out of order).
-- [ ] 7. Claim: `POST /api/billing/checkout`, the Member's card gate on `/rounds/new`, and the `/billing/welcome` return page.
+- [x] 5. Add the `stripe` dependency, and `src/lib/billing/stripe.ts`: the client, which refuses to run without a key (and refuses a live key outside production), and a pure `subscriptionToRow()` mapper tested against fixture objects.
+- [x] 6. Webhook route, the middleware allowlist, and an idempotency test (the same event twice, and events out of order). Checked on a local server: a missing or forged signature gets 400, a signed event is applied once and the repeat is skipped.
+- [ ] 7. Claim: `POST /api/billing/checkout` (**built**, not yet run against Stripe: needs `STRIPE_PRICE_PLAYER`), the Member's card gate on `/rounds/new`, and the `/billing/welcome` return page.
 - [ ] 8. Enforce: `POST /api/rounds` returns 402 with the gate unless the player is allowed, and counts the free round in the insert transaction.
 - [ ] 9. Start membership: `POST /api/billing/start-membership` and its gate screen, including the decline and 3-D Secure paths.
 - [ ] 10. `/account`: member number, status, next charge date, free rounds left, and the portal link.
@@ -125,7 +173,7 @@ Each step is a commit on this PR's branch. Tests run against PGlite as usual.
 | D4 | Failed payments | **No new rounds** until the card is updated, including while Stripe retries. |
 | D5 | Member numbers, and *Founding member* on cards 1 to 100 | **Yes.** |
 | D6 | Terms of service and privacy pages, needed for Checkout consent and the EU 14-day withdrawal waiver on digital services | Open. Needed before live mode. |
-| D7 | VAT (EU consumers owe VAT where they live, under OSS) | Open. Recommended: €7 **including** VAT, with Stripe Tax turned on. |
+| D7 | VAT (EU consumers owe VAT where they live, under OSS) | **Off for now** (Checkout Studio: `automatic_tax` off). Before live: €7 **including** VAT, with Stripe Tax on. |
 | D8 | Conor's personal account | **Free for good**, in code. |
 
 ## 6. Risks

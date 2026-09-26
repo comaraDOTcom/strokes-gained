@@ -94,3 +94,21 @@ describe('assignMemberNumber', () => {
     expect(await store.assignMemberNumber(viewer.id, db)).toBeNull();
   });
 });
+
+describe('ensureCustomer', () => {
+  it('creates one Stripe customer per player and reuses it afterwards', async () => {
+    const ctx = await freshDb();
+    closers.push(ctx.closeDb);
+    const { ensureCustomer } = await import('./store');
+    await makeUser(ctx, 'alice');
+    const created: string[] = [];
+    const create = async (p: { email: string; metadata: { userId: string } }) => {
+      created.push(p.metadata.userId);
+      return { id: `cus_${created.length}` };
+    };
+    const alice = { id: 'alice', email: 'alice@example.com', name: 'Alice' };
+    expect(await ensureCustomer(alice, create, ctx.db)).toBe('cus_1');
+    expect(await ensureCustomer(alice, create, ctx.db)).toBe('cus_1');
+    expect(created).toEqual(['alice']);
+  });
+});
