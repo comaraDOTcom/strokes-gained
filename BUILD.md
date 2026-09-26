@@ -289,7 +289,8 @@ group trends by course, or warn when a comparison mixes courses.
   lower window on a tie. Worked example in `plan.test.ts`: 145y and 165y each −0.4 a round → 140–170.
 - **Drills** (`data/drills.json`): id, name, area, range (display units) or bunker type, `outOf`,
   `passMark`, setup, steps, rationale. Every drill is random and scored; no blocked practice. Matched to a
-  plan item by area and range overlap, best cover first; no match → the page says there's no drill yet.
+  plan item by area and range overlap: offered only when it covers ≥ half the focus range, best cover
+  first; no match → the page says there's no drill for that range yet.
 - **Sessions** (`practice_sessions`): date ≤ today (a day's grace for time zones), score 0…outOf. The
   server stores `out_of`, `pass_mark` and `passed = score ≥ pass_mark` at logging time.
 - **Progress** (`progress.ts`): per drill, pass rate, last 10 sessions, and later half vs earlier half of

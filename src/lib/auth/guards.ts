@@ -88,7 +88,8 @@ export async function canEditTee(teeId: number, viewer: SessionUser): Promise<bo
 /** A practice session id, only if it's `viewer`'s own. Practice logs are private, the admin's
  * included: anything else is a 404, so ids can't be probed. */
 export async function requirePracticeSessionOwner(id: number, viewer: SessionUser): Promise<number> {
-  if (!Number.isInteger(id) || id < 1) throw new HttpError(404, 'Session not found');
+  // Ids are Postgres `integer`: anything past its maximum would be a database error, not a 404.
+  if (!Number.isInteger(id) || id < 1 || id > 2_147_483_647) throw new HttpError(404, 'Session not found');
   const owner = await sessionOwner(id);
   if (owner === null || owner !== viewer.id) throw new HttpError(404, 'Session not found');
   return id;

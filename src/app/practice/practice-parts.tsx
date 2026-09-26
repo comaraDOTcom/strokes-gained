@@ -108,7 +108,7 @@ export function PlanCard({ item, rank, progressByDrill }: { item: PlanItem; rank
         </div>
       ) : (
         <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted">
-          There&apos;s no drill for this part of the game in the library yet.
+          There&apos;s no drill in the library for {item.focus ? item.focus.label : 'this part of the game'} yet.
         </p>
       )}
     </li>

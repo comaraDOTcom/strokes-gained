@@ -48,6 +48,9 @@ export function parseDrills(input: unknown): Drill[] {
     if (!Number.isInteger(passMark) || passMark < 1 || passMark > outOf) {
       throw new Error(`${where}: passMark must be between 1 and outOf`);
     }
+    if (d.bunkerSubtype !== null && d.bunkerSubtype !== 'greenside' && d.bunkerSubtype !== 'fairway') {
+      throw new Error(`${where}: bunkerSubtype must be null, greenside or fairway`);
+    }
     const range = d.range as Drill['range'];
     if (range !== null && !(typeof range?.min === 'number' && typeof range.max === 'number' && range.min < range.max)) {
       throw new Error(`${where}: range must be null or { min < max }`);
@@ -79,10 +82,13 @@ function overlap(drill: Drill, lo: number, hiRaw: number): number {
   return Math.max(0, Math.min(hi, drill.range.max) - Math.max(lo, drill.range.min)) / width;
 }
 
+/** A drill must cover at least this share of a focus range to be offered for it. */
+export const MIN_DRILL_COVER = 0.5;
+
 /**
  * Drills for a part of the game and, optionally, a focus range or bunker type: those that cover
- * the range, best cover first. Empty when the library has nothing for it yet (the page says so
- * rather than offering an unrelated drill).
+ * at least half the range, best cover first. Empty when the library has nothing for it yet (the
+ * page says so rather than offering a drill for a different distance).
  */
 export function drillsFor(
   area: Category,
@@ -92,7 +98,7 @@ export function drillsFor(
   return DRILLS.filter((d) => d.area === area)
     .filter((d) => d.bunkerSubtype === null || bunkerSubtype === null || d.bunkerSubtype === bunkerSubtype)
     .map((d) => ({ d, cover: focus ? overlap(d, focus.min, focus.max) : 1 }))
-    .filter((x) => x.cover > 0)
+    .filter((x) => x.cover >= MIN_DRILL_COVER)
     .sort((a, b) => b.cover - a.cover)
     .map((x) => x.d);
 }

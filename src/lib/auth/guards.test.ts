@@ -111,6 +111,7 @@ describe('practice session guard', () => {
     await expect(guards.requirePracticeSessionOwner(s.id, root)).rejects.toMatchObject({ status: 404 });
     await expect(guards.requirePracticeSessionOwner(99999, alice)).rejects.toMatchObject({ status: 404 });
     await expect(guards.requirePracticeSessionOwner(Number.NaN, alice)).rejects.toMatchObject({ status: 404 });
+    await expect(guards.requirePracticeSessionOwner(99999999999, alice)).rejects.toMatchObject({ status: 404 });
   });
 });
 

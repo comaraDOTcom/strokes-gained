@@ -251,6 +251,10 @@ export function planSentence(i: Omit<PlanItem, 'sentence'>): string {
       ? capitalise(i.focus.label)
       : `${i.area === 'PUTTING' ? 'Putts' : 'Shots'} from ${i.focus.label}`;
     out += ` ${what} cost the most: ${i.focus.strokesPerRound.toFixed(1)} a round over ${plural(i.focus.attempts, 'shot')}.`;
+    // Other distances can gain strokes, so the range can lose more than the whole area.
+    if (i.focus.strokesPerRound.toFixed(1) !== i.strokesPerRound.toFixed(1) && i.focus.strokesPerRound > i.strokesPerRound) {
+      out += ' You win some of that back from other distances.';
+    }
   }
   if (i.smallSample) out += ` Only ${plural(i.attempts, 'shot')} so far, so treat it as a hint.`;
   return out;

@@ -145,7 +145,8 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
             Each part of your game gets one number: strokes lost to a scratch golfer a round, over your last{' '}
             {roundWindow} rounds. A 9-hole round counts as half. The top three become your plan. Inside each, the
             plan finds the distance range that costs the most (a 30-yard window for approach shots, 10 yards around the
-            green, set ranges on the greens) as long as it has at least 3 shots in it.
+            green, set ranges on the greens, greenside or fairway for bunkers) as long as it has at least 3 shots in it. A
+            drill is offered only when it covers at least half that range.
           </p>
           <p>
             This differs from What to work on, on Trends, which also weighs how much each part of the game matters to

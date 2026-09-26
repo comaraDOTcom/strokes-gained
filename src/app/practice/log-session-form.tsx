@@ -68,13 +68,15 @@ export function LogSessionForm({ drills, today, defaultDrillId }: { drills: Form
                 ))}
               </optgroup>
             )}
-            <optgroup label={planned.length > 0 ? 'Other drills' : 'Drills'}>
-              {others.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </optgroup>
+            {others.length > 0 && (
+              <optgroup label={planned.length > 0 ? 'Other drills' : 'Drills'}>
+                {others.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </label>
       </div>
@@ -119,6 +121,7 @@ export function LogSessionForm({ drills, today, defaultDrillId }: { drills: Form
 export function DeleteSessionButton({ id, label }: { id: number; label: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <button
       type="button"
@@ -127,12 +130,22 @@ export function DeleteSessionButton({ id, label }: { id: number; label: string }
       onClick={async () => {
         if (!window.confirm(`Delete ${label}?`)) return;
         setBusy(true);
-        await fetch(`/api/practice/sessions/${id}`, { method: 'DELETE' });
-        router.refresh();
+        setFailed(false);
+        try {
+          const res = await fetch(`/api/practice/sessions/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error();
+          router.refresh();
+        } catch {
+          setFailed(true);
+        } finally {
+          setBusy(false);
+        }
       }}
-      className="shrink-0 rounded-lg border border-line-strong px-2 py-0.5 text-xs text-ink-2 disabled:opacity-50"
+      className={`shrink-0 rounded-lg border px-2 py-0.5 text-xs disabled:opacity-50 ${
+        failed ? 'border-neg text-neg' : 'border-line-strong text-ink-2'
+      }`}
     >
-      {busy ? '…' : 'Delete'}
+      {busy ? '…' : failed ? 'Try again' : 'Delete'}
     </button>
   );
 }

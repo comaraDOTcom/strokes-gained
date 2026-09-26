@@ -147,6 +147,15 @@ describe('focus range', () => {
     );
   });
 
+  it('says so when the range loses more than the whole area', () => {
+    // 145y and 165y lose 0.6 each a round; 200y gains 0.7: the area loses 0.5, the range 1.2.
+    const shots = rounds(6, () => [approach(145, -0.6), approach(165, -0.6), approach(200, 0.7)]);
+    const item = ready(buildPracticePlan(shots)).items[0]!;
+    expect(item.sentence).toBe(
+      'You lose 0.5 strokes a round on approach shots. Shots from 140–170 yards cost the most: 1.2 a round over 12 shots. You win some of that back from other distances.',
+    );
+  });
+
   it('never names a range on one or two shots', () => {
     // One 230-yard disaster costs more than anything else, but a range needs 3 shots in it.
     const shots = rounds(6, (r) => [approach(80, -0.2), approach(85, -0.2), ...(r === 0 ? [approach(230, -3)] : [])]);
