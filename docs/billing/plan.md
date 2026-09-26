@@ -120,8 +120,13 @@ Test mode first. Nothing here charges a real card.
    price, and its id is in `STRIPE_PRICE_PLAYER`. The same product also has a one-off €12.99 price
    that nothing uses; archive it to avoid picking it by mistake.
 3. **Webhook secret:** install the Stripe CLI (`brew install stripe/stripe-cli/stripe`) and run
-   `stripe login`. Then run `stripe listen --forward-to localhost:3000/api/billing/webhook` and put
-   the `whsec_…` it prints in `STRIPE_WEBHOOK_SECRET`.
+   `stripe login`. Then run the command below and put the `whsec_…` it prints in
+   `STRIPE_WEBHOOK_SECRET`. CLI 1.52 and later insist on naming the events:
+
+   ```bash
+   stripe listen --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed --forward-to localhost:3000/api/billing/webhook
+   ```
+
 4. **Switch it on locally:** `BILLING_ENABLED=1`.
 5. **Test cards:**
 

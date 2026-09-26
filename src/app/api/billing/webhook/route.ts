@@ -2,8 +2,9 @@
  * Stripe webhook. Public (see src/middleware.ts): Stripe has no session cookie, so the signature
  * is the only authentication. Everything after verification lives in src/lib/billing/webhook.ts.
  *
- *   Local:  stripe listen --forward-to localhost:3000/api/billing/webhook
- *           (prints the whsec_… for STRIPE_WEBHOOK_SECRET)
+ *   Local:  stripe listen --forward-to localhost:3000/api/billing/webhook \
+ *             --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed
+ *           (prints the whsec_… for STRIPE_WEBHOOK_SECRET; CLI 1.52+ requires --events)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/billing/stripe';
