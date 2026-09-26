@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 
-const PUBLIC = [/^\/login(\/|$)/, /^\/join\//, /^\/api\/auth(\/|$)/];
+// The Stripe webhook authenticates by signature, not session (src/app/api/billing/webhook/route.ts).
+const PUBLIC = [/^\/login(\/|$)/, /^\/join\//, /^\/api\/auth(\/|$)/, /^\/api\/billing\/webhook$/];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

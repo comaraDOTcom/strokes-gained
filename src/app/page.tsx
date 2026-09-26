@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
+import { getAllEnrichedShots, getCourseOptions, getEmptyRounds, getRoundDetailsById } from '@/lib/insights/queries';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import { CourseFilter } from './course-filter';
 import { ExpandableText } from './expandable-text';
@@ -13,9 +13,6 @@ import { qualityStat } from '@/lib/insights/quality';
 import { QualityInfo } from './quality-info';
 import { RoundsTip } from './rounds-tip';
 import { GettingStarted } from './getting-started';
-import { ScenePicker } from './scene-picker';
-import { cookies } from 'next/headers';
-import { SCENE_COOKIE, SCENE_LABELS, parseScenePreference, resolveScene } from '@/lib/scene/scene';
 
 // Reads live round/shot state — never statically prerendered.
 export const dynamic = 'force-dynamic';
@@ -34,9 +31,7 @@ export default async function Home({
   const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
   const rounds = roundSummaries(shots);
   const detailsById = await getRoundDetailsById(user.id);
-  const scenePref = parseScenePreference((await cookies()).get(SCENE_COOKIE)?.value);
-  const scene = resolveScene(scenePref);
-  const autoScene = resolveScene('auto');
+  const emptyRounds = selectedCourseId === null ? [] : await getEmptyRounds(user.id, selectedCourseId);
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
@@ -46,21 +41,6 @@ export default async function Home({
           New round
         </Link>
       </header>
-
-      {/* The backdrop the player picked (or the season's, on Auto). The layout sets the scene
-          on <body>, so this banner, the footer and the sign-in page all show the same one. */}
-      <section className="space-y-3">
-        <div
-          role="img"
-          aria-label={`${SCENE_LABELS[scene].weather} ${SCENE_LABELS[scene].name.toLowerCase()} on the course`}
-          className="golf-scene golf-scene-hero h-40 sm:h-60 rounded-2xl border relative overflow-hidden"
-        >
-          <span className="absolute left-3 bottom-3 rounded-md bg-card/90 backdrop-blur-sm px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-2">
-            {SCENE_LABELS[scene].weather} {SCENE_LABELS[scene].name}
-          </span>
-        </div>
-        <ScenePicker preference={scenePref} autoScene={autoScene} />
-      </section>
 
       <CourseFilter options={options} selectedCourseId={selectedCourseId} basePath="/" />
 
@@ -74,6 +54,28 @@ export default async function Home({
           <Link className="underline" href="/rounds/new">Log a round</Link>.
         </p>
       ) : (
+        <>
+        {emptyRounds.length > 0 && (
+          <ul className="space-y-2">
+            {emptyRounds.map((r) => (
+              <li key={r.roundId}>
+                <Link
+                  href={`/rounds/${r.roundId}`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-dashed bg-card px-3 py-2.5 sm:px-4"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{r.name ?? `${r.courseName} — ${r.teeName}`}</span>
+                    <span className="block text-xs text-muted font-mono">
+                      {r.name ? `${r.courseName} — ${r.teeName} · ` : ''}
+                      {r.playedOn} · no shots yet
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm text-ink-2">Continue or delete ›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <ul className="space-y-3">
           {rounds.map((r) => {
             const t = r.traditional;
@@ -231,6 +233,7 @@ export default async function Home({
             );
           })}
         </ul>
+        </>
       )}
 
       {roundCount > 0 && (

@@ -6,7 +6,7 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
-## 0.0.38 — 2026-09-26
+## 0.0.40 — 2026-09-26
 
 ### Better Than Most: new name, new look, and a dark theme
 The app is now **Better Than Most** (BTM). It looks like the new landing page, and it follows your
@@ -25,6 +25,25 @@ phone's dark mode.
   double and worse), retuned to the new palette, and look the same in either theme.
 - "Biggest leak" on Insights is now **Costliest area**.
 - Known gap: some chart colours are faint on the dark background (#62).
+
+## 0.0.39 — 2026-09-26
+
+### Delete a round
+- **"Delete this round"** at the bottom of your round's page. You confirm first, and it tells you
+  how many shots go with it. Only you can delete your rounds; the organiser can't.
+- **Empty rounds now show on Rounds.** A round you started but never logged a shot on still counted
+  towards "3 rounds logged at Elm Park" but never appeared in the list, so there was no way to open
+  it. It now shows as a card marked "no shots yet": tap it to carry on, or delete it.
+
+## 0.0.38 — 2026-09-26
+
+### Backdrop choice moves off Rounds, into Settings on your profile
+- **Rounds is back to just your rounds.** The scene banner and the Backdrop picker are gone from the
+  top of the page. The course scene at the bottom of every page stays.
+- **Settings, at the bottom of your profile (the Played page):** your name and email, and the
+  **Backdrop** setting, with a preview of the current scene, then Auto or one of the four seasons.
+  It's still saved on this device.
+- **Your name (or initial, on a phone) in the top bar** now opens those settings.
 
 ## 0.0.37 — 2026-09-26
 
