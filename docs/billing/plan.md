@@ -103,7 +103,7 @@ Conor configured these in Stripe's Checkout Studio. They are used as given in
 | `automatic_tax` | off | So D7 (VAT) is "off for now". Turn it on here and in the dashboard when VAT is sorted. |
 | `allow_promotion_codes` | false | |
 | `payment_method_collection` | `always` | Also what the free-rounds trial needs. |
-| `submit_type` | `auto` | Check in test mode that Stripe accepts it in subscription mode. |
+| `submit_type` | `auto` | Accepted in subscription mode (checked in the sandbox). |
 | `name_collection.individual` | enabled, optional | |
 | `integration_identifier`, `origin_context` | `hosted_web_0001`, `web` | Checkout Studio's own tags. |
 
@@ -116,8 +116,9 @@ Test mode first. Nothing here charges a real card.
 
 1. **Keys, in `.env.local`:** `STRIPE_SECRET_KEY` (`sk_test_…`) is done. The publishable key isn't
    needed.
-2. **Price:** create the product "Player" with a €12.99 monthly recurring price. Put its id in
-   `STRIPE_PRICE_PLAYER`.
+2. **Price:** done. The sandbox product "Better Than Most membership card" has a €12.99 monthly
+   price, and its id is in `STRIPE_PRICE_PLAYER`. The same product also has a one-off €12.99 price
+   that nothing uses; archive it to avoid picking it by mistake.
 3. **Webhook secret:** install the Stripe CLI (`brew install stripe/stripe-cli/stripe`) and run
    `stripe login`. Then run `stripe listen --forward-to localhost:3000/api/billing/webhook` and put
    the `whsec_…` it prints in `STRIPE_WEBHOOK_SECRET`.
@@ -148,7 +149,7 @@ Each step is a commit on this PR's branch. Tests run against PGlite as usual.
 - [x] 4. `.env.example` entries for billing, left empty so the secret scan stays green.
 - [x] 5. Add the `stripe` dependency, and `src/lib/billing/stripe.ts`: the client, which refuses to run without a key (and refuses a live key outside production), and a pure `subscriptionToRow()` mapper tested against fixture objects.
 - [x] 6. Webhook route, the middleware allowlist, and an idempotency test (the same event twice, and events out of order). Checked on a local server: a missing or forged signature gets 400, a signed event is applied once and the repeat is skipped.
-- [ ] 7. Claim: `POST /api/billing/checkout` (**built**, not yet run against Stripe: needs `STRIPE_PRICE_PLAYER`), the Member's card gate on `/rounds/new`, and the `/billing/welcome` return page.
+- [ ] 7. Claim: `POST /api/billing/checkout` (**built**; its parameters were checked in the Stripe sandbox: a claim opens at €0.00 today, a rejoin at €12.99), the Member's card gate on `/rounds/new`, and the `/billing/welcome` return page.
 - [ ] 8. Enforce: `POST /api/rounds` returns 402 with the gate unless the player is allowed, and counts the free round in the insert transaction.
 - [ ] 9. Start membership: `POST /api/billing/start-membership` and its gate screen, including the decline and 3-D Secure paths.
 - [ ] 10. `/account`: member number, status, next charge date, free rounds left, and the portal link.
