@@ -1,4 +1,4 @@
-# Billing plan: the Member's card, four free rounds, then €7 a month
+# Billing plan: the Member's card, four free rounds, then €12.99 a month
 
 For [issue #54](https://github.com/comaraDOTcom/strokes-gained/issues/54) (Stripe subscription). It
 reshapes [issue #53](https://github.com/comaraDOTcom/strokes-gained/issues/53) (free tier).
@@ -16,14 +16,17 @@ The handover and #53 say *first round free, no card*. This plan changes two thin
   `src/lib/billing/entitlement.ts`), so it can change later without touching anything else.
 
 Why the card comes first:
-- Round five becomes one tap ("Start membership · €7") instead of a cold Checkout form.
+- Round five becomes one tap ("Start membership · €12.99") instead of a cold Checkout form.
 - One set of free rounds per **card**, not per Google account (Stripe card fingerprints), so fresh
   sign-ins can't farm them.
 - Free rounds are **counted when started and never given back**. Deleting rounds does not reset the
   count.
 
+**Price: €12.99 a month** (Conor, 26 September; the handover and landing page say €7). The copy reads it
+from `PLAYER_PRICE_LABEL` in `src/lib/billing/checkout.ts`, which must match the Stripe price.
+
 Knock-on edits are in build step 12: the landing page's pricing card ("No card needed", "Log one full
-round"), the handover's pricing line, and #53's rules.
+round", "€7"), the handover's pricing line, and #53's rules.
 
 ## 2. The player's path (the game)
 
@@ -31,11 +34,11 @@ Clubhouse, not casino: no points and no streaks. The player sees one card and a 
 
 | Moment | Where | What they see |
 |---|---|---|
-| **1. Claim** | `/rounds/new` when the gate is `claim-free-rounds`. A new player gets here straight after the welcome tour. | A blank Member's card in forest green with the gold BTM mark and their name. Under it, a strip of four tickets: **"Four rounds on the house"**. One button: **Claim your free rounds**. Below it: *Nothing is taken today. €7 a month starts only when you tee up round five. Cancel any time.* |
+| **1. Claim** | `/rounds/new` when the gate is `claim-free-rounds`. A new player gets here straight after the welcome tour. | A blank Member's card in forest green with the gold BTM mark and their name. Under it, a strip of four tickets: **"Four rounds on the house"**. One button: **Claim your free rounds**. Below it: *Nothing is taken today. €12.99 a month starts only when you tee up round five. Cancel any time.* |
 | **2. Card on file** | `/billing/welcome`, where Checkout returns | The card embosses: **Member No. 0042**, *Member since September 2026*, and *Founding member* on cards 1 to 100. Button: **Tee off**. |
 | **During** | New-round form and round page | A small ticket strip, one stub punched per round started: **3 of 4 free rounds left**. |
 | **3. Free rounds played** | Last slide of the round-four recap | All four stubs punched. One line from the recap as the hook: *"Your costliest area over four rounds is approach: −2.1 a round."* Button: **Keep the card active**. |
-| **4. Start membership** | `/rounds/new` when the gate is `start-membership` | The card with a gold rule and **Player**. **Start membership · €7 today, then monthly**. On success the new-round form opens. |
+| **4. Start membership** | `/rounds/new` when the gate is `start-membership` | The card with a gold rule and **Player**. **Start membership · €12.99 today, then monthly**. On success the new-round form opens. |
 
 Other gates reuse the same card with a different line:
 - `fix-payment`: *"Your card was declined. Update it to log new rounds. Every round you've logged is still here."*
@@ -46,14 +49,14 @@ Other gates reuse the same card with a different line:
 ## 3. How it maps onto Stripe
 
 **The trial covers the free rounds.** Checkout puts the card on file as a `trialing` subscription to the
-€7 Player price, and nothing is charged. When the player starts round five, we end the trial ourselves.
+€12.99 Player price, and nothing is charged. When the player starts round five, we end the trial ourselves.
 
 | Step | Stripe call | Notes |
 |---|---|---|
 | Claim | `checkout.sessions.create` | `mode: 'subscription'` with the Player price and `subscription_data.trial_period_days: 730` (Stripe's maximum), so only round five ever charges. Also `payment_method_collection: 'always'`, `trial_settings.end_behavior.missing_payment_method: 'cancel'`, `client_reference_id: userId`, a reused `customer`, `consent_collection.terms_of_service: 'required'` (needs a terms page, D6), and `custom_text.submit` with the "nothing today" line. A `rejoin` gets the same session **without** a trial. |
 | Card on file | webhook `checkout.session.completed` | Link the customer and subscription to the user and give them a member number (`assignMemberNumber`). Read the card fingerprint. If that card has already used its free rounds on another account, set `free_rounds_used` to `FREE_ROUNDS`. |
 | Rounds 1 to 4 | none | `POST /api/rounds` counts the free round in the same transaction as the insert (`spendFreeRound`). The update is conditional, so two taps on the last free round count once. |
-| Start membership | `subscriptions.update(id, { trial_end: 'now', payment_behavior: 'pending_if_incomplete', proration_behavior: 'none' })` | Charges €7 now. If the charge fails, nothing changes: the player stays `trialing` and sees the decline. If 3-D Secure is needed, send them to `latest_invoice.hosted_invoice_url`. On success, write `active` from the response straight away, so round five unlocks without waiting for the webhook. The webhook then confirms it. Check in test mode that `pending_if_incomplete` accepts `trial_end`. |
+| Start membership | `subscriptions.update(id, { trial_end: 'now', payment_behavior: 'pending_if_incomplete', proration_behavior: 'none' })` | Charges €12.99 now. If the charge fails, nothing changes: the player stays `trialing` and sees the decline. If 3-D Secure is needed, send them to `latest_invoice.hosted_invoice_url`. On success, write `active` from the response straight away, so round five unlocks without waiting for the webhook. The webhook then confirms it. Check in test mode that `pending_if_incomplete` accepts `trial_end`. |
 | Manage | `billingPortal.sessions.create` from `/account` | Portal settings: update card, cancel **at period end**, no plan switching yet. |
 | Keep in sync | webhook `customer.subscription.created/updated/deleted`, `invoice.payment_failed` | On every event, **fetch the subscription again** and write its current state. Retried or out-of-order events then can't roll it back. |
 
@@ -113,7 +116,7 @@ Test mode first. Nothing here charges a real card.
 
 1. **Keys, in `.env.local`:** `STRIPE_SECRET_KEY` (`sk_test_…`) is done. The publishable key isn't
    needed.
-2. **Price:** create the product "Player" with a €7 monthly recurring price. Put its id in
+2. **Price:** create the product "Player" with a €12.99 monthly recurring price. Put its id in
    `STRIPE_PRICE_PLAYER`.
 3. **Webhook secret:** install the Stripe CLI (`brew install stripe/stripe-cli/stripe`) and run
    `stripe login`. Then run `stripe listen --forward-to localhost:3000/api/billing/webhook` and put
@@ -157,7 +160,7 @@ Each step is a commit on this PR's branch. Tests run against PGlite as usual.
 - a new player adds a card and is charged nothing;
 - they log four rounds free, and deleting one doesn't give it back;
 - round five asks them to start the membership;
-- a €7 test charge unlocks round five straight away, and the webhook agrees within one delivery;
+- a €12.99 test charge unlocks round five straight away, and the webhook agrees within one delivery;
 - a failed renewal blocks new rounds until the card is updated;
 - cancelling in the portal keeps access until the period ends, then re-locks;
 - a second account with the same test card gets no free rounds;
@@ -173,7 +176,7 @@ Each step is a commit on this PR's branch. Tests run against PGlite as usual.
 | D4 | Failed payments | **No new rounds** until the card is updated, including while Stripe retries. |
 | D5 | Member numbers, and *Founding member* on cards 1 to 100 | **Yes.** |
 | D6 | Terms of service and privacy pages, needed for Checkout consent and the EU 14-day withdrawal waiver on digital services | Open. Needed before live mode. |
-| D7 | VAT (EU consumers owe VAT where they live, under OSS) | **Off for now** (Checkout Studio: `automatic_tax` off). Before live: €7 **including** VAT, with Stripe Tax on. |
+| D7 | VAT (EU consumers owe VAT where they live, under OSS) | **Off for now** (Checkout Studio: `automatic_tax` off). Before live: €12.99 **including** VAT, with Stripe Tax on. |
 | D8 | Conor's personal account | **Free for good**, in code. |
 
 ## 6. Risks

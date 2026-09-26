@@ -6,6 +6,12 @@
 import type Stripe from 'stripe';
 import type { Gate } from './entitlement';
 
+/**
+ * What the Player price reads as in our copy. Must match the Stripe price in STRIPE_PRICE_PLAYER
+ * (€12.99 a month, set by Conor in the Stripe dashboard); change both together.
+ */
+export const PLAYER_PRICE_LABEL = '€12.99';
+
 /** Stripe's maximum. The trial is the free rounds; only starting round five ends it (plan D2). */
 export const TRIAL_DAYS = 730;
 
@@ -54,7 +60,9 @@ export function buildCheckoutParams(input: {
       }),
     },
     ...(claim && {
-      custom_text: { submit: { message: 'Nothing is taken today. €7 a month starts only when you tee up round five. Cancel any time.' } },
+      custom_text: {
+        submit: { message: `Nothing is taken today. ${PLAYER_PRICE_LABEL} a month starts only when you tee up round five. Cancel any time.` },
+      },
     }),
     success_url: `${input.origin}/billing/welcome?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${input.origin}/rounds/new`,
