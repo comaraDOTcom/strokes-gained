@@ -81,6 +81,19 @@ header.page p{color:var(--ink-2)}
 .ticket.punched{opacity:.8}
 .ticket.punched .t2{text-decoration:line-through;text-decoration-thickness:1px;color:var(--ink-3)}
 
+/* The ticket strip: four free rounds, one stub punched per round started */
+.strip{border:1px dashed var(--rule);border-radius:8px;background:var(--cream-2);padding:10px 12px}
+.strip .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.strip .t1{white-space:nowrap;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.strip .t2{font-family:var(--display);font-size:17px}
+.stubs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stub{position:relative;aspect-ratio:1.1;border:1px solid var(--rule);border-radius:5px;background:var(--paper);display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.stub small{position:absolute;top:4px;left:6px;font-size:9px;color:var(--ink-3);letter-spacing:.08em}
+.stub.punched{background:transparent;color:var(--ink-3)}
+.stub.punched::after{content:"";width:16px;height:16px;border-radius:50%;background:var(--cream);border:1px solid var(--rule);box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+.stub.punched span{display:none}
+.stub.next{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+
 .btn{display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 16px;border-radius:4px;font-family:var(--body);font-size:15px;font-weight:600;border:1px solid var(--green);background:var(--green);color:#F6F0DE;text-decoration:none;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
 .hook{border-left:3px solid var(--loss);padding:6px 10px;background:color-mix(in srgb,var(--loss) 8%,transparent);font-size:14.5px}
@@ -103,7 +116,7 @@ ul.terms{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px}
     <button class="toggle" type="button" onclick="(function(r){r.dataset.theme=(r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches))?'light':'dark'})(document.documentElement)">Light / dark</button>
     <p class="eyebrow">Design mock · issue #54</p>
     <h1>The Member's card</h1>
-    <p>Adding a card is the reward moment: it earns the first round on the house. Four screens take a player from a blank card to a paying member. Static mock; the real screens use the app's components.</p>
+    <p>Adding a card is the reward moment: it earns four rounds on the house. Four screens take a player from a blank card to a paying member. Static mock; the real screens use the app's components.</p>
   </header>
 
   <div class="frames">
@@ -115,10 +128,10 @@ ul.terms{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px}
         <div class="name">Aoife Byrne</div>
         <div class="meta"><span>Member No.<br><span class="no num">––––</span></span><span>Player</span></div>
       </div>
-      <div class="ticket"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div></div>
-      <p class="lede">Put a card on file and your first round is free. Log every shot and see where the strokes go.</p>
-      <a class="btn" href="#">Claim your free round</a>
-      <p class="fine">Nothing is taken today. €7 a month starts only when you tee up round two. Cancel any time.</p>
+      <div class="strip"><div class="head"><div><div class="t1">Admit four</div><div class="t2">Four rounds on the house</div></div><span class="t1 num">4 of 4 left</span></div><div class="stubs"><div class="stub next"><small>R1</small><span>Free</span></div><div class="stub"><small>R2</small><span>Free</span></div><div class="stub"><small>R3</small><span>Free</span></div><div class="stub"><small>R4</small><span>Free</span></div></div></div>
+      <p class="lede">Put a card on file and your first four rounds are free. Four rounds is enough to see where the strokes go.</p>
+      <a class="btn" href="#">Claim your free rounds</a>
+      <p class="fine">Nothing is taken today. €7 a month starts only when you tee up round five. Cancel any time.</p>
     </section>
 
     <!-- 2. Card on file -->
@@ -129,18 +142,20 @@ ul.terms{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px}
         <div class="name">Aoife Byrne</div>
         <div class="meta"><span>Member No.<br><span class="no num">0042</span></span><span>Since Sep 2026</span></div>
       </div>
-      <div class="ticket"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div><span class="stamp free">Free round</span></div>
-      <p class="lede">Welcome to the club, member 42. Your round is waiting.</p>
+      <div class="strip"><div class="head"><div><div class="t1">Admit four</div><div class="t2">Four rounds on the house</div></div><span class="stamp free">Free rounds</span></div><div class="stubs"><div class="stub next"><small>R1</small><span>Free</span></div><div class="stub"><small>R2</small><span>Free</span></div><div class="stub"><small>R3</small><span>Free</span></div><div class="stub"><small>R4</small><span>Free</span></div></div></div>
+      <p class="lede">Welcome to the club, member 42. Four rounds are waiting.</p>
       <a class="btn" href="#">Tee off</a>
       <p class="fine">Numbers 1 to 100 carry "Founding member" for good.</p>
+      <p class="where">On the new-round form, after two rounds:</p>
+      <div class="strip"><div class="head"><div><div class="t1">Admit four</div><div class="t2">Four rounds on the house</div></div><span class="t1 num">2 of 4 left</span></div><div class="stubs"><div class="stub punched"><small>R1</small><span>Free</span></div><div class="stub punched"><small>R2</small><span>Free</span></div><div class="stub next"><small>R3</small><span>Free</span></div><div class="stub"><small>R4</small><span>Free</span></div></div></div>
     </section>
 
     <!-- 3. Free round played -->
     <section class="frame" aria-label="Step 3, free round played">
-      <div class="step"><b>3</b><div><h2>Free round played</h2><p class="where">Last slide of the round-one recap</p></div></div>
-      <div class="ticket punched"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div><span class="stamp played">Played</span></div>
-      <div class="hook">Your costliest area was approach: <span class="num">−2.4</span> strokes to a scratch golfer. Round two tells you whether that was a one-off.</div>
-      <p class="lede">That was your free round. The card stays in your wallet; round two starts the membership.</p>
+      <div class="step"><b>3</b><div><h2>Free rounds played</h2><p class="where">Last slide of the round-four recap</p></div></div>
+      <div class="strip"><div class="head"><div><div class="t1">Admit four</div><div class="t2">Four rounds on the house</div></div><span class="stamp played">Played</span></div><div class="stubs"><div class="stub punched"><small>R1</small><span>Free</span></div><div class="stub punched"><small>R2</small><span>Free</span></div><div class="stub punched"><small>R3</small><span>Free</span></div><div class="stub punched"><small>R4</small><span>Free</span></div></div></div>
+      <div class="hook">Your costliest area over four rounds is approach: <span class="num">−2.1</span> a round against a scratch golfer. That's the one to work on.</div>
+      <p class="lede">That was your fourth free round. The card stays in your wallet; round five starts the membership.</p>
       <a class="btn" href="#">Keep the card active</a>
       <a class="btn ghost" href="#">Back to the round</a>
     </section>
@@ -162,9 +177,8 @@ ul.terms{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px}
   </div>
 
   <div class="gates" aria-label="Other gates">
-    <div class="gate"><p class="where">gate: fix-payment</p><p>Your card was declined. Update it and you're back on the tee.</p></div>
+    <div class="gate"><p class="where">gate: fix-payment</p><p>Your card was declined. Update it to log new rounds. Every round you've logged is still here.</p></div>
     <div class="gate"><p class="where">gate: rejoin</p><p>Your membership ended on 3 October. Your rounds are all still here.</p></div>
-    <div class="gate"><p class="where">warning: payment-failing</p><p>We couldn't take this month's €7. Play on, and update your card when you're in.</p></div>
   </div>
 </div>
 </body>

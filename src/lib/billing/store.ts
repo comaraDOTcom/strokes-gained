@@ -2,42 +2,65 @@
  * Billing reads and writes against our own `subscriptions` cache (never Stripe's API), so a page
  * can decide entitlement in one indexed lookup. Rules live in ./entitlement.ts.
  */
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { db, type DbOrTx } from '../../db/client';
-import { subscriptions } from '../../db/schema';
-import { decideEntitlement, isBillingEnabled, isBillingExempt, type Entitlement } from './entitlement';
+import { subscriptions, user } from '../../db/schema';
+import { decideEntitlement, FREE_ROUNDS, isBillingEnabled, isBillingExempt, type BillingEnv, type Entitlement } from './entitlement';
 
 type Viewer = { id: string; email: string; isAdmin: boolean };
-type BillingEnv = Record<string, string | undefined>; // reads BILLING_ENABLED, BILLING_EXEMPT_EMAILS
 
 /** May `viewer` start a new round, and if not, which screen do they see? */
 export async function getEntitlement(viewer: Viewer, conn: DbOrTx = db, env: BillingEnv = process.env): Promise<Entitlement> {
   const billingEnabled = isBillingEnabled(env.BILLING_ENABLED);
-  const exempt = viewer.isAdmin || isBillingExempt(viewer.email, env.BILLING_EXEMPT_EMAILS);
-  if (!billingEnabled || exempt) return decideEntitlement({ billingEnabled, exempt, sub: null });
+  if (!billingEnabled) return decideEntitlement({ billingEnabled, exempt: false, sub: null });
 
-  const [sub] = await conn
+  const [row] = await conn
     .select({
+      createdAt: user.createdAt,
       status: subscriptions.status,
-      freeRoundUsedAt: subscriptions.freeRoundUsedAt,
+      freeRoundsUsed: subscriptions.freeRoundsUsed,
       cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
-      currentPeriodEnd: subscriptions.currentPeriodEnd,
+      hasSub: subscriptions.userId,
     })
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, viewer.id));
-  return decideEntitlement({ billingEnabled, exempt, sub: sub ?? null });
+    .from(user)
+    .leftJoin(subscriptions, eq(subscriptions.userId, user.id))
+    .where(eq(user.id, viewer.id));
+
+  const exempt = isBillingExempt({ email: viewer.email, isAdmin: viewer.isAdmin, createdAt: row?.createdAt ?? null }, env);
+  const sub =
+    row?.hasSub != null
+      ? { status: row.status, freeRoundsUsed: row.freeRoundsUsed ?? 0, cancelAtPeriodEnd: row.cancelAtPeriodEnd ?? false }
+      : null;
+  return decideEntitlement({ billingEnabled, exempt, sub });
 }
 
 /**
- * Spend the free round. Call inside the transaction that inserts the round, only when the
- * entitlement reason was 'free-round'. Only the first caller wins (conditional update), so two
- * concurrent "Start round" taps can't both be free: the loser gets false and must roll back.
+ * Count one free round. Call inside the transaction that inserts the round, only when the
+ * entitlement reason was 'free-round'. The conditional update means two concurrent "Start round"
+ * taps on the last free round can't both be free: the loser gets false and must roll back.
+ * The counter never goes down, so deleting a round doesn't give a free round back.
  */
 export async function spendFreeRound(userId: string, conn: DbOrTx, now = new Date()): Promise<boolean> {
   const spent = await conn
     .update(subscriptions)
-    .set({ freeRoundUsedAt: now, updatedAt: now })
-    .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.freeRoundUsedAt)))
+    .set({ freeRoundsUsed: sql`${subscriptions.freeRoundsUsed} + 1`, updatedAt: now })
+    .where(and(eq(subscriptions.userId, userId), lt(subscriptions.freeRoundsUsed, FREE_ROUNDS)))
     .returning({ userId: subscriptions.userId });
   return spent.length === 1;
+}
+
+/**
+ * The player's member number, allocated from member_no_seq the first time their card goes on file
+ * (the webhook calls this on checkout.session.completed). Idempotent: a second call returns the
+ * same number. Null when the player has no subscription row.
+ */
+export async function assignMemberNumber(userId: string, conn: DbOrTx = db): Promise<number | null> {
+  const [fresh] = await conn
+    .update(subscriptions)
+    .set({ memberNo: sql`nextval('member_no_seq')` })
+    .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.memberNo)))
+    .returning({ memberNo: subscriptions.memberNo });
+  if (fresh) return fresh.memberNo;
+  const [existing] = await conn.select({ memberNo: subscriptions.memberNo }).from(subscriptions).where(eq(subscriptions.userId, userId));
+  return existing?.memberNo ?? null;
 }

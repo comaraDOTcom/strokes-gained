@@ -31,6 +31,7 @@ import {
   uniqueIndex,
   index,
   primaryKey,
+  pgSequence,
 } from 'drizzle-orm/pg-core';
 
 // ---------------------------------------------------------------------------
@@ -309,7 +310,8 @@ export const playedCourses = pgTable(
  * `status` is Stripe's subscription status verbatim ('trialing', 'active', 'past_due', 'canceled',
  * 'unpaid', 'incomplete', 'incomplete_expired', 'paused'), or null between creating the Stripe
  * customer and Checkout completing. The card goes on file as a `trialing` subscription: the trial
- * is the free round, and it ends (and the first €7 is taken) when the player starts round two.
+ * covers the free rounds, and it ends (and the first €7 is taken) when the player starts the
+ * first round after them.
  */
 export const subscriptions = pgTable(
   'subscriptions',
@@ -324,17 +326,24 @@ export const subscriptions = pgTable(
     trialEnd: timestamp('trial_end'),
     currentPeriodEnd: timestamp('current_period_end'),
     cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
-    // When the free round was spent: set in the same transaction as that round's insert, only
-    // where still null, so two taps on "Start round" can't both be free. Also set up front when
-    // the card's fingerprint has already had a free round on another account.
-    freeRoundUsedAt: timestamp('free_round_used_at'),
-    // Stripe's card fingerprint (same card, same value, across customers). One free round per card.
+    // Free rounds started so far. Goes up by one in the same transaction as each free round's
+    // insert (only while below FREE_ROUNDS, so two taps can't both count), and NEVER goes down:
+    // deleting a round does not hand a free round back. Set straight to FREE_ROUNDS when the card's
+    // fingerprint has already had its free rounds on another account.
+    freeRoundsUsed: integer('free_rounds_used').notNull().default(0),
+    // Stripe's card fingerprint (same card, same value, across customers). One set of free rounds per card.
     cardFingerprint: text('card_fingerprint'),
+    // "Member No. 0042" on the Member's card. Taken from member_no_seq when the card first goes on
+    // file (not when Checkout starts, so abandoned checkouts leave no gaps). Numbers 1-100 are
+    // founding members.
+    memberNo: integer('member_no').unique(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (t) => ({ fingerprintIdx: index('subscriptions_card_fingerprint_idx').on(t.cardFingerprint) }),
 );
+
+export const memberNoSeq = pgSequence('member_no_seq', { startWith: 1, increment: 1 });
 
 /**
  * Stripe webhook events already applied. Stripe delivers at least once and may retry or reorder;

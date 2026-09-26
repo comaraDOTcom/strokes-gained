@@ -1,5 +1,5 @@
 {
-  "id": "cabc91dd-9b72-4135-9cc7-3c76a80aefe5",
+  "id": "55e8cc89-72d9-43c1-a0da-06f115fccd9c",
   "prevId": "59fb0edb-ee45-486d-a903-9ae440377c50",
   "version": "7",
   "dialect": "postgresql",
@@ -917,15 +917,22 @@
           "notNull": true,
           "default": false
         },
-        "free_round_used_at": {
-          "name": "free_round_used_at",
-          "type": "timestamp",
+        "free_rounds_used": {
+          "name": "free_rounds_used",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
         "card_fingerprint": {
           "name": "card_fingerprint",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "member_no": {
+          "name": "member_no",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -990,6 +997,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "stripe_subscription_id"
+          ]
+        },
+        "subscriptions_member_no_unique": {
+          "name": "subscriptions_member_no_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "member_no"
           ]
         }
       },
@@ -1343,7 +1357,18 @@
   },
   "enums": {},
   "schemas": {},
-  "sequences": {},
+  "sequences": {
+    "public.member_no_seq": {
+      "name": "member_no_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "1",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    }
+  },
   "roles": {},
   "policies": {},
   "views": {},
