@@ -88,7 +88,7 @@ describe('course directory data (data/ireland.json)', () => {
     }
   });
 
-  it('still lacks exactly the known missing clubs (fix: overrides.json add, then remove it here)', () => {
+  it('still lacks exactly the known missing clubs (fix: search ireland.json by website and position first, then overrides.json set or add; then remove it here)', () => {
     for (const name of KNOWN_MISSING) {
       expect(has(name), `${name} is now present: remove it from KNOWN_MISSING`).toBe(false);
     }
