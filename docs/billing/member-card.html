@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Member's Card Flow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Tokens copied from docs/brand/landing.html (the approved design). */
+:root{
+  --cream:#F2EBDC; --cream-2:#E9E0CC; --paper:#FBF7EE;
+  --ink:#1C2620; --ink-2:#4A5A50; --ink-3:#7E8C83;
+  --green:#144433; --green-deep:#0C2A1F; --green-tint:#DDE7DF;
+  --gold:#B48A3C; --gold-light:#E7D6AE;
+  --gain:#2C7A4B; --loss:#A94330; --rule:#CFC4AB;
+  --display:'Fraunces',Georgia,serif; --body:'Source Serif 4',Georgia,serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --cream:#101A15; --cream-2:#17241D; --paper:#1A2721;
+    --ink:#EFE7D3; --ink-2:#BFB6A0; --ink-3:#8A8574;
+    --green:#1E5C44; --green-deep:#0C2A1F; --green-tint:#1F3329;
+    --gold:#D2A857; --gold-light:#5A4A2A; --gain:#5FBF85; --loss:#E0745D; --rule:#33423A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --cream:#101A15; --cream-2:#17241D; --paper:#1A2721;
+  --ink:#EFE7D3; --ink-2:#BFB6A0; --ink-3:#8A8574;
+  --green:#1E5C44; --green-deep:#0C2A1F; --green-tint:#1F3329;
+  --gold:#D2A857; --gold-light:#5A4A2A; --gain:#5FBF85; --loss:#E0745D; --rule:#33423A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.1;margin:0;letter-spacing:-0.01em}
+p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.wrap{max-width:1240px;margin:0 auto;padding:32px 16px 64px}
+header.page{max-width:680px;margin-bottom:28px}
+header.page h1{font-size:clamp(28px,5vw,40px);margin:6px 0 10px}
+header.page p{color:var(--ink-2)}
+.frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px}
+.frame{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.frame .step{display:flex;align-items:baseline;gap:8px}
+.frame .step b{font-family:var(--mono);font-size:12px;background:var(--green);color:var(--gold-light);border-radius:50%;width:22px;height:22px;display:grid;place-items:center;flex:none}
+.frame h2{font-size:22px}
+.frame .where{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.lede{color:var(--ink-2);font-size:15px}
+.fine{color:var(--ink-3);font-size:13px}
+
+/* The card */
+.card{position:relative;aspect-ratio:1.586;border-radius:12px;padding:14px 16px;color:#F6F0DE;
+  background:
+    radial-gradient(120% 80% at 100% 0%,rgba(255,255,255,.08),transparent 60%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px),
+    linear-gradient(160deg,#1A5640,#0C2A1F);
+  box-shadow:0 10px 24px -12px rgba(12,42,31,.55);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.card .top{display:flex;justify-content:space-between;align-items:center}
+.mark{width:30px;height:30px;border-radius:50%;border:1px solid #E7D6AE;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:600;color:#E7D6AE}
+.card .club{font-family:var(--display);font-size:15px;color:#E7D6AE}
+.card .name{font-family:var(--display);font-size:22px;letter-spacing:.01em}
+.card .meta{display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#CFE0D5}
+.card .meta .no{font-size:14px;color:#E7D6AE;letter-spacing:.12em}
+.card.blank .name,.card.blank .no{color:rgba(246,240,222,.35)}
+.card .tier{position:absolute;left:16px;right:16px;bottom:52px;height:1px;background:linear-gradient(90deg,transparent,#B48A3C,transparent);opacity:0}
+.card.player .tier{opacity:.9}
+.founding{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#E7D6AE;border:1px solid rgba(231,214,174,.5);border-radius:3px;padding:1px 5px}
+
+/* The ticket */
+.ticket{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;
+  background:var(--cream-2);border:1px dashed var(--rule);border-radius:8px;padding:10px 12px}
+.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--paper);transform:translateY(-50%)}
+.ticket::before{left:-8px} .ticket::after{right:-8px}
+.ticket .t1{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.ticket .t2{font-family:var(--display);font-size:18px}
+.stamp{font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border:2px solid currentColor;border-radius:4px;transform:rotate(-8deg);white-space:nowrap}
+.stamp.free{color:var(--gold)}
+.stamp.played{color:var(--loss)}
+.ticket.punched{opacity:.8}
+.ticket.punched .t2{text-decoration:line-through;text-decoration-thickness:1px;color:var(--ink-3)}
+
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 16px;border-radius:4px;font-family:var(--body);font-size:15px;font-weight:600;border:1px solid var(--green);background:var(--green);color:#F6F0DE;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.hook{border-left:3px solid var(--loss);padding:6px 10px;background:color-mix(in srgb,var(--loss) 8%,transparent);font-size:14.5px}
+.hook .num{color:var(--loss);font-weight:600}
+.price{display:flex;align-items:baseline;gap:6px}
+.price .num{font-size:28px}
+.price span:last-child{color:var(--ink-3);font-size:14px}
+ul.terms{margin:0;padding-left:18px;color:var(--ink-2);font-size:14px}
+.gates{margin-top:36px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.gate{border:1px solid var(--rule);border-radius:8px;padding:12px 14px;background:var(--paper)}
+.gate .where{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-bottom:4px}
+.gate p{font-size:15px}
+.toggle{float:none;margin-bottom:14px;font-family:var(--mono);font-size:12px;background:none;border:1px solid var(--rule);color:var(--ink-2);border-radius:4px;padding:4px 8px;cursor:pointer}
+@media (max-width:420px){.card .name{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <button class="toggle" type="button" onclick="(function(r){r.dataset.theme=(r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches))?'light':'dark'})(document.documentElement)">Light / dark</button>
+    <p class="eyebrow">Design mock · issue #54</p>
+    <h1>The Member's card</h1>
+    <p>Adding a card is the reward moment: it earns the first round on the house. Four screens take a player from a blank card to a paying member. Static mock; the real screens use the app's components.</p>
+  </header>
+
+  <div class="frames">
+    <!-- 1. Claim -->
+    <section class="frame" aria-label="Step 1, claim">
+      <div class="step"><b>1</b><div><h2>Claim</h2><p class="where">/rounds/new · gate: claim-free-round</p></div></div>
+      <div class="card blank">
+        <div class="top"><span class="mark">BTM</span><span class="club">Better Than Most</span></div>
+        <div class="name">Aoife Byrne</div>
+        <div class="meta"><span>Member No.<br><span class="no num">––––</span></span><span>Player</span></div>
+      </div>
+      <div class="ticket"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div></div>
+      <p class="lede">Put a card on file and your first round is free. Log every shot and see where the strokes go.</p>
+      <a class="btn" href="#">Claim your free round</a>
+      <p class="fine">Nothing is taken today. €7 a month starts only when you tee up round two. Cancel any time.</p>
+    </section>
+
+    <!-- 2. Card on file -->
+    <section class="frame" aria-label="Step 2, card on file">
+      <div class="step"><b>2</b><div><h2>Card on file</h2><p class="where">/billing/welcome · Checkout return</p></div></div>
+      <div class="card">
+        <div class="top"><span class="mark">BTM</span><span class="founding">Founding member</span></div>
+        <div class="name">Aoife Byrne</div>
+        <div class="meta"><span>Member No.<br><span class="no num">0042</span></span><span>Since Sep 2026</span></div>
+      </div>
+      <div class="ticket"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div><span class="stamp free">Free round</span></div>
+      <p class="lede">Welcome to the club, member 42. Your round is waiting.</p>
+      <a class="btn" href="#">Tee off</a>
+      <p class="fine">Numbers 1 to 100 carry "Founding member" for good.</p>
+    </section>
+
+    <!-- 3. Free round played -->
+    <section class="frame" aria-label="Step 3, free round played">
+      <div class="step"><b>3</b><div><h2>Free round played</h2><p class="where">Last slide of the round-one recap</p></div></div>
+      <div class="ticket punched"><div><div class="t1">Admit one</div><div class="t2">Round one · on the house</div></div><span class="stamp played">Played</span></div>
+      <div class="hook">Your costliest area was approach: <span class="num">−2.4</span> strokes to a scratch golfer. Round two tells you whether that was a one-off.</div>
+      <p class="lede">That was your free round. The card stays in your wallet; round two starts the membership.</p>
+      <a class="btn" href="#">Keep the card active</a>
+      <a class="btn ghost" href="#">Back to the round</a>
+    </section>
+
+    <!-- 4. Start membership -->
+    <section class="frame" aria-label="Step 4, start membership">
+      <div class="step"><b>4</b><div><h2>Start membership</h2><p class="where">/rounds/new · gate: start-membership</p></div></div>
+      <div class="card player">
+        <span class="tier"></span>
+        <div class="top"><span class="mark">BTM</span><span class="founding">Founding member</span></div>
+        <div class="name">Aoife Byrne</div>
+        <div class="meta"><span>Member No.<br><span class="no num">0042</span></span><span>Player</span></div>
+      </div>
+      <div class="price"><span class="num">€7</span><span>today, then monthly on the 26th</span></div>
+      <ul class="terms"><li>Unlimited rounds, shot by shot</li><li>Every round you logged stays yours, member or not</li><li>Cancel from your account; you keep playing to the end of the month</li></ul>
+      <a class="btn" href="#">Start membership · €7</a>
+      <p class="fine">Charged to the Visa ending 4242 you added on 26 September.</p>
+    </section>
+  </div>
+
+  <div class="gates" aria-label="Other gates">
+    <div class="gate"><p class="where">gate: fix-payment</p><p>Your card was declined. Update it and you're back on the tee.</p></div>
+    <div class="gate"><p class="where">gate: rejoin</p><p>Your membership ended on 3 October. Your rounds are all still here.</p></div>
+    <div class="gate"><p class="where">warning: payment-failing</p><p>We couldn't take this month's €7. Play on, and update your card when you're in.</p></div>
+  </div>
+</div>
+</body>
+</html>

@@ -297,6 +297,55 @@ export const playedCourses = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.userId, t.courseKey] }) }),
 );
 
+// ---------------------------------------------------------------------------
+// Billing (issue #54, plan in docs/billing/plan.md)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per player who has started putting a card on file. Stripe is the source of truth; this
+ * is a cache of it, written by the webhook (src/app/api/billing/webhook) and read by the
+ * entitlement rules (src/lib/billing/entitlement.ts), so no page ever waits on Stripe's API.
+ *
+ * `status` is Stripe's subscription status verbatim ('trialing', 'active', 'past_due', 'canceled',
+ * 'unpaid', 'incomplete', 'incomplete_expired', 'paused'), or null between creating the Stripe
+ * customer and Checkout completing. The card goes on file as a `trialing` subscription: the trial
+ * is the free round, and it ends (and the first €7 is taken) when the player starts round two.
+ */
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    stripeCustomerId: text('stripe_customer_id').notNull().unique(),
+    stripeSubscriptionId: text('stripe_subscription_id').unique(),
+    status: text('status'),
+    priceId: text('price_id'),
+    trialEnd: timestamp('trial_end'),
+    currentPeriodEnd: timestamp('current_period_end'),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    // When the free round was spent: set in the same transaction as that round's insert, only
+    // where still null, so two taps on "Start round" can't both be free. Also set up front when
+    // the card's fingerprint has already had a free round on another account.
+    freeRoundUsedAt: timestamp('free_round_used_at'),
+    // Stripe's card fingerprint (same card, same value, across customers). One free round per card.
+    cardFingerprint: text('card_fingerprint'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => ({ fingerprintIdx: index('subscriptions_card_fingerprint_idx').on(t.cardFingerprint) }),
+);
+
+/**
+ * Stripe webhook events already applied. Stripe delivers at least once and may retry or reorder;
+ * the handler inserts the event id first and skips the event if it was already there.
+ */
+export const stripeEvents = pgTable('stripe_events', {
+  id: text('id').primaryKey(), // evt_…
+  type: text('type').notNull(),
+  receivedAt: timestamp('received_at').notNull().defaultNow(),
+});
+
 export type User = typeof user.$inferSelect;
 export type InvitedEmail = typeof invitedEmails.$inferSelect;
 export type CourseRequest = typeof courseRequests.$inferSelect;
@@ -311,3 +360,4 @@ export type Round = typeof rounds.$inferSelect;
 export type NewRound = typeof rounds.$inferInsert;
 export type Shot = typeof shots.$inferSelect;
 export type NewShot = typeof shots.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
