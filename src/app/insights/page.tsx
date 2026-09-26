@@ -409,7 +409,7 @@ export default async function InsightsPage({
                   <td className="py-1">{h.holeNo}</td>
                   <td className="py-1">{h.courseName}</td>
                   <td className="py-1 text-neg">{h.penaltyStrokes > 0 ? h.penaltyStrokes : '—'}</td>
-                  <td className={`py-1 ${h.recoverySgLost < 0 ? 'text-neg' : 'text-pos'}`}>
+                  <td className={`py-1 font-mono ${h.recoverySgLost < 0 ? 'text-neg' : 'text-pos'}`}>
                     {h.recoveryShotCount > 0 ? `${fmtSg(h.recoverySgLost)} (${h.recoveryShotCount} shot${h.recoveryShotCount === 1 ? '' : 's'})` : '—'}
                   </td>
                 </tr>

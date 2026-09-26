@@ -140,11 +140,20 @@ are fixed once a round is started** — every shot's yardages came from that tee
 
 ### Design system
 
-Tokens live in `src/app/globals.css` (`@theme`): warm paper background, near-black
-ink, terracotta = strokes lost, green = strokes gained, steel-blue selected state;
-IBM Plex Sans for text, Plex Mono for numbers/labels. Use the semantic classes
-(`bg-paper`, `text-neg`, `font-mono`…), not raw Tailwind palette colours. Charts use
-the same pair via `src/lib/insights/chart-colors.ts`.
+Tokens live in `src/app/globals.css` (`@theme`), ported from the approved landing page
+(`docs/brand/landing.html`): cream page, paper cards, ink text, forest green for the selected state,
+links and primary buttons, gold for accents, green = strokes gained, oxblood = strokes lost.
+Fraunces for headings (`font-display`, and every `h1`–`h3`), Source Serif 4 for text (`font-sans`
+is the body serif), IBM Plex Mono for every number (`font-mono` is always `tabular-nums`). Use the
+semantic classes (`bg-paper`, `text-neg`, `text-warn`, `bg-green text-on-fill`…), never raw Tailwind
+palette colours: the same names carry a **dark theme** that follows the device setting
+(`data-theme="light|dark"` on `<html>` forces one; there is no toggle yet). Charts use the tokens
+through `var(--color-…)` in `src/lib/insights/chart-colors.ts`.
+
+The gain/loss pair is the brand's, darkened just enough that red-green colour-blind readers can
+tell them apart and both read as text. `src/lib/theme-contrast.test.ts` fails if any text token drops
+below 4.5:1 on any surface in either theme. Score-cell fills (`--color-eagle/birdie/bogey/double/worse`)
+don't change with the theme and carry `text-on-light` / `text-on-fill`.
 
 The brand is **Better Than Most** (short form BTM); the decisions, palette and copy rules are in
 [`docs/brand/HANDOVER.md`](./docs/brand/HANDOVER.md), and the approved landing design is
@@ -161,7 +170,7 @@ applied with the `.golf-scene` / `.golf-scene-strip` / `.golf-scene-hero` classe
 Players pick one on the Rounds page (or leave it on **Auto**, which follows the season); the choice is
 an `sg-scene` cookie (`src/lib/scene`), and the layout puts `scene-<season>` on `<body>` so the hero,
 footer and sign-in page all swap together. Each image's top edge is the paper colour so it blends into
-the page. They're excluded from the auth middleware's matcher so the sign-in page can load them.
+the page; each has a `-dark` twin (dusk sky, veiled) that the dark theme swaps in. They're excluded from the auth middleware's matcher so the sign-in page can load them.
 
 ### Known issues already fixed (don't reintroduce)
 

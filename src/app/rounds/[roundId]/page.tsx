@@ -168,7 +168,7 @@ function ReadOnlyRound({
       <div className="border rounded-xl bg-card p-4 space-y-3">
         <p className="font-semibold">
           {totalScore} <span className="text-muted font-normal text-sm">over {played.length} holes</span>{' '}
-          <span className={`text-sm font-medium ${totalSg >= 0 ? 'text-pos' : 'text-neg'}`}>SG {fmtSg(totalSg)}</span>
+          <span className={`font-mono text-sm font-medium ${totalSg >= 0 ? 'text-pos' : 'text-neg'}`}>SG {fmtSg(totalSg)}</span>
         </p>
         <table className="w-full text-sm">
           <thead>

@@ -60,7 +60,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ userId:
                     {r.grossScore - r.par} · par {r.par})
                   </span>
                 </p>
-                <p className={`text-sm font-medium ${r.sgTotal >= 0 ? 'text-pos' : 'text-neg'}`}>SG {fmtSg(r.sgTotal)}</p>
+                <p className={`font-mono text-sm font-medium ${r.sgTotal >= 0 ? 'text-pos' : 'text-neg'}`}>SG {fmtSg(r.sgTotal)}</p>
               </div>
             </li>
           ))}

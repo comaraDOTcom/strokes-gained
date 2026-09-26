@@ -6,6 +6,26 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.38 — 2026-09-26
+
+### Better Than Most: new name, new look, and a dark theme
+The app is now **Better Than Most** (BTM). It looks like the new landing page, and it follows your
+phone's dark mode.
+- **New name and mark** (#50). The tab title, home-screen icon, sign-in page, nav and sign-in
+  emails all say Better Than Most. The mark is "BTM" in gold on a forest-green disc. The home-screen
+  label is BTM. "Strokes gained" is still the name of the number.
+- **Clubhouse palette and type** (#51). Cream pages, paper cards, forest green for buttons and the
+  selected state, gold accents. Headings are set in Fraunces, text in Source Serif 4, and every
+  number in IBM Plex Mono with digits that line up in columns.
+- **Gained and lost are easier to tell apart.** Green for strokes gained and a deeper oxblood for
+  strokes lost, far enough apart in lightness that red-green colour-blind players can read them.
+  Every text colour reads at 4.5:1 or better, in both themes, and a test keeps it that way.
+- **Dark theme.** Follows your device setting. The illustrated backdrop has a dusk version for it.
+- **Scorecards** keep the tour-leaderboard colours (gold eagle, green birdie, blue bogey, navy
+  double and worse), retuned to the new palette, and look the same in either theme.
+- "Biggest leak" on Insights is now **Costliest area**.
+- Known gap: some chart colours are faint on the dark background (#62).
+
 ## 0.0.37 — 2026-09-26
 
 ### Under the hood: how Claude works on this app, and what it's now allowed to trust

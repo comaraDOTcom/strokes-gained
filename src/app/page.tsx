@@ -42,7 +42,7 @@ export default async function Home({
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Rounds</h1>
-        <Link href="/rounds/new" className="bg-ink text-white text-sm font-medium px-4 py-2 rounded">
+        <Link href="/rounds/new" className="bg-ink text-paper text-sm font-medium px-4 py-2 rounded">
           New round
         </Link>
       </header>
@@ -112,7 +112,7 @@ export default async function Home({
                         {r.grossScore - r.par} · par {r.par})
                       </span>
                     </p>
-                    <p className={`text-sm font-medium ${r.sgTotal >= 0 ? 'text-pos' : 'text-neg'}`}>
+                    <p className={`font-mono text-sm font-medium ${r.sgTotal >= 0 ? 'text-pos' : 'text-neg'}`}>
                       SG {fmtSg(r.sgTotal)}
                     </p>
                   </div>
@@ -223,7 +223,7 @@ export default async function Home({
                     .filter(([, sg]) => Math.abs(sg) > 1e-9)
                     .map(([category, sg]) => (
                       <span key={category}>
-                        {category.replace(/_/g, ' ')} <span className={sg >= 0 ? 'text-pos' : 'text-neg'}>{fmtSg(sg)}</span>
+                        {category.replace(/_/g, ' ')} <span className={`font-mono ${sg >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(sg)}</span>
                       </span>
                     ))}
                 </div>

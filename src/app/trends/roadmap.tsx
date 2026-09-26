@@ -123,7 +123,7 @@ export function RoadmapSection({ roadmap }: { roadmap: Roadmap }) {
           ))}
         </div>
         {roadmap.importanceStatus === 'placeholder' && (
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-warn">
             These importance shares are rounded placeholders until they&apos;re checked against the book. The ranking
             below leans on them.
           </p>

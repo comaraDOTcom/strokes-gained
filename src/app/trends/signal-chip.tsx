@@ -2,7 +2,7 @@ import type { SignalStrength } from '@/lib/insights/signal';
 
 const SIGNAL_STYLE: Record<SignalStrength, string> = {
   signal: 'bg-accent-soft text-accent',
-  limited: 'bg-amber-100 text-amber-800',
+  limited: 'bg-warn-soft text-warn',
   noise: 'bg-paper-2 text-ink-2',
 };
 

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice">
 <defs>
-<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2ebdc"/><stop offset=".55" stop-color="#f0e9dc"/><stop offset="1" stop-color="#e6dccb"/></linearGradient>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101a15"/><stop offset=".55" stop-color="#1a2a26"/><stop offset="1" stop-color="#27403c"/></linearGradient>
 <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b3ccd0"/><stop offset="1" stop-color="#86a9b3"/></linearGradient>
 <clipPath id="fw"><path d="M0 418 C250 378 500 430 750 398 S1100 378 1200 408 L1200 600 L0 600Z"/></clipPath>
 </defs>
@@ -834,4 +834,5 @@
 <ellipse cx="857.5" cy="272.9" rx="7.8" ry="3.9" fill="#d9822b" transform="rotate(6 857.5 272.9)"/>
 <ellipse cx="240.2" cy="336.4" rx="7.2" ry="3.6" fill="#a8412a" transform="rotate(23 240.2 336.4)"/>
 <ellipse cx="496.2" cy="421.8" rx="6.9" ry="3.5" fill="#e8b13a" transform="rotate(134 496.2 421.8)"/>
+<rect width="1200" height="600" fill="#101a15" opacity="0.45"/>
 </svg>

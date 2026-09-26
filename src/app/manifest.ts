@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Log every shot; see where the strokes went, against a scratch golfer.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#f3f2ea',
-    theme_color: '#faf9f4',
+    background_color: '#f2ebdc',
+    theme_color: '#fbf7ee',
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },

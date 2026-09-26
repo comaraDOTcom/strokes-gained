@@ -52,10 +52,10 @@ export function DifficultyToggle({ rounds }: { rounds: AdjustableRound[] }) {
                 <td className="py-1">
                   {r.courseName} — {r.teeName}
                   {applied && r.perHoleAdjustment === null && (
-                    <span className="text-amber-600 text-xs block">no course rating on file — shown unadjusted</span>
+                    <span className="text-warn text-xs block">no course rating on file — shown unadjusted</span>
                   )}
                 </td>
-                <td className={`py-1 font-medium ${shown >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(shown)}</td>
+                <td className={`py-1 font-mono font-medium ${shown >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(shown)}</td>
               </tr>
             );
           })}

@@ -84,7 +84,7 @@ export function QualityInfo({ stat, size = 'sm' }: { stat: QualityStat | null; s
           <span className="block text-ink-2">
             {e.detail} That&apos;s {qualityBand(stat.quality)}.
           </span>
-          {e.caveat && <span className="block text-xs text-amber-800">{e.caveat}</span>}
+          {e.caveat && <span className="block text-xs text-warn">{e.caveat}</span>}
           <span className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs">
             <Link href="/learn#shot-quality" className="text-accent underline underline-offset-2">
               How the hexagon works
