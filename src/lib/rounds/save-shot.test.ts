@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { and, asc, eq } from 'drizzle-orm';
 import { freshDb, makeUser } from '../../db/test-helpers';
+import { expectedStrokes } from '../sg/interpolate';
 import type { ShotResultInput } from './save-shot';
 import type { ShotTags } from './entry';
 
@@ -122,5 +123,81 @@ describe('saveShotResult — tags', () => {
     expect(b[1]!.sg).toBeCloseTo(0.18, 3);
     expect(b[2]!.sg).toBeCloseTo(0.93, 3);
     expect(b[2]).toMatchObject({ puttSlope: 'DOWNHILL', puttBreak: 'RIGHT_TO_LEFT' }); // and the tags survived recompute
+  });
+});
+
+describe('saveShotResult — editing and the chain', () => {
+  it('marking an edited shot holed removes the shots after it', async () => {
+    const { save, read } = await setup();
+    await playGoldenHole(save);
+    expect(await read()).toHaveLength(3);
+
+    const r = await save({ shotNo: 2, holed: true });
+    expect(r).not.toHaveProperty('error');
+    expect((r as { shots: unknown[] }).shots).toHaveLength(2);
+
+    const rows = await read();
+    expect(rows).toHaveLength(2);
+    expect(rows.map((s) => s.shotNo)).toEqual([1, 2]);
+    expect(rows[1]).toMatchObject({ startLie: 'FAIRWAY', startYards: 150, endLie: null, endYards: 0, holed: true });
+    expect(rows.find((s) => s.shotNo === 3)).toBeUndefined();
+  });
+
+  it('editing an earlier shot re-derives later starts and stores the recomputed SG for every shot', async () => {
+    const { save, read } = await setup();
+    await playGoldenHole(save);
+    const before = await read();
+    expect(before[2]!.sg).toBeCloseTo(0.93, 3);
+
+    expect(await save({ shotNo: 1, endLie: 'ROUGH', endDistance: 140 })).not.toHaveProperty('error');
+    const rows = await read();
+    expect(rows).toHaveLength(3);
+
+    // Shot 1's own result changed; shot 2 now starts where shot 1 ended; shot 3 is untouched.
+    expect(rows[0]).toMatchObject({ startLie: 'TEE', startYards: 413, endLie: 'ROUGH', endYards: 140 });
+    expect(rows[1]).toMatchObject({ startLie: 'ROUGH', startYards: 140, endLie: 'GREEN' });
+    expect(rows[2]).toMatchObject({ startLie: 'GREEN', endLie: null, holed: true });
+
+    // SG = E(start) − E(end) − 1 (feet on the green, yards elsewhere).
+    expect(rows[0]!.sg).toBeCloseTo(expectedStrokes('TEE', 413) - expectedStrokes('ROUGH', 140) - 1, 6);
+    expect(rows[1]!.sg).toBeCloseTo(expectedStrokes('ROUGH', 140) - expectedStrokes('GREEN', 20) - 1, 6);
+    expect(rows[2]!.sg).toBeCloseTo(0.93, 3);
+    expect(rows[2]!.sg).toBe(before[2]!.sg);
+
+    // Invariant on a finished hole: sum(SG) === E('TEE', holeYards) − grossScore, no penalties here.
+    const sum = rows.reduce((acc, s) => acc + (s.sg ?? 0), 0);
+    expect(Math.abs(sum - (expectedStrokes('TEE', 413) - 3))).toBeLessThan(1e-6);
+  });
+
+  it('a stroke-and-distance result forces end = start and not holed, whatever the client sent', async () => {
+    const { save, read } = await setup();
+    const r = await save({
+      shotNo: 1,
+      penaltyType: 'STROKE_AND_DISTANCE',
+      penaltyStrokes: 1,
+      holed: true, // must be ignored
+      endLie: 'FAIRWAY', // must be ignored
+      endDistance: 250, // must be ignored
+    });
+    expect(r).not.toHaveProperty('error');
+
+    const [first] = await read();
+    expect(first).toMatchObject({
+      startLie: 'TEE',
+      startYards: 413,
+      endLie: 'TEE',
+      endYards: 413,
+      holed: false,
+      penaltyStrokes: 1,
+      penaltyType: 'STROKE_AND_DISTANCE',
+    });
+    // E(start) − E(start) − 1 − 1: the shot costs exactly 2.0.
+    expect(first!.sg).toBeCloseTo(-2, 6);
+
+    // The hole is not finished, so the next shot replays from the tee.
+    expect(await save({ shotNo: 2, endLie: 'GREEN', endDistance: 20 })).not.toHaveProperty('error');
+    const rows = await read();
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toMatchObject({ shotNo: 2, startLie: 'TEE', startYards: 413, endLie: 'GREEN' });
   });
 });
