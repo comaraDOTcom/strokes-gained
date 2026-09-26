@@ -51,7 +51,7 @@ function Overview({ row, heading }: { row: SgTableRow; heading: string }) {
           <p className="text-sm text-ink-2">
             {leak ? (
               <>
-                Biggest leak: <span className="font-medium text-ink">{LABEL[leak]}</span>
+                Costliest area: <span className="font-medium text-ink">{LABEL[leak]}</span>
               </>
             ) : (
               'No category lost strokes'

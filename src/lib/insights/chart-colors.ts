@@ -1,10 +1,13 @@
 /**
- * Chart palette for `/insights` and `/trends` — the validated default
- * instance from the `dataviz` skill's `references/palette.md`, used
- * verbatim (no brand substitution requested). The rest of this app is
- * light-mode-only Tailwind with no theme toggle (see `globals.css` /
- * `layout.tsx`), so charts match that scope rather than adding dark-mode
- * theming nothing else in the app has.
+ * Chart palette for `/insights` and `/trends`.
+ *
+ * SG polarity and the chart chrome are the app's theme tokens (src/app/globals.css), passed to
+ * Recharts as `var(--color-…)` strings so the charts follow the brand palette and the dark theme
+ * with the rest of the page. The gain/loss pair is validated for red-green colour blindness (see the
+ * note in globals.css). Categorical hues are unchanged: the validated light-mode instance from the
+ * `dataviz` skill's `references/palette.md`. They identify courses and areas, not the brand, and
+ * always sit beside a text label. They have no dark-mode steps yet: on the dark card, violet (7) is
+ * 1.8:1 and blue (1) and green (6) are near 3:1 (docs/quality.md, issue #62).
  */
 
 /** Fixed-order categorical hues — assign by identity, never cycle/re-sort. */
@@ -21,18 +24,18 @@ export const CATEGORICAL = [
 
 /** Diverging pair for SG (polarity: gained vs. lost), neutral midpoint for ~0. */
 export const DIVERGING = {
-  positive: '#2d7a4f', // green (design mock)
-  negative: '#b5432b', // terracotta (design mock)
-  neutral: '#c3c2b7',
+  positive: 'var(--color-pos)',
+  negative: 'var(--color-neg)',
+  neutral: 'var(--color-line-strong)',
 } as const;
 
 export const CHROME = {
-  surface: '#faf9f4',
-  primaryInk: '#0b0b0b',
-  secondaryInk: '#52514e',
-  mutedInk: '#898781',
-  gridline: '#e1e0d9',
-  baseline: '#c3c2b7',
+  surface: 'var(--color-card)',
+  primaryInk: 'var(--color-ink)',
+  secondaryInk: 'var(--color-ink-2)',
+  mutedInk: 'var(--color-muted)',
+  gridline: 'var(--color-line)',
+  baseline: 'var(--color-line-strong)',
 } as const;
 
 export function sgColor(value: number): string {

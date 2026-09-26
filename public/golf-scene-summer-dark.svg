@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice">
 <defs>
-<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2ebdc"/><stop offset=".55" stop-color="#eef0dc"/><stop offset="1" stop-color="#cfe4ea"/></linearGradient>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101a15"/><stop offset=".55" stop-color="#1a2a26"/><stop offset="1" stop-color="#27403c"/></linearGradient>
 <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9d6e4"/><stop offset="1" stop-color="#6fb0c8"/></linearGradient>
 <clipPath id="fw"><path d="M0 418 C250 378 500 430 750 398 S1100 378 1200 408 L1200 600 L0 600Z"/></clipPath>
 </defs>
@@ -787,4 +787,5 @@
 <circle cx="805.1" cy="597.6" r="4.2" fill="#a9c4ec"/>
 <circle cx="725.1" cy="584.1" r="6.5" fill="#a9c4ec"/>
 <circle cx="674.9" cy="581.7" r="3.3" fill="#6f95d0"/>
+<rect width="1200" height="600" fill="#101a15" opacity="0.45"/>
 </svg>

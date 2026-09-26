@@ -25,6 +25,10 @@ import {
 import { CATEGORICAL, CHROME, DIVERGING, fmtSg, niceAxis, sgColor } from '@/lib/insights/chart-colors';
 
 const AXIS_STYLE = { fontSize: 11, fill: CHROME.mutedInk };
+// Recharts' default tooltip is white with black text; give it the card surface and ink so it
+// follows the theme. (Axis ticks are set in the mono face by globals.css.)
+const TOOLTIP_STYLE = { fontSize: 12, borderColor: CHROME.gridline, background: CHROME.surface, color: CHROME.primaryInk };
+const TOOLTIP_LABEL = { color: CHROME.secondaryInk };
 
 /**
  * A named format, not a function — a Server Component page cannot pass a
@@ -66,7 +70,7 @@ function barLabel(format: ValueFormat, digits: number) {
     const top = Math.min(y, y + h);
     const bottom = Math.max(y, y + h);
     return (
-      <text x={x} y={v < 0 ? bottom + 12 : top - 4} textAnchor="middle" fontSize={11} fill={CHROME.mutedInk}>
+      <text x={x} y={v < 0 ? bottom + 12 : top - 4} textAnchor="middle" fontSize={11} fill={CHROME.mutedInk} fontFamily="var(--font-mono)">
         {labelText(v, format, digits)}
       </text>
     );
@@ -112,7 +116,8 @@ export function DivergingBarChart({
         <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} width={40} domain={axis.domain} ticks={axis.ticks} tickFormatter={(v: number) => labelText(v, format, Math.max(1, axis.decimals))} />
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
-          contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
+          contentStyle={TOOLTIP_STYLE}
+          labelStyle={TOOLTIP_LABEL}
         />
         <Bar dataKey={yKey} radius={[4, 4, 4, 4]} maxBarSize={40} isAnimationActive={false}>
           {data.map((d, i) => (
@@ -153,7 +158,8 @@ export function GroupedBarChart({
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
           labelFormatter={shortDate}
-          contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
+          contentStyle={TOOLTIP_STYLE}
+          labelStyle={TOOLTIP_LABEL}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {series.map((s) => (
@@ -202,7 +208,8 @@ export function TrendBarChart({
         <Tooltip
           formatter={(v: number) => formatValue(v, format, suffix)}
           labelFormatter={shortDate}
-          contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
+          contentStyle={TOOLTIP_STYLE}
+          labelStyle={TOOLTIP_LABEL}
         />
         <Bar dataKey={valueKey} name="This round" radius={[4, 4, 4, 4]} maxBarSize={40} fill={CATEGORICAL[0]} isAnimationActive={false}>
           {format === 'sg' && data.map((d, i) => <Cell key={i} fill={sgColor(Number(d[valueKey]))} />)}
@@ -274,7 +281,8 @@ export function QualityTrendChart({
         />
         <Tooltip
           labelFormatter={shortDate}
-          contentStyle={{ fontSize: 12, borderColor: CHROME.gridline }}
+          contentStyle={TOOLTIP_STYLE}
+          labelStyle={TOOLTIP_LABEL}
           formatter={(v: number, name: string, item: { payload?: QualityTrendDatum }) => {
             const d = item.payload;
             const shots = name === 'This round' ? d?.roundShots : d?.rollingShots;

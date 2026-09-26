@@ -362,9 +362,9 @@ export function RoundEntry({
               onClick={() => goToHole(h.holeNo)}
               className={[
                 'shrink-0 w-9 h-9 rounded text-sm font-medium border',
-                h.holeNo === currentHoleNo ? 'border-ink bg-ink text-white' : 'border-line-strong',
+                h.holeNo === currentHoleNo ? 'border-ink bg-ink text-paper' : 'border-line-strong',
                 done && h.holeNo !== currentHoleNo ? 'bg-pos-soft border-pos' : '',
-                started && !done && h.holeNo !== currentHoleNo ? 'bg-yellow-50 border-yellow-400' : '',
+                started && !done && h.holeNo !== currentHoleNo ? 'bg-warn-soft border-warn' : '',
               ].join(' ')}
             >
               {h.holeNo}
@@ -412,7 +412,7 @@ export function RoundEntry({
                 {unitFor(s.startLie as Lie)} → {s.holed ? 'HOLED' : `${s.endLie} ${displayDistance(s.endLie as Lie, s.endYards)}${unitFor(s.endLie as Lie)}`}
                 {s.penaltyStrokes > 0 ? ` (+${s.penaltyStrokes} penalty)` : ''}
                 {' · SG '}
-                {(s.sg ?? 0).toFixed(2)}
+                <span className="font-mono">{(s.sg ?? 0).toFixed(2)}</span>
                 {tagSummary(s) && <span className="font-mono text-xs text-muted">{' · '}{tagSummary(s)}</span>}
               </span>
               <button className="text-accent underline text-xs" onClick={() => startEdit(s)} disabled={busy}>
@@ -423,11 +423,11 @@ export function RoundEntry({
         </ul>
 
         <p className="text-sm font-medium">
-          Derived score so far: {holeTotals.grossScore} (par {hole.par}) · Hole SG {holeTotals.sg.toFixed(2)}
+          Derived score so far: {holeTotals.grossScore} (par {hole.par}) · Hole SG <span className="font-mono">{holeTotals.sg.toFixed(2)}</span>
         </p>
 
         {editingShotNo !== null && (
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-warn">
             Editing shot {editingShotNo} — later shots keep their results; their starting positions follow this one. (Marking it Holed removes the shots after it.){' '}
             <button className="underline" onClick={() => resetForm(holeShots)}>
               Cancel
@@ -565,7 +565,7 @@ export function RoundEntry({
                       onClick={() => setSelectedLie(lie)}
                       className={[
                         'border rounded py-3 text-sm font-medium',
-                        selectedLie === lie ? 'bg-ink text-white border-ink' : 'border-line-strong',
+                        selectedLie === lie ? 'bg-ink text-paper border-ink' : 'border-line-strong',
                       ].join(' ')}
                     >
                       {lie}
@@ -575,7 +575,7 @@ export function RoundEntry({
                     type="button"
                     onClick={() => void saveShot({ holed: true })}
                     disabled={busy}
-                    className="col-span-3 border rounded py-3 text-sm font-semibold bg-pos text-white border-pos disabled:opacity-50"
+                    className="col-span-3 border rounded py-3 text-sm font-semibold bg-pos text-paper border-pos disabled:opacity-50"
                   >
                     Holed
                   </button>
@@ -642,7 +642,7 @@ export function RoundEntry({
               type="button"
               disabled={busy || (!isStrokeAndDistance && !canSaveResult)}
               onClick={() => void saveShot({ holed: false })}
-              className="w-full bg-ink text-white rounded py-3 text-base font-medium disabled:opacity-50"
+              className="w-full bg-ink text-paper rounded py-3 text-base font-medium disabled:opacity-50"
             >
               Save shot
             </button>

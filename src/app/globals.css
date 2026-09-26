@@ -1,41 +1,122 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens, taken from the published design mock (landing + dashboard):
- * warm paper background, near-black ink, terracotta for strokes lost, green for
- * strokes gained, and a steel-blue selected state. IBM Plex Sans for text, Plex
- * Mono for numbers/labels. Use these semantic names (bg-paper, text-neg,
- * font-mono …) rather than raw Tailwind palette colours.
+ * Design tokens: the Better Than Most "clubhouse classic" palette, ported from the approved landing
+ * page (docs/brand/landing.html; decisions in docs/brand/HANDOVER.md). Cream page, paper cards,
+ * ink text, forest green for selection and primary actions, gold for accents. Fraunces for
+ * headings, Source Serif 4 for text, IBM Plex Mono (tabular) for every number.
+ *
+ * Use the semantic names (bg-paper, text-neg, font-mono …), never raw Tailwind palette colours:
+ * the same names carry the dark theme below, so a page written against them works in both.
+ *
+ * Gain/loss (pos/neg) are the brand's gain #2C7A4B and loss #A94330 moved just far enough apart in
+ * lightness that red-green colour-blind readers can tell them apart (OKLab ΔE ≥ 8 under simulated
+ * deuteranopia and protanopia; the brand pair scores 4.5) and that both read as text at ≥ 4.5:1 on
+ * every surface. Every text colour here except `faint` is ≥ 4.5:1 on paper, paper-2 and card, in
+ * both themes; `faint` is for placeholders and dashes only.
  */
 @theme {
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+  /* `font-sans` stays the name of the default text face (Tailwind's preflight uses it); here it is
+     the body serif. */
+  --font-sans: var(--font-source-serif), Georgia, 'Times New Roman', serif;
+  --font-serif: var(--font-source-serif), Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-paper: #f3f2ea;
-  --color-paper-2: #e9e8dc;
-  --color-card: #faf9f4;
-  --color-line: #dedcce;
-  --color-line-strong: #c3c2b7;
+  --color-paper: #f2ebdc; /* page (brand "cream") */
+  --color-paper-2: #e9e0cc; /* sunken rows, tracks (brand "cream-2") */
+  --color-card: #fbf7ee; /* raised surfaces (brand "paper") */
+  --color-line: #dcd2bd;
+  --color-line-strong: #cfc4ab; /* brand "rule" */
 
-  --color-ink: #16221c;
-  --color-ink-2: #4a5049;
-  --color-muted: #6b6f66;
-  --color-faint: #9a9d92;
+  --color-ink: #1c2620;
+  --color-ink-2: #4a5a50;
+  --color-muted: #56645b;
+  --color-faint: #7e8c83; /* brand "ink-3": decoration only, below 4.5:1 */
 
-  --color-pos: #2d7a4f;
-  --color-pos-soft: #dcefe3;
-  --color-neg: #b5432b;
-  --color-neg-soft: #f6dfd8;
-  --color-accent: #3b5b8c;
+  --color-pos: #277045;
+  --color-pos-soft: #dde7df;
+  --color-neg: #722d20;
+  --color-neg-soft: #f2ded6;
+  /* Selected state, links, focus: forest green (was steel blue). */
+  --color-accent: #144433;
+  --color-accent-soft: #dde7df;
+  /* Caveats and "limited data" chips. */
+  --color-warn: #7a5210;
+  --color-warn-soft: #f1e4c3;
+
+  /* Brand colours for primary buttons, bands and the mark. */
+  --color-green: #144433;
+  --color-green-deep: #0c2a1f;
+  --color-gold: #b48a3c;
+  --color-gold-light: #e7d6ae;
+  /* Text on a saturated fill (score cells, green buttons): the same in both themes. */
+  --color-on-fill: #fbf7ee;
+  --color-on-light: #1c2620;
 
   /* Score-to-par colours (scorecards, eclectic, "How your holes finish"). Tour-leaderboard
-     structure — gold eagle, blank par, blue bogey, navy double and worse — but a green birdie,
-     so red keeps its one meaning in this app: strokes lost. */
-  --color-eagle: #e9b31c;
-  --color-bogey: #a9c9ea;
-  --color-double: #2c5a97;
-  --color-worse: #13284c;
-  --color-accent-soft: #e3e9f2;
+     structure (gold eagle, blank par, blue bogey, navy double and worse) with a green birdie, so red
+     keeps its one meaning in this app: strokes lost. Retuned to the clubhouse palette. A scorecard
+     is printed matter, so these don't change with the theme; the text on them is on-light (eagle,
+     bogey) or on-fill (birdie, double, worse), ≥ 4.9:1 either way. */
+  --color-eagle: #c99a45;
+  --color-birdie: #277045;
+  --color-bogey: #b9c9da;
+  --color-double: #3d5d7e;
+  --color-worse: #1e3049;
+}
+
+/*
+ * Dark theme: the landing page's dark tokens, with pos/neg/muted tuned the same way as above.
+ * Follows the device setting; `data-theme="light|dark"` on <html> forces one (no toggle yet).
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-paper: #101a15;
+    --color-paper-2: #17241d;
+    --color-card: #1a2721;
+    --color-line: #2a3831;
+    --color-line-strong: #33423a;
+    --color-ink: #efe7d3;
+    --color-ink-2: #bfb6a0;
+    --color-muted: #a59e8a;
+    --color-faint: #8a8574;
+    --color-pos: #63c188;
+    --color-pos-soft: #1f3329;
+    --color-neg: #d56e58;
+    --color-neg-soft: #2f1d18;
+    --color-accent: #a9cdb8;
+    --color-accent-soft: #1f3329;
+    --color-warn: #e0b25c;
+    --color-warn-soft: #3a3120;
+    --color-green: #1e5c44;
+    --color-gold: #d2a857;
+    --color-gold-light: #5a4a2a;
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-paper: #101a15;
+  --color-paper-2: #17241d;
+  --color-card: #1a2721;
+  --color-line: #2a3831;
+  --color-line-strong: #33423a;
+  --color-ink: #efe7d3;
+  --color-ink-2: #bfb6a0;
+  --color-muted: #a59e8a;
+  --color-faint: #8a8574;
+  --color-pos: #63c188;
+  --color-pos-soft: #1f3329;
+  --color-neg: #d56e58;
+  --color-neg-soft: #2f1d18;
+  --color-accent: #a9cdb8;
+  --color-accent-soft: #1f3329;
+  --color-warn: #e0b25c;
+  --color-warn-soft: #3a3120;
+  --color-green: #1e5c44;
+  --color-gold: #d2a857;
+  --color-gold-light: #5a4a2a;
 }
 
 @layer base {
@@ -46,6 +127,22 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  /* Every number is set in the mono face; keep its digits on a fixed grid so columns line up. */
+  .font-mono,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
   }
 }
 
@@ -60,6 +157,17 @@
 .scene-summer { --golf-scene: url('/golf-scene-summer.svg'); }
 .scene-autumn { --golf-scene: url('/golf-scene-autumn.svg'); }
 .scene-winter { --golf-scene: url('/golf-scene-winter.svg'); }
+/* Dark theme: each season's dusk twin (same file name + -dark), whose sky starts at the dark paper. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .scene-spring { --golf-scene: url('/golf-scene-spring-dark.svg'); }
+  :root:not([data-theme='light']) .scene-summer { --golf-scene: url('/golf-scene-summer-dark.svg'); }
+  :root:not([data-theme='light']) .scene-autumn { --golf-scene: url('/golf-scene-autumn-dark.svg'); }
+  :root:not([data-theme='light']) .scene-winter { --golf-scene: url('/golf-scene-winter-dark.svg'); }
+}
+:root[data-theme='dark'] .scene-spring { --golf-scene: url('/golf-scene-spring-dark.svg'); }
+:root[data-theme='dark'] .scene-summer { --golf-scene: url('/golf-scene-summer-dark.svg'); }
+:root[data-theme='dark'] .scene-autumn { --golf-scene: url('/golf-scene-autumn-dark.svg'); }
+:root[data-theme='dark'] .scene-winter { --golf-scene: url('/golf-scene-winter-dark.svg'); }
 
 .golf-scene {
   background-image: var(--golf-scene, url('/golf-scene-spring.svg'));
@@ -104,7 +212,7 @@
   border-radius: 9999px;
   background: var(--color-card);
   border: 1.5px solid var(--color-muted);
-  box-shadow: 0 1px 2px rgb(22 34 28 / 0.25);
+  box-shadow: 0 1px 2px rgb(28 38 32 / 0.25);
   transition: transform 120ms ease;
 }
 .course-pin svg {
@@ -147,7 +255,7 @@
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 0 0 3px rgb(22 34 28 / 0.14);
+  box-shadow: 0 0 0 3px rgb(28 38 32 / 0.14);
   opacity: 0.92;
 }
 .course-cluster__played {
@@ -171,4 +279,11 @@
 .golf-scene-hero {
   background-size: cover;
   background-position: 62% 72%;
+}
+
+/* Recharts: every tick label is a number (or a date), so it's set in the mono face like the rest. */
+.recharts-cartesian-axis-tick-value,
+.recharts-label {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }

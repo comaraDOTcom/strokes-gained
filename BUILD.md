@@ -1,4 +1,4 @@
-# Implementation contract
+# Better Than Most — implementation contract
 
 Approved plan: `~/.claude/plans/partitioned-dancing-ladybug.md`. This file is the
 precise build spec. Work the phases in order. **Do not start a phase until the

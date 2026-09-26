@@ -7,6 +7,9 @@
  *   public/golf-scene-autumn.svg   windy autumn: turning trees, leaves blowing across
  *   public/golf-scene-winter.svg   rainy winter: grey sky, rain, holly berries, puddles
  *
+ * Each also gets a `-dark` twin for the dark theme: a dusk sky that starts at the dark paper colour
+ * and a veil of that colour over the artwork, so it sits quietly behind dark cards.
+ *
  * Every season shares the same layout (the same seeded sequence drives the geometry), so switching
  * scene never moves the green or the flag. Only colours and weather change. Original artwork in the
  * app's flat style; deterministic, so re-running it without changes produces the same files.
@@ -26,13 +29,20 @@ const seeded = (start) => {
   };
 };
 
+/** The page colour (`--color-paper` in src/app/globals.css), light and dark. */
+const PAPER = '#f2ebdc';
+const DARK_PAPER = '#101a15';
+/** Dark theme: dusk sky stops, and how much of the dark paper colour veils the artwork. */
+const DARK_SKY = [DARK_PAPER, '#1a2a26', '#27403c'];
+const DARK_VEIL = 0.45;
+
 /**
- * Per-season palette. The top sky stop is always the paper colour (#f3f2ea) so the artwork blends
+ * Per-season palette. The top sky stop is always the paper colour (PAPER) so the artwork blends
  * into the page with no hard edge.
  */
 const SEASONS = {
   spring: {
-    sky: ['#f3f2ea', '#e6efe9', '#d5e6e0'],
+    sky: [PAPER, '#e6efe9', '#d5e6e0'],
     water: ['#b9d8e0', '#8fbccb'],
     farTrees: ['#2f5a41', '#274d38', '#356549'], spire: '#23402f', treeBand: '#2a5240',
     ground: ['#86b886', '#5fa46c', '#3f8454'], stripes: 0.1,
@@ -43,7 +53,7 @@ const SEASONS = {
     blossomSize: 1, flag: 'wind',
   },
   summer: {
-    sky: ['#f3f2ea', '#eef0dc', '#cfe4ea'],
+    sky: [PAPER, '#eef0dc', '#cfe4ea'],
     water: ['#a9d6e4', '#6fb0c8'],
     farTrees: ['#2f6a41', '#28603a', '#3a7a4b'], spire: '#23452f', treeBand: '#2c5c3f',
     ground: ['#95c983', '#62ad5f', '#3f8a4c'], stripes: 0.15,
@@ -55,7 +65,7 @@ const SEASONS = {
     blossomSize: 1, flag: 'still',
   },
   autumn: {
-    sky: ['#f3f2ea', '#f0e9dc', '#e6dccb'],
+    sky: [PAPER, '#f0e9dc', '#e6dccb'],
     water: ['#b3ccd0', '#86a9b3'],
     farTrees: ['#c9702e', '#a8462a', '#d9a03a', '#2f5a41', '#b8612b', '#8e3b24'], spire: '#23402f', treeBand: '#6d4a2c',
     ground: ['#a9b87c', '#7fa062', '#5d8049'], stripes: 0.08,
@@ -66,7 +76,7 @@ const SEASONS = {
     blossomSize: 0.9, flag: 'wind',
   },
   winter: {
-    sky: ['#f3f2ea', '#e3e5e2', '#c9d0d1'],
+    sky: [PAPER, '#e3e5e2', '#c9d0d1'],
     water: ['#a9b9bd', '#7f949a'],
     farTrees: ['#3b5446', '#34493e', '#415a4c'], spire: '#243a2f', treeBand: '#33483d',
     ground: ['#9db293', '#789a77', '#56775a'], stripes: 0.06,
@@ -79,7 +89,7 @@ const SEASONS = {
   },
 };
 
-function build(name, s) {
+function build(name, s, dark = false) {
   const rnd = seeded(20260921); // shared layout: same sequence for every season
   const fx = seeded(7031); // weather: its own sequence, so it never disturbs the layout
   const pick = (xs) => xs[Math.floor(rnd() * xs.length)];
@@ -205,13 +215,16 @@ function build(name, s) {
     }
     add(`</g>`);
   }
+  if (dark) add(`<rect width="${W}" height="${H}" fill="${DARK_PAPER}" opacity="${DARK_VEIL}"/>`);
   add(`</svg>`);
   return out.join('\n') + '\n';
 }
 
 fs.mkdirSync('public', { recursive: true });
 for (const [name, palette] of Object.entries(SEASONS)) {
-  const file = `public/golf-scene-${name}.svg`;
-  fs.writeFileSync(file, build(name, palette));
-  console.log(`${file}  ${(fs.statSync(file).size / 1024).toFixed(1)} KB`);
+  for (const dark of [false, true]) {
+    const file = `public/golf-scene-${name}${dark ? '-dark' : ''}.svg`;
+    fs.writeFileSync(file, build(name, dark ? { ...palette, sky: DARK_SKY } : palette, dark));
+    console.log(`${file}  ${(fs.statSync(file).size / 1024).toFixed(1)} KB`);
+  }
 }

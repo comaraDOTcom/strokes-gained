@@ -11,8 +11,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Pt, Tour, TourShot } from '@/lib/learn/tour';
 
-const POS = '#2d7a4f';
-const NEG = '#b5432b';
+// The theme's gain/loss tokens (globals.css), so the tour matches the rest of the app in both themes.
+const POS = 'var(--color-pos)';
+const NEG = 'var(--color-neg)';
 const sgColour = (v: number) => (v >= 0 ? POS : NEG);
 const fmt = (v: number) => (Math.abs(v) < 0.005 ? '0.00' : `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`);
 
@@ -39,7 +40,7 @@ function HoleDiagram({ tour, shown, active }: { tour: Tour; shown: number; activ
       <ellipse cx="100" cy="48" rx="36" ry="27" fill="#b7d79b" stroke="#9cc07f" strokeWidth="1.5" />
       <ellipse cx="58" cy="72" rx="17" ry="10" fill="#efe2bf" stroke="#dccb9b" strokeWidth="1" />
       <rect x="88" y="390" width="24" height="12" rx="3" fill="#c9dab4" stroke="#a9bf92" />
-      <text x="118" y="400" fontSize="9" fill="#6b6f66" fontFamily="ui-monospace, monospace">{tour.yards}y · par {tour.par}</text>
+      <text x="118" y="400" fontSize="9" fill="#6b6f66" fontFamily="var(--font-mono), ui-monospace, monospace">{tour.yards}y · par {tour.par}</text>
       {/* flag */}
       <line x1="100" y1="44" x2="100" y2="18" stroke="#16221c" strokeWidth="1.2" />
       <path d="M100,18 L116,23 L100,28 Z" fill="#e9b31c" />
@@ -66,7 +67,7 @@ function HoleDiagram({ tour, shown, active }: { tour: Tour; shown: number; activ
       {activeShot && (
         <g transform={`translate(${Math.min(activeShot.to.at.x + 10, 150)},${Math.max(activeShot.to.at.y - 22, 6)})`}>
           <rect width="44" height="16" rx="4" fill={sgColour(activeShot.sg)} />
-          <text x="22" y="11.5" textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#fff" fontFamily="ui-monospace, monospace">
+          <text x="22" y="11.5" textAnchor="middle" fontSize="9.5" fontWeight="600" fill="var(--color-paper)" fontFamily="var(--font-mono), ui-monospace, monospace">
             {fmt(activeShot.sg)}
           </text>
         </g>

@@ -265,7 +265,7 @@ export default function ImportPage() {
             ))}
 
             <button
-              className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-ink text-paper px-4 py-2 rounded disabled:opacity-50"
               disabled={busy || hasBlockingErrors || !courseName.trim() || teeForms.length === 0}
               onClick={onImport}
             >

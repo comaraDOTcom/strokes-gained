@@ -98,9 +98,9 @@ export function BandMissTable({ rows }: { rows: GreenMissProfile[] }) {
 export function TeeSplitBar({ t }: { t: TeeDispersion }) {
   if (t.teeShots === 0) return null;
   const segs = [
-    { key: 'left', label: 'Left', share: t.leftShare, cls: 'bg-neg/60 text-white' },
-    { key: 'fairway', label: 'Fairway', share: t.fairwayPct, cls: 'bg-pos/70 text-white' },
-    { key: 'right', label: 'Right', share: t.rightShare, cls: 'bg-neg/60 text-white' },
+    { key: 'left', label: 'Left', share: t.leftShare, cls: 'bg-neg text-paper' },
+    { key: 'fairway', label: 'Fairway', share: t.fairwayPct, cls: 'bg-pos text-paper' },
+    { key: 'right', label: 'Right', share: t.rightShare, cls: 'bg-neg text-paper' },
     { key: 'other', label: '', share: (t.untagged + t.onGreen) / t.teeShots, cls: 'bg-paper-2 text-muted' },
   ].filter((s) => s.share > 0);
   return (

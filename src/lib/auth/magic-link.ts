@@ -9,24 +9,25 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { invitedEmails, user } from '../../db/schema';
+import { BRAND_NAME } from '../brand';
 
 export const normaliseEmail = (email: string) => email.trim().toLowerCase();
 
 /** The sign-in email. Plain, short, and says how long the link lasts. */
 export function magicLinkEmail(url: string, minutes: number, isNewAccount: boolean): { subject: string; text: string; html: string } {
-  const subject = isNewAccount ? 'Join Strokes Gained' : 'Your Strokes Gained sign-in link';
+  const subject = isNewAccount ? `Join ${BRAND_NAME}` : `Your ${BRAND_NAME} sign-in link`;
   const lead = isNewAccount
-    ? 'Tap the link below to set up your Strokes Gained account. No password needed.'
-    : 'Tap the link below to sign in to Strokes Gained. No password needed.';
+    ? `Tap the link below to set up your ${BRAND_NAME} account. No password needed.`
+    : `Tap the link below to sign in to ${BRAND_NAME}. No password needed.`;
   const footer = `The link works once and expires in ${minutes} minutes. If you didn't ask for it, ignore this email.`;
   return {
     subject,
     text: `${lead}\n\n${url}\n\n${footer}`,
-    html: `<div style="font-family:system-ui,sans-serif;font-size:16px;line-height:1.5;color:#16221c">
+    html: `<div style="font-family:system-ui,sans-serif;font-size:16px;line-height:1.5;color:#1C2620">
   <p>${lead}</p>
-  <p><a href="${url}" style="display:inline-block;background:#16221c;color:#f3f2ea;padding:12px 20px;border-radius:10px;text-decoration:none">Sign in</a></p>
-  <p style="font-size:13px;color:#6b6f66">${footer}</p>
-  <p style="font-size:13px;color:#6b6f66">Or paste this into your browser:<br><span style="word-break:break-all">${url}</span></p>
+  <p><a href="${url}" style="display:inline-block;background:#144433;color:#F6F0DE;padding:12px 20px;border-radius:4px;text-decoration:none">Sign in</a></p>
+  <p style="font-size:13px;color:#5F6B63">${footer}</p>
+  <p style="font-size:13px;color:#5F6B63">Or paste this into your browser:<br><span style="word-break:break-all">${url}</span></p>
 </div>`,
   };
 }

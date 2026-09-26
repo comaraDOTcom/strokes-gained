@@ -22,6 +22,7 @@ check · **C** known gap, labelled in the UI · **D** known gap, not labelled in
 | Played: Top 100 challenge | `directory/data/top100.json` | D | Empty; badge, ring, tile and filter never show | `top100.test.ts` (consistency only) | #38 |
 | Voice entry | Cloudflare Whisper + golf vocabulary | B | Test bench only (`/voice`) | `transcribe.test.ts`, `vocabulary.test.ts` | — |
 | Sign-up and invites | Better Auth, invite cookie, magic link | A | Removing a user takes up to 5 min (cookie cache) | `guards.test.ts`, `invite-gate.test.ts` | #33 |
+| Charts in the dark theme | `CATEGORICAL` in `chart-colors.ts` (light-mode dataviz palette) | B | Gain/loss, chrome and tooltips follow the theme; the categorical hues don't. On the dark card violet is **1.8:1**, blue 3.5:1, green 3.1:1. Every chart has a legend or label, so nothing is colour-only | `theme-contrast.test.ts` (tokens only, not the categorical hues) | #62 |
 
 ## How a problem gets here
 

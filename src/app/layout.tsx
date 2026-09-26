@@ -1,30 +1,42 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
-import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Fraunces, IBM_Plex_Mono, Source_Serif_4 } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
 import { SCENE_COOKIE, parseScenePreference, resolveScene } from '@/lib/scene/scene';
 import { SignOutButton } from './sign-out-button';
-import { Logo } from './logo';
+import { Wordmark } from './logo';
+import { BRAND_NAME, BRAND_SHORT, BRAND_TAGLINE } from '@/lib/brand';
 import './globals.css';
 
-const plexSans = IBM_Plex_Sans({
+// The brand faces (docs/brand/HANDOVER.md): Fraunces for headings, Source Serif 4 for text, IBM Plex
+// Mono for every number. Wired to the font tokens in globals.css through these CSS variables.
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-plex-sans',
+  axes: ['opsz', 'SOFT'],
+  variable: '--font-fraunces',
+});
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+  variable: '--font-source-serif',
 });
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   variable: '--font-plex-mono',
 });
 
 export const metadata: Metadata = {
-  title: 'Strokes Gained',
-  description: 'Strokes-gained golf tracking',
+  // A page that sets its own title gets "<title> · Better Than Most".
+  title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
+  applicationName: BRAND_NAME,
+  description: `${BRAND_TAGLINE}: log every shot and see where your round loses strokes to a scratch golfer.`,
   manifest: '/manifest.webmanifest',
-  // iOS: "Add to Home Screen" opens full screen, titled, with apple-icon.png.
-  appleWebApp: { capable: true, title: 'Strokes Gained', statusBarStyle: 'default' },
+  // iOS: "Add to Home Screen" opens full screen, titled, with apple-icon.png. The home-screen label
+  // is the short form, BTM: "Better Than Most" is truncated under the icon.
+  appleWebApp: { capable: true, title: BRAND_SHORT, statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {
@@ -33,7 +45,11 @@ export const viewport: Viewport = {
   // Lets the page extend under the iPhone notch and home indicator when installed; the nav and the
   // welcome tour's bottom bar pad themselves with env(safe-area-inset-*).
   viewportFit: 'cover',
-  themeColor: '#faf9f4',
+  // The nav's card colour, per theme (globals.css --color-card).
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fbf7ee' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a2721' },
+  ],
 };
 
 const NAV_LINKS: { href: string; label: string; adminOnly?: boolean }[] = [
@@ -54,16 +70,15 @@ export default async function RootLayout({
   // Which illustrated backdrop to paint (sets --golf-scene for every .golf-scene below).
   const scene = resolveScene(parseScenePreference((await cookies()).get(SCENE_COOKIE)?.value));
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${sourceSerif.variable} ${plexMono.variable}`}>
       <body className={`scene-${scene} font-sans text-ink min-h-screen flex flex-col`}>
         {/* Phone/tablet: logo + actions pinned on the first row, links on their own row below,
             wrapping rather than scrolling (nothing out of reach). From `lg` up it's a single row:
             logo · links · actions. */}
         <nav className="border-b bg-card sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 max-w-5xl mx-auto text-sm font-medium">
-            <Link href="/" className="flex items-center gap-2 mr-auto" aria-label="Strokes Gained home">
-              <Logo size={28} />
-              <span className="font-semibold">Strokes Gained</span>
+            <Link href="/" className="mr-auto" aria-label={`${BRAND_NAME} home`}>
+              <Wordmark size={28} />
             </Link>
             {user && (
               <>
@@ -80,7 +95,7 @@ export default async function RootLayout({
                   ))}
                 </ul>
                 <div className="flex items-center gap-3">
-                  <Link href="/rounds/new" className="bg-ink text-paper rounded-lg px-3 py-1.5 font-medium whitespace-nowrap">
+                  <Link href="/rounds/new" className="bg-green text-on-fill rounded px-3 py-1.5 font-semibold whitespace-nowrap hover:bg-green-deep">
                     + Log a round
                   </Link>
                   <Link

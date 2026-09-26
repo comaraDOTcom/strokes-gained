@@ -154,7 +154,7 @@ export function NewRoundForm({
       <button
         type="submit"
         disabled={busy}
-        className="w-full bg-ink text-white rounded py-3 text-base font-medium disabled:opacity-50"
+        className="w-full bg-ink text-paper rounded py-3 text-base font-medium disabled:opacity-50"
       >
         Start round
       </button>

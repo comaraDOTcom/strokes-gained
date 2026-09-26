@@ -142,7 +142,7 @@ export function CourseHoleEditor({
       {readOnlyReason ? (
         <p className="text-sm text-muted">{readOnlyReason}</p>
       ) : (
-        <button className="bg-ink text-white px-4 py-2 rounded disabled:opacity-50" disabled={saving} onClick={onSave}>
+        <button className="bg-ink text-paper px-4 py-2 rounded disabled:opacity-50" disabled={saving} onClick={onSave}>
           Save
         </button>
       )}

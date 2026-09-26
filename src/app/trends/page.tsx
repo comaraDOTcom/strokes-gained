@@ -100,7 +100,7 @@ export default async function TrendsPage() {
       <p className="text-sm text-ink-2">
         {roundCount} round{roundCount === 1 ? '' : 's'} logged
         {courses.length > 1 && (
-          <span className="text-amber-700">
+          <span className="text-warn">
             {' '}
             across {courses.length} courses ({courses.map((c) => c.courseName).join(', ')}) — see the cross-course
             caveat below before comparing them directly.
@@ -139,7 +139,7 @@ export default async function TrendsPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className={`font-semibold ${t.delta >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(t.delta)}</p>
+                  <p className={`font-mono font-semibold ${t.delta >= 0 ? 'text-pos' : 'text-neg'}`}>{fmtSg(t.delta)}</p>
                   <SignalChip signal={t.signal} />
                 </div>
               </li>
