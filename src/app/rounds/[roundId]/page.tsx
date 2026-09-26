@@ -9,6 +9,7 @@ import { fmtSg } from '@/lib/insights/chart-colors';
 import { ReelIcon } from '../../recap-icon';
 import { RoundEntry } from './round-entry';
 import { RoundDetailsForm } from './round-details';
+import { DeleteRoundButton } from './delete-round';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,6 +118,9 @@ export default async function RoundPage({ params }: { params: Promise<{ roundId:
             mentalTension: round.mentalTension,
           }}
         />
+      </div>
+      <div className="mt-8 mb-4">
+        <DeleteRoundButton roundId={roundId} shotCount={allShots.length} />
       </div>
     </main>
   );
