@@ -273,6 +273,29 @@ applied per hole, **off by default and clearly labelled**. It needs a course rat
 which Portmarnock's seed lacks — ask Conor for the CR/SR box on his card. Until then,
 group trends by course, or warn when a comparison mixes courses.
 
+### Practice plan: "Next session" (issue #55)
+
+`src/lib/practice/` (pure + tested; `sessions.ts` against PGlite), page `/practice`, routes
+`POST /api/practice/sessions`, `DELETE /api/practice/sessions/[id]` (guard:
+`requirePracticeSessionOwner`, 404 for anyone but the owner, admin included).
+
+- **Plan** (`plan.ts`): window = last N rounds by date, N = 6 default, 3–20 via `?rounds=`; fewer than 3
+  rounds in total → no plan. Per SG category: strokes at stake a round = `max(0, −ΣSG × 18 / holes)`.
+  Top 3 with ≥ 0.05 a round. No importance weighting (that's the roadmap's job). Penalties stay inside
+  the causing shot's SG; the sentence names them.
+- **Focus range**: approach = 30-yard windows every 10 yards; short game = 10-yard windows every 5;
+  putting = 0–4, 4–8, 8–15, 15–30, 30–50, 50+ ft; bunker = greenside / fairway; none off the tee or for
+  recovery. Windows are `(min, max]`. A window needs ≥ 3 shots and a loss; the biggest loss wins, the
+  lower window on a tie. Worked example in `plan.test.ts`: 145y and 165y each −0.4 a round → 140–170.
+- **Drills** (`data/drills.json`): id, name, area, range (display units) or bunker type, `outOf`,
+  `passMark`, setup, steps, rationale. Every drill is random and scored; no blocked practice. Matched to a
+  plan item by area and range overlap, best cover first; no match → the page says there's no drill yet.
+- **Sessions** (`practice_sessions`): date ≤ today (a day's grace for time zones), score 0…outOf. The
+  server stores `out_of`, `pass_mark` and `passed = score ≥ pass_mark` at logging time.
+- **Progress** (`progress.ts`): per drill, pass rate, last 10 sessions, and later half vs earlier half of
+  those 10 (needs 4; a change under 20 points is "steady"). `/trends` shows the top plan item and the
+  last 30 days of sessions.
+
 ---
 
 ## Phase 6 — Postgres, accounts, invite-only multiplayer

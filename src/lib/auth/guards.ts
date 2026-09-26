@@ -10,6 +10,7 @@ import { db } from '../../db/client';
 import { rounds, courses, tees, type Round, type Course, type Tee } from '../../db/schema';
 import { getSessionUser, type SessionUser } from './session';
 import { canViewRound, canEditRound, canEditCourse } from './permissions';
+import { sessionOwner } from '../practice/sessions';
 
 export class HttpError extends Error {
   constructor(
@@ -82,4 +83,13 @@ export async function canEditTee(teeId: number, viewer: SessionUser): Promise<bo
     if (e instanceof HttpError) return false;
     throw e;
   }
+}
+
+/** A practice session id, only if it's `viewer`'s own. Practice logs are private, the admin's
+ * included: anything else is a 404, so ids can't be probed. */
+export async function requirePracticeSessionOwner(id: number, viewer: SessionUser): Promise<number> {
+  if (!Number.isInteger(id) || id < 1) throw new HttpError(404, 'Session not found');
+  const owner = await sessionOwner(id);
+  if (owner === null || owner !== viewer.id) throw new HttpError(404, 'Session not found');
+  return id;
 }

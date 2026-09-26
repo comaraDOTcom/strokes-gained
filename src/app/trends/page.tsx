@@ -17,6 +17,10 @@ import { RoadmapSection } from './roadmap';
 import { SignalChip } from './signal-chip';
 import { QualityTrendsSection } from './quality-trends';
 import { isoDaysBefore, qualityTrends } from '@/lib/insights/quality';
+import { buildPracticePlan } from '@/lib/practice/plan';
+import { practiceSummary } from '@/lib/practice/progress';
+import { listSessions } from '@/lib/practice/sessions';
+import { NextSessionSection } from './next-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +56,13 @@ export default async function TrendsPage() {
   const roadmap = buildRoadmap(shots);
   const quality = qualityTrends(shots, { since: isoDaysBefore(today, 365) });
 
-  const [courses, tees] = await Promise.all([getCoursesWithRounds(user.id), getTeesWithRounds(user.id)]);
+  const [courses, tees, practiceSessions] = await Promise.all([
+    getCoursesWithRounds(user.id),
+    getTeesWithRounds(user.id),
+    listSessions(user.id),
+  ]);
+  const practicePlan = buildPracticePlan(shots);
+  const practice = practiceSummary(practiceSessions, today);
   const summaries = roundSummaries(shots);
 
   // One yardage query per distinct tee, not per round.
@@ -149,6 +159,8 @@ export default async function TrendsPage() {
       </section>
 
       <RoadmapSection roadmap={roadmap} />
+
+      <NextSessionSection plan={practicePlan} summary={practice} />
 
       <section className="border rounded-xl bg-card p-4 space-y-3">
         <h2 className="font-semibold text-lg">Cross-course difficulty adjustment</h2>

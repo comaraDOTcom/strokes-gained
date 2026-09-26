@@ -84,7 +84,8 @@ export type PracticePriorityItem = {
  * positive bucket is a strength, not something to drill. Uses the same
  * buckets as the roadmap (`roadmap.ts`), which supersedes this on `/trends`
  * by adding importance and trend; this stays as the plain "SG lost" view,
- * plus a separate penalty-strokes line.
+ * plus a separate penalty-strokes line. The practice plan on `/practice` (`src/lib/practice/plan.ts`)
+ * builds on the same windowing, by part of the game, with drills attached.
  */
 export function practicePriority(shots: EnrichedShot[], roundWindow = 4): PracticePriorityItem[] {
   const recent = lastNRoundsShots(shots, roundWindow);

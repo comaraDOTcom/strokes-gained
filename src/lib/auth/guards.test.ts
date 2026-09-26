@@ -101,6 +101,19 @@ describe('tee/course guards', () => {
   });
 });
 
+describe('practice session guard', () => {
+  it('lets a player at their own session, and 404s everyone else, the admin included', async () => {
+    const { guards, alice, bob, root } = await arrange();
+    const { logSession } = await import('../practice/sessions');
+    const s = await logSession(alice.id, { practisedOn: '2026-09-20', drillId: 'circle-putting', score: 16 });
+    await expect(guards.requirePracticeSessionOwner(s.id, alice)).resolves.toBe(s.id);
+    await expect(guards.requirePracticeSessionOwner(s.id, bob)).rejects.toMatchObject({ status: 404 });
+    await expect(guards.requirePracticeSessionOwner(s.id, root)).rejects.toMatchObject({ status: 404 });
+    await expect(guards.requirePracticeSessionOwner(99999, alice)).rejects.toMatchObject({ status: 404 });
+    await expect(guards.requirePracticeSessionOwner(Number.NaN, alice)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
 describe('claimLegacyData', () => {
   it('gives every ownerless round to the admin and leaves owned rounds alone', async () => {
     const { db, schema, alice, root, mkRound } = await arrange();

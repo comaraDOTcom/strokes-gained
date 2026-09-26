@@ -1,0 +1,90 @@
+{
+  "note": "The drill library for /practice (issue #55). Every drill is random practice with a score: a new target, distance or lie on every ball, never the same shot twice in a row. Pass marks are hand-set starting points, not yet calibrated to handicap (docs/quality.md). Ranges are in the app's display units: yards off the green, feet on it. Checked by src/lib/practice/drills.test.ts.",
+  "drills": [
+    {
+      "id": "approach-ladder",
+      "name": "Approach ladder",
+      "area": "APPROACH",
+      "range": { "min": 100, "max": 250 },
+      "bunkerSubtype": null,
+      "outOf": 9,
+      "passMark": 5,
+      "scoreUnit": "balls on target",
+      "setup": "Pick three targets spread across your focus range: a short, a middle and a long one. Give each a scoring zone about the size of a green (10 yards either side of the flag).",
+      "steps": [
+        "Hit 9 balls, 3 at each target, in a random order: never the same target twice in a row.",
+        "Go through your full routine on every ball: pick the club, pick the line, commit.",
+        "A ball scores if it finishes inside the zone."
+      ],
+      "rationale": "On the course every approach is a new distance. Changing target on every ball makes you pick a club and commit each time, which is the skill the round asks for."
+    },
+    {
+      "id": "wedge-matrix",
+      "name": "Wedge distance matrix",
+      "area": "APPROACH",
+      "range": { "min": 30, "max": 100 },
+      "bunkerSubtype": null,
+      "outOf": 9,
+      "passMark": 5,
+      "scoreUnit": "shots within 5 yards",
+      "setup": "Take three wedges and three swing lengths (for example half, three-quarter and full). Write down the carry you expect from each of the 9 combinations.",
+      "steps": [
+        "Hit each club and length once, 9 shots, in a random order.",
+        "Call the number before you swing.",
+        "A shot scores if it carries within 5 yards of the number you called."
+      ],
+      "rationale": "Most shots inside 100 yards are lost to distance, not direction. Knowing your 9 numbers turns a guess into a stock shot."
+    },
+    {
+      "id": "circle-putting",
+      "name": "Circle putting, 4 to 8 ft",
+      "area": "PUTTING",
+      "range": { "min": 3, "max": 10 },
+      "bunkerSubtype": null,
+      "outOf": 20,
+      "passMark": 16,
+      "scoreUnit": "putts holed",
+      "setup": "Put 4 tees around a hole at 4, 5, 6 and 8 feet, each on a different side so you get uphill, downhill and both breaks.",
+      "steps": [
+        "Hit 20 putts, moving to a different tee after every putt.",
+        "Read each one fresh and go through your full routine.",
+        "Count the putts you hole."
+      ],
+      "rationale": "These are the putts a scratch golfer holes most of the time, so every miss is a stroke lost. Moving every putt makes each one a real read, like on the course."
+    },
+    {
+      "id": "lag-putting",
+      "name": "Lag putting, 30 to 50 ft",
+      "area": "PUTTING",
+      "range": { "min": 20, "max": 60 },
+      "bunkerSubtype": null,
+      "outOf": 10,
+      "passMark": 7,
+      "scoreUnit": "putts inside 3 ft",
+      "setup": "Pick three holes on the practice green and a spot 30, 40 and 50 feet from each.",
+      "steps": [
+        "Hit 10 putts, changing both hole and distance after every putt.",
+        "Pace off each putt before you hit it.",
+        "A putt scores if it finishes within 3 feet of the hole, or drops."
+      ],
+      "rationale": "Three-putts come from the first putt, not the second. Leaving long putts inside 3 feet takes most of them away."
+    },
+    {
+      "id": "bunker-to-10ft",
+      "name": "Bunker to 10 ft",
+      "area": "BUNKER",
+      "range": null,
+      "bunkerSubtype": "greenside",
+      "outOf": 10,
+      "passMark": 6,
+      "scoreUnit": "balls inside 10 ft",
+      "setup": "Use a greenside bunker with at least two holes to aim at.",
+      "steps": [
+        "Hit 10 balls, changing the hole and your lie (flat, up, down, a bit buried) after every ball.",
+        "Rake and drop a fresh ball each time: no hitting from the same footprint.",
+        "A ball scores if it finishes within 10 feet of the hole."
+      ],
+      "rationale": "Most strokes lost from greenside bunkers come from leaving the ball too far away, or in the sand. Inside 10 feet you have a putt you can expect to hole."
+    }
+  ]
+}

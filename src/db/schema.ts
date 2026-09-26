@@ -297,10 +297,36 @@ export const playedCourses = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.userId, t.courseKey] }) }),
 );
 
+/**
+ * A logged practice session: one drill, one score (issue #55, `/practice`). `drill_id` is a key in
+ * the static drill library (src/lib/practice/data/drills.json), not a foreign key. `out_of` and
+ * `pass_mark` are copied from the drill when the session is logged, so a later change to a drill's
+ * pass mark never rewrites whether an old session passed. `passed` is derived on the server
+ * (score >= pass_mark), never taken from the form.
+ */
+export const practiceSessions = pgTable(
+  'practice_sessions',
+  {
+    id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    practisedOn: text('practised_on').notNull(), // ISO date (YYYY-MM-DD), like rounds.played_on
+    drillId: text('drill_id').notNull(),
+    score: integer('score').notNull(),
+    outOf: integer('out_of').notNull(),
+    passMark: integer('pass_mark').notNull(),
+    passed: boolean('passed').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({ userIdx: index('practice_sessions_user_id_idx').on(t.userId) }),
+);
+
 export type User = typeof user.$inferSelect;
 export type InvitedEmail = typeof invitedEmails.$inferSelect;
 export type CourseRequest = typeof courseRequests.$inferSelect;
 export type PlayedCourse = typeof playedCourses.$inferSelect;
+export type PracticeSession = typeof practiceSessions.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type NewCourse = typeof courses.$inferInsert;
 export type Tee = typeof tees.$inferSelect;

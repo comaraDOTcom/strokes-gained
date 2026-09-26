@@ -6,6 +6,23 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.38 — 2026-09-26
+
+### Practice: your next session
+- New **Practice** page. From your last 6 rounds it picks the three parts of your game costing you the
+  most strokes a round, and the distance inside each that costs the most, for example "Approach,
+  140–170 yards" or "Putting, 4–8 ft". You need 3 rounds for a plan; you can switch to your last 3 or
+  10 rounds.
+- Each one comes with a **drill**: what to set up, what to do, why it matters and the **pass mark**.
+  Five to start: an approach ladder, a wedge distance matrix, circle putting from 4 to 8 ft, lag putting
+  from 30 to 50 ft and bunker to 10 ft. Every drill changes the shot on every ball and gives you a
+  score, so practice looks like the course.
+- **Log a session**: date, drill and score. It tells you pass or not as you type. The page then shows
+  your pass rate per drill, your recent sessions as a strip, and whether you're passing more often.
+- **Trends** shows your next session and your practice over the last 30 days.
+- Pass marks are starting points, not yet tuned to your handicap, and a few parts of the game (off the
+  tee, chipping, recovery) don't have a drill yet (#61).
+
 ## 0.0.37 — 2026-09-26
 
 ### Under the hood: how Claude works on this app, and what it's now allowed to trust

@@ -108,6 +108,18 @@ The importance shares live in `src/lib/insights/importance-broadie.ts` and are *
 transcribed from *Every Shot Counts*: fill in the shares, `where` and `comparison`, then set
 `status: 'transcribed'` to drop the caveat on the page. The formulas are in `BUILD.md` Phase 5.
 
+**Practice** (`/practice`, nav **Practice**; issue #55) turns strokes gained into a session. The plan
+(`buildPracticePlan` in `src/lib/practice/plan.ts`, pure and tested) takes the last 6 rounds (`?rounds=3…20`;
+no plan under 3), ranks the parts of your game by strokes lost to scratch a round, keeps the top 3, and
+inside each finds the costliest distance range (a sliding 30-yard window for approach, 10 yards for short
+game, fixed putting ranges that match the drills, bunker type). Unlike What to work on it doesn't weigh
+Broadie's importance. Each item gets drills from the library, `src/lib/practice/data/drills.json`
+(`drills.ts` checks it): every drill is random practice with a pass mark out of a fixed number of balls.
+Players log sessions (date, drill, score) to `practice_sessions`; pass/fail and the pass mark are fixed
+on the server when logged (`src/lib/practice/sessions.ts`, validated in `entry.ts`). Pass rate per drill,
+a results strip and recent-vs-earlier direction come from `progress.ts`; `/trends` shows a one-block
+summary. Sessions are private, the admin's view included.
+
 `/trends` opens with a 90-day play calendar (`buildPlayCalendar` in `src/lib/insights/calendar.ts`,
 pure and tested: Monday-first columns, UTC date maths, gap stats), coloured by course.
 All of the scoring views live on **`/scoring`**: score history across every course, how your holes
