@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { GoogleButton, MagicLinkForm, TestLoginForm } from './login-forms';
-import { Logo } from '../logo';
+import { Wordmark } from '../logo';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +38,7 @@ export default async function LoginPage({
       <div className="max-w-sm mx-auto space-y-6 rounded-2xl border bg-card/95 backdrop-blur-sm p-6 shadow-sm">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <Logo size={44} />
+            <Wordmark size={44} className="text-xl" />
             {invited && (
               <span className="rounded-full bg-pos-soft px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-pos">
                 You’re invited

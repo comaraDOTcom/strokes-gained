@@ -1,4 +1,7 @@
-# Strokes Gained App — MVP Plan
+# Better Than Most — MVP Plan
+
+_The product was called "Strokes Gained" when this plan was written; it is now Better Than Most
+(BTM). "Strokes gained" below means the metric._
 
 ## Context
 

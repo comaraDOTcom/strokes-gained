@@ -1,0 +1,576 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Better Than Most</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --cream:#F2EBDC; --cream-2:#E9E0CC; --paper:#FBF7EE;
+  --ink:#1C2620; --ink-2:#4A5A50; --ink-3:#7E8C83;
+  --green:#144433; --green-deep:#0C2A1F; --green-tint:#DDE7DF;
+  --gold:#B48A3C; --gold-light:#E7D6AE;
+  --gain:#2C7A4B; --loss:#A94330;
+  --rule:#CFC4AB;
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --body:'Source Serif 4',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --cream:#101A15; --cream-2:#17241D; --paper:#1A2721;
+    --ink:#EFE7D3; --ink-2:#BFB6A0; --ink-3:#8A8574;
+    --green:#1E5C44; --green-deep:#0C2A1F; --green-tint:#1F3329;
+    --gold:#D2A857; --gold-light:#5A4A2A;
+    --gain:#5FBF85; --loss:#E0745D;
+    --rule:#33423A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --cream:#101A15; --cream-2:#17241D; --paper:#1A2721;
+  --ink:#EFE7D3; --ink-2:#BFB6A0; --ink-3:#8A8574;
+  --green:#1E5C44; --green-deep:#0C2A1F; --green-tint:#1F3329;
+  --gold:#D2A857; --gold-light:#5A4A2A;
+  --gain:#5FBF85; --loss:#E0745D;
+  --rule:#33423A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-0.01em}
+p{margin:0}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* nav */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--cream) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+.logo{font-family:var(--display);font-size:20px;text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo b{font-weight:600;font-variation-settings:"SOFT" 40}
+.logo .mark{width:26px;height:26px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:var(--gold-light);font-family:var(--mono);font-size:10px;font-weight:600}
+nav ul{list-style:none;margin:0;padding:0;display:flex;gap:22px;font-size:15px}
+nav li a{text-decoration:none;color:var(--ink-2)}
+nav li a:hover{color:var(--ink)}
+@media (max-width:760px){nav ul{display:none}}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:4px;font-family:var(--body);font-size:15px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;line-height:1}
+.btn-primary{background:var(--green);color:#F6F0DE;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-deep)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn-ghost:hover{border-color:var(--ink-2)}
+
+/* hero */
+.hero{padding-block:64px 56px;border-bottom:1px solid var(--rule)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+@media (max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero{padding-block:44px}}
+.hero h1{font-size:clamp(46px,7vw,84px);font-variation-settings:"opsz" 144,"SOFT" 30}
+.hero h1 em{font-style:italic;color:var(--green);font-variation-settings:"opsz" 144,"SOFT" 100}
+.hero .lede{font-size:20px;color:var(--ink-2);max-width:34ch;margin-top:22px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}
+.hero .fine{font-size:14px;color:var(--ink-3);margin-top:14px}
+
+/* the slip (widget) */
+.slip{background:var(--paper);border:1px solid var(--rule);border-radius:6px;box-shadow:0 1px 0 var(--rule),0 18px 40px -24px rgba(20,40,30,.35);padding:22px 22px 18px;position:relative}
+.slip::before{content:"";position:absolute;inset:8px;border:1px solid var(--rule);border-radius:3px;pointer-events:none;opacity:.6}
+.slip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--green);padding-bottom:10px;margin-bottom:16px}
+.slip-head h3{font-size:22px}
+.slip-head span{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+.field{display:grid;gap:6px;margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.seg{display:flex;gap:0;border:1px solid var(--rule);border-radius:4px;overflow:hidden;flex-wrap:wrap}
+.seg button{flex:1 1 auto;background:transparent;border:0;border-right:1px solid var(--rule);padding:9px 6px;font-family:var(--body);font-size:14px;color:var(--ink-2);cursor:pointer;min-width:52px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--green);color:#F6F0DE}
+.range-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+input[type=range]{width:100%;accent-color:var(--green)}
+.range-val{font-family:var(--mono);font-size:15px;min-width:64px;text-align:right}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;padding-top:14px;border-top:1px dashed var(--rule)}
+.verdict .cell{display:grid;gap:2px}
+.verdict .cell small{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.verdict .cell strong{font-family:var(--mono);font-weight:500;font-size:30px;line-height:1.1}
+.verdict .gap{grid-column:1/-1;background:var(--green-tint);border-radius:4px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.verdict .gap strong{font-family:var(--mono);font-size:22px;font-weight:500}
+.verdict .gap p{font-size:14px;color:var(--ink-2);max-width:26ch}
+.slip-foot{font-size:12.5px;color:var(--ink-3);margin-top:12px;line-height:1.45}
+
+/* sections */
+section{padding-block:72px}
+@media (max-width:760px){section{padding-block:52px}}
+.sec-head{display:grid;grid-template-columns:auto 1fr;gap:24px 40px;align-items:end;margin-bottom:36px}
+.sec-head h2{font-size:clamp(32px,4.4vw,48px);font-variation-settings:"opsz" 100}
+.sec-head p{color:var(--ink-2);max-width:52ch;font-size:18px}
+@media (max-width:760px){.sec-head{grid-template-columns:1fr}}
+.rule-top{border-top:1px solid var(--rule)}
+
+/* origin strip */
+.strip{background:var(--green);color:#EFE7D3;padding-block:38px}
+.strip .wrap{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+@media (max-width:760px){.strip .wrap{grid-template-columns:1fr}}
+.strip blockquote{margin:0;font-family:var(--display);font-size:clamp(22px,3vw,30px);font-style:italic;font-variation-settings:"SOFT" 80;line-height:1.25}
+.strip cite{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.75;margin-top:10px}
+.strip .side{font-size:15px;max-width:34ch;opacity:.9;border-left:1px solid rgba(239,231,211,.3);padding-left:20px}
+
+/* how it works */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--paper)}
+@media (max-width:820px){.steps{grid-template-columns:1fr}}
+.step{padding:26px 24px;border-right:1px solid var(--rule)}
+.step:last-child{border-right:0}
+@media (max-width:820px){.step{border-right:0;border-bottom:1px solid var(--rule)}.step:last-child{border-bottom:0}}
+.step .k{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
+.step h3{font-size:24px;margin:8px 0 10px}
+.step p{color:var(--ink-2);font-size:15.5px}
+.step .fig{margin-top:16px;font-family:var(--mono);font-size:14px;display:grid;gap:6px}
+.step .fig div{display:flex;justify-content:space-between;border-bottom:1px dotted var(--rule);padding-bottom:4px}
+.step .fig div:last-child{border-bottom:0;font-weight:600}
+
+/* insights */
+.insight-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:22px}
+@media (max-width:860px){.insight-grid{grid-template-columns:1fr}}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:22px}
+.card h3{font-size:22px;margin-bottom:4px}
+.card .sub{font-size:14px;color:var(--ink-3);margin-bottom:18px}
+.bars{display:grid;gap:12px}
+.bar{display:grid;grid-template-columns:110px 1fr 64px;gap:12px;align-items:center;font-size:15px}
+.bar .track{position:relative;height:18px;background:var(--cream-2);border-radius:2px}
+.bar .track::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--ink-3)}
+.bar .fill{position:absolute;top:0;bottom:0;border-radius:2px}
+.bar .fill.pos{left:50%;background:var(--gain)}
+.bar .fill.neg{right:50%;background:var(--loss)}
+.bar .v{font-family:var(--mono);text-align:right;font-size:15px}
+@media (max-width:480px){.bar{grid-template-columns:86px 1fr 56px;font-size:14px}}
+.leaks{display:grid;gap:0;margin-top:6px}
+.leak{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--rule);font-size:15px}
+.leak:first-child{border-top:0}
+.leak .hole{font-family:var(--mono);font-size:12px;color:var(--ink-3);letter-spacing:.06em;width:44px}
+.leak .what{color:var(--ink)}
+.leak .what small{display:block;color:var(--ink-3);font-size:13px}
+.leak .sg{font-family:var(--mono);font-weight:500;font-size:17px}
+.dist{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px;align-items:end;height:120px}
+.dist .col{display:grid;gap:4px;align-content:end;height:100%}
+.dist .col .stack{display:flex;gap:2px;align-items:flex-end;height:100%}
+.dist .col .stack i{flex:1;display:block;border-radius:2px 2px 0 0}
+.dist .col .stack i.you{background:var(--green)}
+.dist .col .stack i.them{background:var(--gold-light)}
+.dist .col span{font-family:var(--mono);font-size:11px;color:var(--ink-3);text-align:center}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink-2);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.callout{margin-top:22px;border-left:3px solid var(--gold);padding:4px 0 4px 16px;font-size:16px;color:var(--ink-2)}
+.callout b{color:var(--ink)}
+
+/* practice */
+.practice{background:var(--paper);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.practice-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
+@media (max-width:860px){.practice-grid{grid-template-columns:1fr}}
+.plan{border:1px solid var(--rule);border-radius:6px;background:var(--cream);overflow:hidden}
+.plan header{background:var(--green);color:#EFE7D3;padding:14px 18px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.plan header h3{font-size:20px}
+.plan header span{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.8}
+.plan ol{list-style:none;margin:0;padding:0}
+.plan li{display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 18px;border-top:1px solid var(--rule);align-items:start}
+.plan li:first-child{border-top:0}
+.plan .rank{font-family:var(--display);font-size:26px;color:var(--gold);line-height:1;font-variation-settings:"SOFT" 60}
+.plan .drill b{display:block;font-weight:600}
+.plan .drill span{font-size:14px;color:var(--ink-2)}
+.plan .worth{font-family:var(--mono);font-size:13px;color:var(--gain);white-space:nowrap}
+.plan footer{padding:12px 18px;font-size:13px;color:var(--ink-3);border-top:1px solid var(--rule)}
+.proof{display:grid;gap:22px}
+.proof article{display:grid;grid-template-columns:auto 1fr;gap:16px}
+.proof .ic{width:38px;height:38px;border-radius:50%;border:1px solid var(--rule);display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--gold)}
+.proof h3{font-size:21px;margin-bottom:6px}
+.proof p{color:var(--ink-2);font-size:15.5px;max-width:52ch}
+
+/* head game */
+.head-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:820px){.head-grid{grid-template-columns:1fr}}
+.dial{display:grid;gap:8px}
+.dial .lbl{display:flex;justify-content:space-between;font-size:14px}
+.dial .lbl span:last-child{font-family:var(--mono);color:var(--ink-2)}
+.dial .pips{display:flex;gap:5px}
+.dial .pips i{flex:1;height:8px;border-radius:2px;background:var(--cream-2)}
+.dial .pips i.on{background:var(--gold)}
+.tagline-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:var(--mono);font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:5px 11px;color:var(--ink-2)}
+.chip.on{background:var(--green);color:#EFE7D3;border-color:var(--green)}
+
+/* club + coaches */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.card ul{margin:12px 0 0;padding-left:18px;color:var(--ink-2);font-size:15.5px}
+.card li{margin-bottom:6px}
+.board{margin-top:16px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;font-size:14px}
+.board div{display:grid;grid-template-columns:28px 1fr auto auto;gap:12px;padding:8px 12px;border-top:1px solid var(--rule);align-items:center}
+.board div:first-child{border-top:0;background:var(--cream-2);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.board .r{font-family:var(--mono);color:var(--ink-3)}
+.board .s{font-family:var(--mono)}
+
+/* pricing */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:860px){.tiers{grid-template-columns:1fr}}
+.tier{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:24px;display:grid;gap:12px;align-content:start}
+.tier.feat{border-color:var(--green);box-shadow:inset 0 3px 0 var(--green)}
+.tier .name{font-family:var(--display);font-size:26px}
+.tier .price{font-family:var(--mono);font-size:30px;font-weight:500}
+.tier .price small{font-size:13px;color:var(--ink-3);font-weight:400}
+.tier ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:15px}
+.tier li{margin-bottom:5px}
+
+/* final cta + footer */
+.final{background:var(--green);color:#EFE7D3;text-align:center;padding-block:80px}
+.final h2{font-size:clamp(40px,7vw,80px);font-variation-settings:"opsz" 144,"SOFT" 50}
+.final h2 em{font-style:italic;color:var(--gold-light)}
+.final p{opacity:.85;margin:18px auto 28px;max-width:44ch;font-size:18px}
+.final .btn-primary{background:var(--gold-light);color:var(--green-deep);border-color:var(--gold-light)}
+footer{padding-block:28px;font-size:13.5px;color:var(--ink-3);border-top:1px solid var(--rule)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){
+  .verdict strong{transition:color .2s}
+}
+</style>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#top"><span class="mark">BTM</span><b>Better Than Most</b></a>
+    <ul>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#insights">Insights</a></li>
+      <li><a href="#practice">Practice</a></li>
+      <li><a href="#head">Head game</a></li>
+      <li><a href="#club">Your club</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <a class="btn btn-primary" href="#pricing">Log a round</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Strokes gained for club golfers</p>
+      <h1 style="margin-top:14px">Are you <em>better than most</em>?</h1>
+      <p class="lede">Log every shot. See exactly where your round loses strokes to a scratch golfer, and what to practise this week to get them back. Then go and win the club championship.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#pricing">Start free</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <p class="fine">No sensors. No hardware. A phone and an honest scorecard.</p>
+    </div>
+
+    <form class="slip" id="bench" onsubmit="return false">
+      <div class="slip-head"><h3>The benchmark</h3><span>Scratch baseline</span></div>
+
+      <div class="field">
+        <label for="hcp">Your handicap</label>
+        <div class="range-row">
+          <input type="range" id="hcp" min="0" max="28" value="12">
+          <span class="range-val" id="hcpVal">12</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Where you are</label>
+        <div class="seg" id="lie" role="group" aria-label="Lie">
+          <button type="button" data-lie="TEE" aria-pressed="false">Tee</button>
+          <button type="button" data-lie="FAIRWAY" aria-pressed="true">Fairway</button>
+          <button type="button" data-lie="ROUGH" aria-pressed="false">Rough</button>
+          <button type="button" data-lie="SAND" aria-pressed="false">Sand</button>
+          <button type="button" data-lie="GREEN" aria-pressed="false">Green</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="dist" id="distLabel">Distance to the hole</label>
+        <div class="range-row">
+          <input type="range" id="dist" min="5" max="300" value="150">
+          <span class="range-val" id="distVal">150 yds</span>
+        </div>
+      </div>
+
+      <div class="verdict">
+        <div class="cell"><small>Scratch takes</small><strong class="num" id="scratchE">3.11</strong></div>
+        <div class="cell"><small>A 12 takes</small><strong class="num" id="youE">3.33</strong></div>
+        <div class="gap">
+          <strong class="num loss" id="gapE">−0.22</strong>
+          <p id="gapText">strokes lost to scratch every time you're here. Over a round, that's where your handicap lives.</p>
+        </div>
+      </div>
+      <p class="slip-foot">Scratch figures are from our expected-strokes baseline (Broadie method, calibrated to course rating). Handicap figures are an estimate. Log a round and you'll see your own.</p>
+    </form>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap">
+    <blockquote>"Better than most."<cite>Gary Koch, 17th green, Sawgrass, 2001</cite></blockquote>
+    <p class="side">Three words for a putt that had no business dropping. We borrowed them because strokes gained asks the same question of every shot you hit: better than a scratch golfer would have done from there, or worse?</p>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow">How it works</p><h2 style="margin-top:8px">Every shot gets a number</h2></div>
+      <p>Score, putts and greens hit tell you what happened. Strokes gained tells you which shots caused it. Here's one shot, worked through.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <p class="k">Before the shot</p>
+        <h3>Where you started</h3>
+        <p>You're 165 yards out, in the rough. Our baseline says a scratch golfer needs 3.41 strokes from here, on average, to hole out.</p>
+        <div class="fig num"><div><span>Lie</span><span>Rough</span></div><div><span>Distance</span><span>165 yds</span></div><div><span>Expected</span><span>3.41</span></div></div>
+      </div>
+      <div class="step">
+        <p class="k">After the shot</p>
+        <h3>Where you finished</h3>
+        <p>You chunk it. 40 yards short, back in the fairway. From there scratch needs 2.70 strokes.</p>
+        <div class="fig num"><div><span>Lie</span><span>Fairway</span></div><div><span>Distance</span><span>40 yds</span></div><div><span>Expected</span><span>2.70</span></div></div>
+      </div>
+      <div class="step">
+        <p class="k">The verdict</p>
+        <h3>Strokes gained</h3>
+        <p>Start minus finish, minus the one stroke you spent. That shot cost you three-tenths against scratch. Add up 80 of those and you have your round.</p>
+        <div class="fig num"><div><span>3.41 − 2.70</span><span>0.71</span></div><div><span>minus 1 stroke</span><span>−1.00</span></div><div><span>Strokes gained</span><span class="loss">−0.29</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="insights" class="rule-top">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow">Insights &amp; analysis</p><h2 style="margin-top:8px">Where the strokes go</h2></div>
+      <p>Most golfers practise what they enjoy. The app shows what's actually costing you, by skill area, by hole, and against real scratch golfers' competition rounds.</p>
+    </div>
+    <div class="insight-grid">
+      <div class="card">
+        <h3>Sunday medal, Portmarnock</h3>
+        <p class="sub">79 (+7) · strokes gained vs scratch, by area</p>
+        <div class="bars">
+          <div class="bar"><span>Driving</span><div class="track"><i class="fill pos" style="width:14%"></i></div><span class="v gain">+0.9</span></div>
+          <div class="bar"><span>Approach</span><div class="track"><i class="fill neg" style="width:38%"></i></div><span class="v loss">−3.6</span></div>
+          <div class="bar"><span>Short game</span><div class="track"><i class="fill neg" style="width:12%"></i></div><span class="v loss">−1.1</span></div>
+          <div class="bar"><span>Putting</span><div class="track"><i class="fill pos" style="width:6%"></i></div><span class="v gain">+0.4</span></div>
+        </div>
+        <p class="sub" style="margin:22px 0 6px">The three shots that cost the most</p>
+        <div class="leaks">
+          <div class="leak"><span class="hole">H 11</span><span class="what">7-iron, 168 yds, fairway<small>Finished in the greenside bunker</small></span><span class="sg loss">−1.4</span></div>
+          <div class="leak"><span class="hole">H 5</span><span class="what">Pitch, 62 yds, rough<small>Left 38 ft</small></span><span class="sg loss">−0.9</span></div>
+          <div class="leak"><span class="hole">H 15</span><span class="what">9-iron, 142 yds, tee<small>Short-sided, long rough</small></span><span class="sg loss">−0.8</span></div>
+        </div>
+        <p class="callout">Your driving was scratch-standard on Sunday. <b>Approach play cost 3.6 strokes</b>, and two of those three shots came from 140 to 170 yards. That's your practice session.</p>
+      </div>
+
+      <div class="card">
+        <h3>How your holes finish</h3>
+        <p class="sub">Last 10 rounds vs scratch golfers' competition rounds</p>
+        <div class="dist" aria-label="Score distribution">
+          <div class="col"><div class="stack"><i class="you" style="height:4%"></i><i class="them" style="height:10%"></i></div><span>Eagle</span></div>
+          <div class="col"><div class="stack"><i class="you" style="height:22%"></i><i class="them" style="height:38%"></i></div><span>Birdie</span></div>
+          <div class="col"><div class="stack"><i class="you" style="height:100%"></i><i class="them" style="height:96%"></i></div><span>Par</span></div>
+          <div class="col"><div class="stack"><i class="you" style="height:62%"></i><i class="them" style="height:34%"></i></div><span>Bogey</span></div>
+          <div class="col"><div class="stack"><i class="you" style="height:24%"></i><i class="them" style="height:6%"></i></div><span>Double</span></div>
+          <div class="col"><div class="stack"><i class="you" style="height:8%"></i><i class="them" style="height:2%"></i></div><span>Worse</span></div>
+        </div>
+        <div class="legend"><span><i style="background:var(--green)"></i>You</span><span><i style="background:var(--gold-light)"></i>Scratch</span></div>
+        <p class="callout">Your doubles cost <b>2.9 strokes a round</b> against scratch. Birdies cost 1.6. Stopping the bleeding is worth almost twice as much as making more birdies.</p>
+        <ul style="margin-top:18px;padding-left:18px;color:var(--ink-2);font-size:15px">
+          <li>Trends across rounds, so one bad Sunday isn't a verdict</li>
+          <li>Par 3s, 4s and 5s scored separately</li>
+          <li>Eclectic and scorecard views per course</li>
+          <li>Cross-course difficulty caveats shown, never hidden</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="practice" class="practice">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow">What to practise</p><h2 style="margin-top:8px">Proven, not guessed</h2></div>
+      <p>The app ranks your skill areas by strokes at stake, then hands you a session built on what the research and the best coaches agree on. No swing thoughts from the internet.</p>
+    </div>
+    <div class="practice-grid">
+      <div class="plan">
+        <header><h3>Next session</h3><span>Built from your last 6 rounds</span></header>
+        <ol>
+          <li><span class="rank">1</span><div class="drill"><b>Approach, 140–170 yds</b><span>9 balls, 3 targets, score each one. Miss long and short in play, never short-sided.</span></div><span class="worth">2.4 strokes / rd</span></li>
+          <li><span class="rank">2</span><div class="drill"><b>Wedges, 50–80 yds</b><span>Build your distance matrix: three clubs, three swing lengths. Carry numbers, not feel.</span></div><span class="worth">1.1 strokes / rd</span></li>
+          <li><span class="rank">3</span><div class="drill"><b>Putts, 4–8 ft</b><span>Circle drill. Make 16 of 20 before you leave. Scratch holes 70% from six feet.</span></div><span class="worth">0.6 strokes / rd</span></li>
+        </ol>
+        <footer>Ranked by strokes at stake, not by what you fancy hitting.</footer>
+      </div>
+
+      <div class="proof">
+        <article><div class="ic">SG</div><div><h3>Practise where the strokes are</h3><p>Mark Broadie's data on thousands of rounds showed the long game separates handicaps more than putting does. So the plan starts wherever your numbers say the strokes are, which is usually approach play.</p></div></article>
+        <article><div class="ic">RX</div><div><h3>Random over blocked</h3><p>Hitting 50 seven-irons at one flag feels productive and transfers poorly. Motor-learning research favours changing club, target and lie every ball. Every drill here is random practice with a score.</p></div></article>
+        <article><div class="ic">TG</div><div><h3>Keep score when you practise</h3><p>A drill without a pass mark is a warm-up. Each session has a target, and the app logs whether you hit it, so practice gets a trend line just like your rounds.</p></div></article>
+        <article><div class="ic">DM</div><div><h3>Decide, then commit</h3><p>Scott Fawcett's DECADE work and Pia Nilsson's coaching agree on one thing: a committed shot to a sensible target beats a perfect swing at a hopeful one. The Head Game section tracks whether you're doing it.</p></div></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="head">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow">Head game</p><h2 style="margin-top:8px">The shot before the shot</h2></div>
+      <p>Balance, tempo, tension and commitment decide the swing before you make it. Rate three things after each round, tag two things on any shot, and see what they cost you in strokes.</p>
+    </div>
+    <div class="head-grid">
+      <div class="card">
+        <h3>After the round</h3>
+        <p class="sub">Balance, tempo, tension. Three ratings, ten seconds.</p>
+        <div class="dial" style="margin-bottom:14px"><div class="lbl"><span>Balance</span><span>4 / 5</span></div><div class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+        <div class="dial" style="margin-bottom:14px"><div class="lbl"><span>Tempo</span><span>3 / 5</span></div><div class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+        <div class="dial"><div class="lbl"><span>Tension (5 = relaxed)</span><span>2 / 5</span></div><div class="pips"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="card">
+        <h3>On any shot</h3>
+        <p class="sub">Two optional tags before you save it.</p>
+        <p style="font-size:14px;color:var(--ink-2)">Focus</p>
+        <div class="tagline-row" style="margin-top:6px"><span class="chip">Internal (swing)</span><span class="chip on">External (target)</span></div>
+        <p style="font-size:14px;color:var(--ink-2);margin-top:14px">Commitment</p>
+        <div class="tagline-row" style="margin-top:6px"><span class="chip on">Committed</span><span class="chip">Hesitant</span></div>
+      </div>
+      <div class="card">
+        <h3>What it costs</h3>
+        <p class="sub">Once enough shots carry tags</p>
+        <div class="bars">
+          <div class="bar"><span>Committed</span><div class="track"><i class="fill pos" style="width:8%"></i></div><span class="v gain">+0.05</span></div>
+          <div class="bar"><span>Hesitant</span><div class="track"><i class="fill neg" style="width:34%"></i></div><span class="v loss">−0.31</span></div>
+        </div>
+        <p class="callout" style="margin-top:18px">Hesitant shots cost you a third of a stroke each. You hit six of them on Sunday.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="club" class="rule-top">
+  <div class="wrap">
+    <div class="two">
+      <div class="card">
+        <p class="eyebrow">Your club</p>
+        <h3 style="margin-top:8px">Invite-only. Like the club.</h3>
+        <p style="color:var(--ink-2);font-size:15.5px;margin-top:6px">Sign in with Google, share your club's course library, and see your friends' rounds read-only. Eclectics, medals and the small matter of who's better than whom.</p>
+        <div class="board">
+          <div><span>#</span><span>Member</span><span>SG / rd</span><span>Rounds</span></div>
+          <div><span class="r">1</span><span>C. O'Mara</span><span class="s loss">−4.2</span><span class="s">14</span></div>
+          <div><span class="r">2</span><span>D. Byrne</span><span class="s loss">−5.8</span><span class="s">11</span></div>
+          <div><span class="r">3</span><span>S. Kelly</span><span class="s loss">−7.1</span><span class="s">9</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">For coaches</p>
+        <h3 style="margin-top:8px">See where every student loses strokes</h3>
+        <p style="color:var(--ink-2);font-size:15.5px;margin-top:6px">A roster view, alerts when a student's numbers move, and lesson notes pinned to the strokes-gained data they came from. Your students log; you see what to work on before they arrive.</p>
+        <ul>
+          <li>Roster with SG by area for every student</li>
+          <li>Weekly digest: who lost what, where</li>
+          <li>Lesson notes tied to rounds and drills</li>
+          <li>Squad view for clubs, academies and unions</li>
+        </ul>
+        <p style="margin-top:18px"><a class="btn btn-ghost" href="#pricing">Talk to us about Coach</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="rule-top">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow">Pricing</p><h2 style="margin-top:8px">Cheaper than a sleeve of balls</h2></div>
+      <p>Your first round is free. After that, €7 a month.</p>
+    </div>
+    <div class="tiers">
+      <div class="tier">
+        <span class="name">First round</span>
+        <span class="price">€0</span>
+        <ul><li>Log one full round, shot by shot</li><li>Strokes gained for that round vs scratch</li><li>Your costliest shots</li><li>No card needed</li></ul>
+        <a class="btn btn-ghost" href="#top" style="justify-content:center">Log a free round</a>
+      </div>
+      <div class="tier feat">
+        <span class="name">Player</span>
+        <span class="price">€7<small> / month</small></span>
+        <ul><li>Unlimited rounds</li><li>Benchmarks vs scratch by area and hole</li><li>Trends across rounds</li><li>Practice plans ranked by strokes at stake</li><li>Head Game insights</li><li>Your club: eclectics, medals, friends' rounds</li></ul>
+        <a class="btn btn-primary" href="#top" style="justify-content:center">Go Player</a>
+      </div>
+      <div class="tier">
+        <span class="name">Coach</span>
+        <span class="price">€49<small> / month</small></span>
+        <ul><li>Everything in Player, for you</li><li>Student roster and alerts</li><li>Lesson notes on the data</li><li>Squad and club dashboards on request</li></ul>
+        <a class="btn btn-ghost" href="#club" style="justify-content:center">Book a demo</a>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-3);margin-top:16px">Coach pricing is a placeholder until the first coaches are on board. Cancel any time; your rounds stay yours.</p>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <h2>Drive for show,<br>putt for dough?<br><em>Your data disagrees.</em></h2>
+    <p>Log one round and find out where the strokes actually go. The club championship isn't going to win itself.</p>
+    <a class="btn btn-primary" href="#top">Log your first round</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Better Than Most. Made in Dublin.</span>
+    <span>Strokes gained method after Mark Broadie. Benchmarks are anonymised competition data; how we collect them is published.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Scratch expected-strokes anchors (yards; GREEN in feet). Interpolated linearly.
+  var B={
+    TEE:[[100,2.80],[120,2.90],[140,3.00],[160,3.08],[180,3.15],[200,3.23],[220,3.30],[240,3.37],[260,3.45],[280,3.55],[300,3.67],[320,3.77],[340,3.85],[360,3.93],[380,4.01],[400,4.09],[420,4.17],[440,4.25],[460,4.33],[480,4.41],[500,4.50],[520,4.59],[540,4.68],[560,4.77],[580,4.86],[600,4.95]],
+    FAIRWAY:[[5,2.15],[10,2.28],[15,2.40],[20,2.50],[30,2.62],[40,2.70],[50,2.76],[60,2.81],[70,2.85],[80,2.88],[90,2.91],[100,2.94],[110,2.97],[120,3.00],[130,3.03],[140,3.07],[150,3.11],[160,3.16],[170,3.21],[180,3.26],[190,3.32],[200,3.38],[220,3.50],[240,3.62],[260,3.73],[280,3.83],[300,3.92]],
+    ROUGH:[[5,2.35],[10,2.48],[15,2.58],[20,2.66],[30,2.78],[40,2.86],[50,2.92],[60,2.97],[70,3.01],[80,3.05],[90,3.09],[100,3.12],[110,3.16],[120,3.20],[130,3.24],[140,3.28],[150,3.33],[160,3.38],[170,3.44],[180,3.50],[190,3.56],[200,3.62],[220,3.75],[240,3.88],[260,4.00],[280,4.11],[300,4.21]],
+    SAND:[[5,2.45],[10,2.55],[15,2.62],[20,2.68],[30,2.80],[40,2.90],[50,2.99],[60,3.07],[70,3.14],[80,3.20],[90,3.26],[100,3.31],[110,3.36],[120,3.41],[130,3.46],[140,3.51],[150,3.57],[160,3.63],[170,3.69],[180,3.76],[190,3.83],[200,3.90],[220,4.04],[240,4.18],[260,4.31]],
+    GREEN:[[1,1.001],[2,1.01],[3,1.06],[4,1.16],[5,1.27],[6,1.38],[7,1.47],[8,1.54],[9,1.60],[10,1.65],[12,1.73],[15,1.82],[18,1.89],[20,1.93],[25,2.01],[30,2.07],[35,2.12],[40,2.16],[45,2.20],[50,2.24],[60,2.30],[70,2.36],[80,2.41],[90,2.46],[100,2.50]]
+  };
+  var RANGE={TEE:[100,600,380],FAIRWAY:[5,300,150],ROUGH:[5,300,150],SAND:[5,260,40],GREEN:[1,100,20]};
+  function interp(a,x){
+    if(x<=a[0][0])return a[0][1]; if(x>=a[a.length-1][0])return a[a.length-1][1];
+    for(var i=1;i<a.length;i++){ if(x<=a[i][0]){var p=a[i-1],q=a[i];return p[1]+(q[1]-p[1])*(x-p[0])/(q[0]-p[0]);} }
+    return a[a.length-1][1];
+  }
+  // Estimated extra strokes per shot for a handicap h. Long shots cost more; putting less.
+  function penalty(lie,d,h){
+    if(lie==='GREEN')return h*0.0045*Math.log(d+1);
+    var base=0.010+d/22000; if(lie==='ROUGH')base+=0.003; if(lie==='SAND')base+=0.006;
+    return h*base;
+  }
+  var lie='FAIRWAY';
+  var hcp=document.getElementById('hcp'),dist=document.getElementById('dist');
+  var hcpVal=document.getElementById('hcpVal'),distVal=document.getElementById('distVal'),distLabel=document.getElementById('distLabel');
+  var sE=document.getElementById('scratchE'),yE=document.getElementById('youE'),gE=document.getElementById('gapE'),gT=document.getElementById('gapText');
+  var youLabel=yE.previousElementSibling;
+  function ordinal(h){return h===0?'Scratch':'A '+h;}
+  function render(){
+    var h=+hcp.value,d=+dist.value;
+    var s=interp(B[lie],d),y=s+penalty(lie,d,h),gap=s-y;
+    hcpVal.textContent=h; distVal.textContent=d+(lie==='GREEN'?' ft':' yds');
+    distLabel.textContent=lie==='GREEN'?'Length of putt':'Distance to the hole';
+    sE.textContent=s.toFixed(2); yE.textContent=y.toFixed(2);
+    youLabel.textContent=(h===0?'You take':ordinal(h)+' takes');
+    var g=(gap>=0?'+':'−')+Math.abs(gap).toFixed(2);
+    gE.textContent=g; gE.className='num '+(gap<-0.005?'loss':'gain');
+    if(h===0){gT.textContent='You are the baseline. Log a round and prove it.';}
+    else if(lie==='GREEN'){gT.textContent='strokes lost to scratch on a '+d+' ft putt. Small per putt. You hit about 30 of them.';}
+    else{gT.textContent='strokes lost to scratch every time you\'re here. Over a round, that\'s where your handicap lives.';}
+  }
+  document.getElementById('lie').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    lie=b.getAttribute('data-lie');
+    this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
+    var r=RANGE[lie]; dist.min=r[0]; dist.max=r[1]; dist.value=r[2]; render();
+  });
+  hcp.addEventListener('input',render); dist.addEventListener('input',render);
+  render();
+})();
+</script>
+
+</body></html>

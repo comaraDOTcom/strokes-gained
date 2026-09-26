@@ -5,7 +5,8 @@ import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
 import { SCENE_COOKIE, parseScenePreference, resolveScene } from '@/lib/scene/scene';
 import { SignOutButton } from './sign-out-button';
-import { Logo } from './logo';
+import { Wordmark } from './logo';
+import { BRAND_NAME, BRAND_SHORT, BRAND_TAGLINE } from '@/lib/brand';
 import './globals.css';
 
 const plexSans = IBM_Plex_Sans({
@@ -20,11 +21,14 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Strokes Gained',
-  description: 'Strokes-gained golf tracking',
+  // A page that sets its own title gets "<title> · Better Than Most".
+  title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
+  applicationName: BRAND_NAME,
+  description: `${BRAND_TAGLINE}: log every shot and see where your round loses strokes to a scratch golfer.`,
   manifest: '/manifest.webmanifest',
-  // iOS: "Add to Home Screen" opens full screen, titled, with apple-icon.png.
-  appleWebApp: { capable: true, title: 'Strokes Gained', statusBarStyle: 'default' },
+  // iOS: "Add to Home Screen" opens full screen, titled, with apple-icon.png. The home-screen label
+  // is the short form, BTM: "Better Than Most" is truncated under the icon.
+  appleWebApp: { capable: true, title: BRAND_SHORT, statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {
@@ -61,9 +65,8 @@ export default async function RootLayout({
             logo · links · actions. */}
         <nav className="border-b bg-card sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 max-w-5xl mx-auto text-sm font-medium">
-            <Link href="/" className="flex items-center gap-2 mr-auto" aria-label="Strokes Gained home">
-              <Logo size={28} />
-              <span className="font-semibold">Strokes Gained</span>
+            <Link href="/" className="mr-auto" aria-label={`${BRAND_NAME} home`}>
+              <Wordmark size={28} />
             </Link>
             {user && (
               <>

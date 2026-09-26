@@ -8,6 +8,8 @@
  * `sendEmail` NEVER throws — a failed send must not take down the request that triggered it — and
  * never logs the recipient's address.
  */
+import { BRAND_NAME } from './brand';
+
 export async function sendEmail(input: {
   to: string;
   subject: string;
@@ -21,7 +23,7 @@ export async function sendEmail(input: {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: process.env.NOTIFY_FROM ?? 'Strokes Gained <onboarding@resend.dev>',
+        from: process.env.NOTIFY_FROM ?? `${BRAND_NAME} <onboarding@resend.dev>`,
         to: [input.to],
         subject: input.subject,
         text: input.text,
