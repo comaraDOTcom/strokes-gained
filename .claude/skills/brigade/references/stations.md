@@ -41,3 +41,24 @@ Never in a cook's ticket. The chef edits them once, after merging.
   and becomes a 500 on purpose.
 - Module header comments say *why*. Keep them true when you change the module.
 - `noUncheckedIndexedAccess` is on: `arr[0]!` only when you've proven it exists.
+
+## One place for each kind of code
+
+Each kind of code has exactly one place in the tree, so nobody has to be told where something
+goes. `src/structure.test.ts` enforces the rules that can be checked mechanically.
+
+| Kind of code | The one place | Rule |
+|---|---|---|
+| A view a player can open | `src/app/<feature>/page.tsx` | Server component; thin; reads through `src/lib` |
+| Interactive UI for that view | `src/app/<feature>/*.tsx` (client components next to the page) | No data access; calls the feature's API route |
+| The feature's API | `src/app/api/<feature>/**/route.ts` | Guard, parse with the feature's validator, call one `src/lib` function, map errors |
+| Logic and invariants | `src/lib/<feature>/*.ts` with a colocated `*.test.ts` | Pure where possible; DB code takes `Tx` and is tested through `freshDb()` |
+| Validators | `src/lib/<feature>/entry.ts`, `details.ts`, `requests.ts`… | `parse*(body: unknown)` returns a real type or a message |
+| Tables and migrations | `src/db/schema.ts` + `drizzle/` | Lead-only; one change at a time |
+| Shipped data | `src/lib/<feature>/data/*.json` | Built by a script in `scripts/`, checked by a ratchet test |
+| Always-on behaviour | `src/middleware.ts`, `src/lib/auth/` | Lead-only |
+| Design tokens and shell | `src/app/globals.css`, `layout.tsx` | Lead-only |
+
+A feature therefore spans three folders (`src/app/<feature>`, `src/app/api/<feature>`,
+`src/lib/<feature>`), which is the App Router's layout rather than the one-folder-per-feature
+model. A ticket names all three; a cook that needs a fourth folder is in the wrong ticket.
