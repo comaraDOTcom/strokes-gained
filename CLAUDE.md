@@ -26,6 +26,14 @@ Quote the PASS/FAIL lines in your report. "Should pass" is not a result.
 Subagents that write code work in their own worktree, own a named set of files, and are
 checked by a verifier that is not the author. Details in `.claude/skills/brigade/`.
 
+## Quality problems are filed, not mentioned
+
+A data or insight problem a player could notice (a wrong or missing course, a number resting on a
+tiny sample, a caveat the page doesn't show) goes in `docs/quality.md` with a confidence grade
+and into a GitHub issue with the numbers, in the same session it was found. Where the data is a
+committed file, add or extend a ratchet test (`src/lib/directory/data-quality.test.ts` is the
+model). A subagent reports it under "Noticed"; the lead files it. Chat is not a store.
+
 ## Conventions
 
 - Logic lives in `src/lib/*` as pure functions with a colocated `*.test.ts`; pages and routes
