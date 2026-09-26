@@ -6,7 +6,7 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
-## 0.0.36 — 2026-09-25
+## 0.0.38 — 2026-09-26
 
 ### Backdrop choice moves off Rounds, into Settings on your profile
 - **Rounds is back to just your rounds.** The scene banner and the Backdrop picker are gone from the
@@ -15,6 +15,47 @@ the entry is missing. While the app is pre-1.0 every release bumps the patch num
   **Backdrop** setting, with a preview of the current scene, then Auto or one of the four seasons.
   It's still saved on this device.
 - **Your name (or initial, on a phone) in the top bar** now opens those settings.
+
+## 0.0.37 — 2026-09-26
+
+### Under the hood: how Claude works on this app, and what it's now allowed to trust
+Nothing changes on screen. This release makes the numbers behind the screen better guarded and
+the way the app is built more reliable.
+- **New tests on shot editing.** Marking an edited shot Holed removes the shots after it; editing an
+  earlier shot re-derives the later starts and stores the right strokes gained for every shot; a
+  stroke-and-distance penalty always costs exactly two strokes whatever was typed. These were the
+  behaviours the app relied on but never checked.
+- **A quality gate on the course directory.** A test now checks the committed course list itself:
+  every course has one of the 32 counties and sits on the island, the share with a known hole count
+  can't fall, and the known gaps (missing clubs, duplicate entries) are listed and must shrink. It
+  found a fourth non-course on its first run.
+- **A quality register** (`docs/quality.md`): every feature's data confidence, its known issues,
+  the test that pins it and the GitHub issue, so a problem a player could notice is never only in a
+  chat. Filed from it: a scoring bug where a shot entered as 0 ft and not holed is scored as holed
+  (#40), the directory's missing clubs and hole counts (#38), and the thin scratch benchmark (#39).
+- **Skills for Claude Code sessions** (`.claude/skills/`): `/how` explains an area with parallel
+  read-only explorers and can critique it with independent reviewers; `/verify` runs the same
+  checks as CI in one command and has a separate verifier check a subagent's claims; `/brigade`
+  runs many subagents at once with one writer per file and a verifier on every change;
+  `/correct` turns a correction into a permanent fix at the lowest level that can hold it. A
+  `CLAUDE.md` points every session at them.
+- **Where code lives** is now a test too: logic in `src/lib` with a test beside it, pages and
+  routes thin, data under `src/lib/*/data`, and counts of the exceptions that may only go down.
+
+## 0.0.36 — 2026-09-25
+
+### Fix: the course map's background
+- The Played page's map showed "API KEY REQUIRED" tiles: CARTO's basemaps now need a key. It now
+  uses OpenStreetMap's standard map, which needs none. A different provider can be set with
+  `NEXT_PUBLIC_MAP_TILE_URL` (see `.env.example`) without a code change.
+
+### Course list corrections
+- **Derry**, not Londonderry.
+- A club named after a county is placed in that county even when the course sits just over the
+  boundary: Waterford Golf Club is in Waterford (not Kilkenny), Carlow Golf Club in Carlow.
+- Courses mapped with only their own name get their venue in front, e.g. "Carton House – The
+  O'Meara" rather than "The O'Meara".
+- Footgolf, practice academies and courses with fewer than 9 holes are no longer listed.
 
 ## 0.0.35 — 2026-09-25
 

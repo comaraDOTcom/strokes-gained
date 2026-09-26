@@ -14,3 +14,8 @@ data/pglite
 # anonymised counts in src/lib/insights/benchmark-data/ go in the repo.
 benchmarks-raw/
 .vercel
+
+# Scratch and intermediate files (see CLAUDE.md)
+archive/
+# Subagent worktrees created by the Agent tool
+.claude/worktrees/
