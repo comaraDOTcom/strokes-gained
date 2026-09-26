@@ -12,6 +12,20 @@ const IRELAND_BOUNDS: [[number, number], [number, number]] = [
   [55.45, -5.35],
 ];
 
+/**
+ * Basemap tiles. Default: OpenStreetMap's own standard tiles — no key needed (CARTO's basemaps now
+ * return an "API key required" image without one). Swap providers without a code change with
+ * NEXT_PUBLIC_MAP_TILE_URL (+ NEXT_PUBLIC_MAP_TILE_ATTRIBUTION), e.g. a MapTiler or Stadia URL with
+ * its key. OSM's tile policy asks for the attribution to stay visible and for light use — fine for
+ * a small invite-only app; move to a keyed provider if traffic grows.
+ */
+const TILES = {
+  url: process.env.NEXT_PUBLIC_MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution:
+    process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION ||
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+};
+
 /** From this zoom in, every course is its own pin (roughly county level). */
 const UNCLUSTER_AT_ZOOM = 11;
 
@@ -35,8 +49,7 @@ function pinHtml(c: Pick<MapCourse, 'played' | 'rank'>): string {
  * `UNCLUSTER_AT_ZOOM` in, each course is its own flag pin: green when played, gold-ringed when in the
  * top 100. Tap a pin for its details and a played toggle. Leaflet is loaded on the client only.
  *
- * Basemap: CARTO "Positron" (light, low-contrast, so the pins carry the colour), © OpenStreetMap
- * contributors — the attribution control must stay on.
+ * Basemap: see `TILES` — the attribution control must stay on.
  */
 export function CourseMap({
   courses,
@@ -71,12 +84,7 @@ export function CourseMap({
       if (cancelled || !el.current || map.current) return;
       const m = L.map(el.current, { scrollWheelZoom: false, zoomSnap: 0.25, attributionControl: true });
       m.fitBounds(IRELAND_BOUNDS);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 18,
-      }).addTo(m);
+      L.tileLayer(TILES.url, { attribution: TILES.attribution, maxZoom: 19 }).addTo(m);
       const group = L.markerClusterGroup({
         showCoverageOnHover: false,
         maxClusterRadius: 60,

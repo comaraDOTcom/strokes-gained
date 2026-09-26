@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDirectory,
   countMappedHoles,
+  countyInName,
   mergeWithPrevious,
   normaliseCounty,
   safeWebsite,
@@ -39,11 +40,24 @@ describe('normaliseCounty', () => {
     ['Cork City', 'Cork'],
     ['Limerick City and County', 'Limerick'],
     ['Contae na Mí / County Meath', 'Meath'],
-    ['County Londonderry', 'Londonderry'],
+    ['County Londonderry', 'Derry'],
+    ['County Derry', 'Derry'],
     ['County Antrim', 'Antrim'],
   ])('%s -> %s', (raw, county) => expect(normaliseCounty(raw)).toBe(county));
 
   it.each(['Leinster', 'Belfast', 'Ireland', '', undefined])('%s -> null', (raw) => expect(normaliseCounty(raw)).toBeNull());
+});
+
+describe('countyInName', () => {
+  it.each([
+    ['Waterford Golf Club', 'Waterford'],
+    ['County Sligo Golf Club', 'Sligo'],
+    ['City of Derry Golf Club', 'Derry'],
+    ['Royal County Down Golf Course', 'Down'],
+    ['Westmeath Golf Club', 'Westmeath'],
+    ['Downpatrick Golf Club', null],
+    ['Portmarnock Golf Club', null],
+  ])('%s -> %s', (name, county) => expect(countyInName(name)).toBe(county));
 });
 
 describe('safeWebsite', () => {
@@ -111,6 +125,26 @@ describe('buildDirectory', () => {
     expect(report.noPosition).toEqual(['osm:relation/8 Nowhere Golf Club']);
   });
 
+  it("uses the county in a club's name over the boundary it sits just inside", () => {
+    const e = way(20, 'Waterford Golf Club', 52.27, -7.08);
+    const { courses, report } = buildDirectory(input([e], { areaNames: new Map([['osm:way/20', ['County Kilkenny']]]) }));
+    expect(courses[0]!.county).toBe('Waterford');
+    expect(report.countyFromName).toEqual(['osm:way/20 Waterford Golf Club: Kilkenny -> Waterford']);
+  });
+
+  it("puts the venue in front of a course mapped with only its own name", () => {
+    const { courses, report } = buildDirectory(
+      input([
+        way(30, 'Carton House Golf Club', 53.39, -6.56),
+        way(31, "The O'Meara", 53.395, -6.565),
+        way(32, 'Old Course', 51.0, -9.0), // no club within 2 km: left as it is
+        way(33, 'Gowran Park', 52.62, -7.07), // a venue name, not a generic one
+      ]),
+    );
+    expect(courses.map((c) => c.name).sort()).toEqual(["Carton House Golf Club", "Carton House Golf Club – The O'Meara", 'Gowran Park', 'Old Course']);
+    expect(report.namedAfterVenue).toHaveLength(1);
+  });
+
   it('prefers a tagged hole count and ignores a mapped count that isn’t a whole number of nines', () => {
     const tagged = way(1, 'Tagged', 53, -7, { holes: '9' });
     const partial = way(2, 'Partly mapped', 54, -8);
@@ -133,12 +167,15 @@ describe('buildDirectory', () => {
         way(8, "Smuggler's Cove Adventure Golf", 53.7, -7),
         way(9, 'Enniskillen Golf Club', 54.3, -7.6, {}, 0.0003), // only the clubhouse is mapped
         way(10, 'Liffey Valley Par 3', 53.35, -6.4),
+        way(12, 'Fairway Football', 53.1, -6.2),
+        way(13, 'GUI Practice Academy', 53.2, -6.6),
+        way(14, '7 Hole Golf Course Grange Castle', 53.32, -6.43),
         way(11, 'Parknasilla Golf Club', 51.8, -9.9), // "Par…" in a name isn't a par 3
       ]),
     );
     expect(courses.map((c) => c.name)).toEqual(['Enniskillen Golf Club', 'Parknasilla Golf Club', 'Real Golf Club']);
     expect(report.unnamed).toBe(1);
-    expect(report.notACourse).toHaveLength(6);
+    expect(report.notACourse).toHaveLength(9);
     expect(report.tooSmall).toHaveLength(1);
   });
 
