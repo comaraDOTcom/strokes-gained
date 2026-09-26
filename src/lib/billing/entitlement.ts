@@ -7,7 +7,7 @@
  *   1. A player puts a card on file. Stripe holds it as a `trialing` subscription; nothing is charged.
  *   2. Their first FREE_ROUNDS rounds are free. Each one started bumps `freeRoundsUsed`, which never
  *      goes down, so deleting rounds doesn't earn free rounds back.
- *   3. Starting the next round ends the trial: €7 is taken and the subscription goes `active`.
+ *   3. Starting the next round ends the trial: €12.99 is taken and the subscription goes `active`.
  * Viewing is never gated: every round a player logged stays readable whatever their status.
  */
 import { createHash } from 'node:crypto';
@@ -35,7 +35,7 @@ export type Allow =
 /** Which screen to show instead of the new-round form. */
 export type Gate =
   | 'claim-free-rounds' // no card yet: the Member's card, "Four rounds on the house"
-  | 'start-membership' // free rounds played: confirm €7 to start the next one
+  | 'start-membership' // free rounds played: confirm €12.99 to start the next one
   | 'fix-payment' // a renewal failed: no new rounds until the card is updated in the portal
   | 'rejoin'; // cancelled (or lapsed) after the free rounds: back to Checkout, no trial
 

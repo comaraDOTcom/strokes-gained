@@ -310,7 +310,7 @@ export const playedCourses = pgTable(
  * `status` is Stripe's subscription status verbatim ('trialing', 'active', 'past_due', 'canceled',
  * 'unpaid', 'incomplete', 'incomplete_expired', 'paused'), or null between creating the Stripe
  * customer and Checkout completing. The card goes on file as a `trialing` subscription: the trial
- * covers the free rounds, and it ends (and the first €7 is taken) when the player starts the
+ * covers the free rounds, and it ends (and the first €12.99 is taken) when the player starts the
  * first round after them.
  */
 export const subscriptions = pgTable(
