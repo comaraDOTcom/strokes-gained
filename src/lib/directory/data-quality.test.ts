@@ -13,8 +13,12 @@ import ireland from './data/ireland.json';
 
 const courses = ireland.courses as DirectoryCourse[];
 
-/** Names that are not a golf course and should be excluded in overrides.json (or by NOT_A_COURSE). */
-const KNOWN_NOT_A_COURSE = ['7 Hole Golf Course Grange Castle', 'GUI Practice Academy', 'Fairway Football', 'Football Golf Cashel'];
+/**
+ * Names that are not a golf course and should be excluded in overrides.json (or by NOT_A_COURSE).
+ * Empty since #37 widened NOT_A_COURSE (football, academies, 1–8 hole courses); any new entry is a
+ * regression in the filter.
+ */
+const KNOWN_NOT_A_COURSE: string[] = [];
 
 /** Pairs that are one club listed twice; the second should be excluded or aliased. */
 const KNOWN_DUPLICATES: [string, string][] = [
@@ -32,7 +36,7 @@ const ANCHORS = [
   'Druids Glen', 'K Club', 'Tralee', 'Dooks', 'Baltray', 'Dundalk', 'Mullingar', 'Galway Bay',
 ];
 
-/** Share of courses with a known hole count. Measured 2026-09-26: 134/409. Raise it as data improves. */
+/** Share of courses with a known hole count. Measured 2026-09-26: 134/405. Raise it as data improves. */
 const MIN_HOLES_COVERAGE = 0.32;
 
 const NOT_A_COURSE_NAME =
