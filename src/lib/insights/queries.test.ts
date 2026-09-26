@@ -89,3 +89,37 @@ describe('getAllEnrichedShots + getTeeHoleMetaForCourse (single-query reads)', (
     expect((await getTeeHoleMetaForCourse(me.id, c!.id + 999)).size).toBe(0);
   });
 });
+
+describe('getEmptyRounds', () => {
+  it("lists this player's shot-less rounds at the course, and deleting a round takes its shots with it", async () => {
+    const ctx = await freshDb();
+    closers.push(ctx.closeDb);
+    const { db, schema } = ctx;
+    const { eq } = await import('drizzle-orm');
+    const { getEmptyRounds } = await import('./queries');
+    const me = await makeUser(ctx, 'me');
+    const other = await makeUser(ctx, 'other');
+
+    const [c] = await db.insert(schema.courses).values({ name: 'Elm Park' }).returning();
+    const [t] = await db.insert(schema.tees).values({ courseId: c!.id, name: 'White', gender: 'M', distanceUnit: 'yards' }).returning();
+    const at = { courseId: c!.id, teeId: t!.id };
+    const [played, empty] = await db
+      .insert(schema.rounds)
+      .values([
+        { userId: me.id, ...at, playedOn: '2026-09-01' },
+        { userId: me.id, ...at, playedOn: '2026-09-02' },
+        { userId: other.id, ...at, playedOn: '2026-09-03' },
+      ])
+      .returning();
+    await db.insert(schema.shots).values({
+      roundId: played!.id, holeNo: 1, shotNo: 1, startLie: 'TEE', startYards: 400, endLie: 'FAIRWAY', endYards: 150, holed: false,
+    });
+
+    expect((await getEmptyRounds(me.id, c!.id)).map((r) => [r.roundId, r.courseName, r.teeName])).toEqual([
+      [empty!.id, 'Elm Park', 'White'],
+    ]);
+
+    await db.delete(schema.rounds).where(eq(schema.rounds.id, played!.id));
+    expect(await db.select().from(schema.shots).where(eq(schema.shots.roundId, played!.id))).toEqual([]);
+  });
+});

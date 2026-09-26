@@ -10,7 +10,7 @@
  * deliberately passes that user's id (the read-only `/players/[id]` view does,
  * and it strips the private fields itself).
  */
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { rounds, courses, tees, teeHoles, shots as shotsTable, user } from '../../db/schema';
 import { yardsToFeet } from '../units';
@@ -183,6 +183,23 @@ export async function getTeesWithRounds(
 export async function getTeeHoleYardages(teeId: number): Promise<{ holeNo: number; yards: number }[]> {
   const rows = await db.select().from(teeHoles).where(eq(teeHoles.teeId, teeId));
   return rows.map((h) => ({ holeNo: h.holeNo, yards: h.yards }));
+}
+
+/** This user's rounds at one course with no shots logged yet. The rounds list is built from
+ * shots, so without this a started-but-empty round would count towards "N rounds logged" yet
+ * never appear — and so couldn't be opened, finished or deleted. Newest first. */
+export async function getEmptyRounds(
+  userId: string,
+  courseId: number,
+): Promise<{ roundId: number; name: string | null; playedOn: string; courseName: string; teeName: string }[]> {
+  return db
+    .select({ roundId: rounds.id, name: rounds.name, playedOn: rounds.playedOn, courseName: courses.name, teeName: tees.name })
+    .from(rounds)
+    .innerJoin(courses, eq(courses.id, rounds.courseId))
+    .innerJoin(tees, eq(tees.id, rounds.teeId))
+    .leftJoin(shotsTable, eq(shotsTable.roundId, rounds.id))
+    .where(and(eq(rounds.userId, userId), eq(rounds.courseId, courseId), isNull(shotsTable.id)))
+    .orderBy(desc(rounds.playedOn), desc(rounds.id));
 }
 
 /** Everyone who has joined, with how many rounds they've logged — the players list. */

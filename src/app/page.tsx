@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllEnrichedShots, getCourseOptions, getRoundDetailsById } from '@/lib/insights/queries';
+import { getAllEnrichedShots, getCourseOptions, getEmptyRounds, getRoundDetailsById } from '@/lib/insights/queries';
 import { resolveSelectedCourseId } from '@/lib/insights/course-filter';
 import { CourseFilter } from './course-filter';
 import { ExpandableText } from './expandable-text';
@@ -31,6 +31,7 @@ export default async function Home({
   const shots = selectedCourseId === null ? [] : await getAllEnrichedShots(user.id, selectedCourseId);
   const rounds = roundSummaries(shots);
   const detailsById = await getRoundDetailsById(user.id);
+  const emptyRounds = selectedCourseId === null ? [] : await getEmptyRounds(user.id, selectedCourseId);
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
@@ -53,6 +54,28 @@ export default async function Home({
           <Link className="underline" href="/rounds/new">Log a round</Link>.
         </p>
       ) : (
+        <>
+        {emptyRounds.length > 0 && (
+          <ul className="space-y-2">
+            {emptyRounds.map((r) => (
+              <li key={r.roundId}>
+                <Link
+                  href={`/rounds/${r.roundId}`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-dashed bg-card px-3 py-2.5 sm:px-4"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{r.name ?? `${r.courseName} — ${r.teeName}`}</span>
+                    <span className="block text-xs text-muted font-mono">
+                      {r.name ? `${r.courseName} — ${r.teeName} · ` : ''}
+                      {r.playedOn} · no shots yet
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm text-ink-2">Continue or delete ›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <ul className="space-y-3">
           {rounds.map((r) => {
             const t = r.traditional;
@@ -210,6 +233,7 @@ export default async function Home({
             );
           })}
         </ul>
+        </>
       )}
 
       {roundCount > 0 && (

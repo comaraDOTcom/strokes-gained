@@ -46,6 +46,11 @@ voice note, or use the keyboard's dictation), the **date played**, and three ove
 1–5 ratings after Pia Nilsson's **balance / tempo / tension** (all "higher is better",
 so for tension 5 = relaxed).
 
+**Deleting a round:** "Delete this round" at the bottom of the round page (owner only, two taps,
+`DELETE /api/rounds/[roundId]`; shots go with it by FK cascade). Rounds with no shots yet are
+listed on Rounds as "no shots yet" cards (`getEmptyRounds`), since the main list is built from
+shots and would otherwise count them without showing them.
+
 **Per shot, both optional** (two tap-again-to-clear toggles above the lie buttons; they
 reset after every shot): **focus** — internal (swing thoughts) vs external (target) —
 and **commitment** — committed vs hesitant (the "make a clear decision and commit"

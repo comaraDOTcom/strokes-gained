@@ -6,6 +6,15 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.39 — 2026-09-26
+
+### Delete a round
+- **"Delete this round"** at the bottom of your round's page. You confirm first, and it tells you
+  how many shots go with it. Only you can delete your rounds; the organiser can't.
+- **Empty rounds now show on Rounds.** A round you started but never logged a shot on still counted
+  towards "3 rounds logged at Elm Park" but never appeared in the list, so there was no way to open
+  it. It now shows as a card marked "no shots yet": tap it to carry on, or delete it.
+
 ## 0.0.38 — 2026-09-26
 
 ### Backdrop choice moves off Rounds, into Settings on your profile
