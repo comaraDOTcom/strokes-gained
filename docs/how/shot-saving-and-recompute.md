@@ -112,3 +112,83 @@ Vitest runs `src/**/*.test.ts` only; route handlers and `.tsx` are never importe
 9. **Editing a later shot does not re-validate its entered end against its new start**; a result further from the hole than its start is accepted by the engine.
 10. Smaller: `describeEntry` does inline `/ 3` and `* 3` (`entry.ts:192-210`) against the `units.ts` rule; a holed save always jumps to the next hole even when editing an earlier hole; null SG is dropped by `insights/queries.ts` but treated as 0 by `ReadOnlyRound`, `round-entry` and scorecard totals (invisible in practice thanks to the same-transaction recompute).
 11. History: commit `50addd3` ("in-place shot editing") introduced `propagateChain`; before it, an edit deleted every later shot on the hole.
+
+---
+
+## Critique verdict
+
+Three independent critics (one on the whole rubric, one on data model and boundaries, one on
+evolution and complexity) reviewed the code with the explanation above as a map. The lead read
+the evidence for each finding and, where it mattered, reproduced it. Filed as a pragmatic lead,
+not an aggregator: agreement between critics is not evidence, the code is.
+
+### Act on
+
+1. **A shot entered as 0 ft / 0 yd and not holed is scored as holed.** Reproduced against the
+   engine on the golden hole: shot 2 scores +2.110 instead of +0.180 and shot 3 scores −1.000
+   instead of +0.930; the hole total is unchanged so the sum invariant can't see it. The client
+   allows a distance of 0 and the route doesn't validate `endDistance`. About 1.9 strokes move
+   from putting to approach per occurrence, in the numbers Insights and "What to work on"
+   report. GitHub #40.
+2. **The shot body has no validator.** Every other JSON entry point parses `unknown` through a
+   `src/lib` validator; the shots route casts `req.json()` and checks presence only. `endLie`,
+   `penaltyType`, `penaltyStrokes` and `endDistance` reach `saveShotResult` unchecked, and the
+   `ShotResultInput` type is then dishonest. A bad lie becomes a 500 inside `expectedStrokes`; a
+   negative distance clamps to the first anchor and yields a plausible, wrong SG; three penalty
+   strokes are scored silently. Fix in one place: `parseShotSubmission()` in `entry.ts`, used by
+   the route. Same issue, #40.
+3. **The client can't show an engine rejection.** `saveShot` in `round-entry.tsx` awaits
+   `res.json()` before checking `res.ok` inside a `try … finally` with no `catch`, so a non-JSON
+   500 (a broken chain from a racing edit, an invalid lie) throws past `setError` and the player
+   sees nothing. Verified by reading the handler. Small fix; belongs with #40.
+4. **DELETE (undo) lives inline in the route** while the other two chain writers were extracted
+   into `src/lib/rounds` precisely so they can be tested against PGlite. It is the one shot
+   mutation with no test. Extract it next to `saveShotResult` and pin "recompute only if the hole
+   still has shots".
+5. **SG after an edit was not pinned by any test.** Already closed on this branch: three tests
+   added to `save-shot.test.ts` (holed edit deletes the tail; SG of later shots after editing an
+   earlier one; stroke-and-distance forces end = start), verified independently.
+6. **`saveShotResult` accepts `DbOrTx`**, so a future script can call it with the bare `db` and
+   commit a shot with stale or null SG; `applyTeeHoleEdits` already demands `Tx`. Tighten the
+   type and stop spreading `existing` into the update.
+7. **Malformed JSON is a 400 on the round PATCH route and a 500 on the shots routes.** One
+   `readJson()` helper used by every route.
+
+### Consider
+
+- **Per-hole recompute for the save path.** Every save loads and recomputes all 18 holes and
+  throws on any of them, so one bad hole blocks entry on the whole round and nothing repairs it.
+  SG depends only on a hole's own chain, so `recomputeHole(roundId, holeNo, tx)` for saves, with
+  the whole-round version kept for tee and baseline changes, matches the real dependency
+  structure. Not urgent at one round per player per day; do it before any offline or queued
+  entry.
+- **The head of the chain is derived by hand in each writer** (`saveShotResult`,
+  `applyTeeHoleEdits`, the client for display) while `propagateChain` covers only the tail, and
+  only one of the two server writers re-normalises tags. A par edit 3→4 can leave a LONG/SHORT
+  miss on what is now a tee shot. A small pure `deriveShot(prev | teeHole, entered)` used by
+  both, with tag consequences returned alongside positions, would remove the drift.
+- **Tags are normalised by deleting user input.** An edit that turns shot 3 into a non-putt
+  erases its slope and break; correcting the edit doesn't bring them back. Filtering at read
+  time (`tagGroupsFor` in `queries.ts`) would make edits non-destructive and remove the
+  asymmetric fallback in the tail loop.
+
+### Noted
+
+- Add vs edit is decided by whether the row exists, and "holed deletes the tail" is confirmed
+  only by the client's view of the hole. Fine for one golfer on one phone; revisit with an
+  expected-shot-count field if entry ever becomes offline or multi-device.
+- `shots.baselineId` anticipates more than one baseline but nothing in the compute chain takes a
+  baseline as input. A second baseline is a threading job through `interpolate`, `compute` and
+  `recompute`, not one file. Acceptable while `scratch-v1` is the only one.
+- `describeEntry` does inline `/ 3` and `* 3` against the `units.ts` rule; and a stale comment
+  in `baseline-scratch.ts` points at the wrong file for `difficultyAdjustment`.
+
+### Dismissed
+
+- "Start positions stored as columns is the wrong model." BUILD.md Phase 2 mandates the stored
+  starts so insights queries stay plain SQL, and `computeHole` verifies the chain on every
+  recompute. The redundancy is contracted defence in depth, not drift.
+- "README says course and tee are fixed but tee yardages can change." Both statements are true
+  in their own sense: the round's tee doesn't change; the tee's card can be corrected, and
+  every round on it is re-based in one transaction. Worth one clarifying clause in the README,
+  not a finding.
