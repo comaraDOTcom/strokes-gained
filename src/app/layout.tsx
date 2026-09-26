@@ -83,9 +83,20 @@ export default async function RootLayout({
                   <Link href="/rounds/new" className="bg-ink text-paper rounded-lg px-3 py-1.5 font-medium whitespace-nowrap">
                     + Log a round
                   </Link>
-                  <span className="hidden md:inline text-muted" title={user.email}>
-                    {user.name}
-                  </span>
+                  <Link
+                    href="/profile#settings"
+                    className="flex items-center gap-2 text-ink-2 hover:text-ink"
+                    title={`${user.email} · Settings`}
+                    aria-label="Settings"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="grid h-7 w-7 place-items-center rounded-full border border-line-strong bg-paper font-mono text-xs uppercase"
+                    >
+                      {(user.name || user.email).slice(0, 1)}
+                    </span>
+                    <span className="hidden md:inline">{user.name}</span>
+                  </Link>
                   <SignOutButton />
                 </div>
               </>

@@ -5,8 +5,8 @@ import { useState, useTransition } from 'react';
 import { SCENES, SCENE_COOKIE, SCENE_LABELS, type Scene, type ScenePreference } from '@/lib/scene/scene';
 
 /**
- * The Rounds page's backdrop chooser: Auto (follows the season) or one of the four scenes. Saves a
- * year-long cookie and refreshes, so the layout repaints every backdrop (hero, footer, sign-in).
+ * The Profile page's backdrop chooser: Auto (follows the season) or one of the four scenes. Saves a
+ * year-long cookie and refreshes, so the layout repaints every backdrop (preview, footer, sign-in).
  */
 export function ScenePicker({ preference, autoScene }: { preference: ScenePreference; autoScene: Scene }) {
   const router = useRouter();
@@ -26,8 +26,8 @@ export function ScenePicker({ preference, autoScene }: { preference: ScenePrefer
 
   return (
     <fieldset className={`space-y-2 ${pending ? 'opacity-70' : ''}`} aria-busy={pending}>
-      <legend className="font-mono text-[10px] uppercase tracking-wide text-muted">Backdrop</legend>
-      <div className="grid grid-cols-5 gap-2">
+      <legend className="sr-only">Backdrop</legend>
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
         {options.map((o) => {
           const isSelected = o.pref === selected;
           return (
@@ -42,7 +42,7 @@ export function ScenePicker({ preference, autoScene }: { preference: ScenePrefer
             >
               <span
                 aria-hidden="true"
-                className={`scene-${o.scene} golf-scene golf-scene-hero block h-10 sm:h-14 rounded-md border`}
+                className={`scene-${o.scene} golf-scene golf-scene-hero block h-12 sm:h-14 rounded-md border`}
               />
               <span className="block px-0.5 pt-1 text-xs sm:text-sm font-medium leading-tight">{o.name}</span>
               <span className="block px-0.5 font-mono text-[10px] text-muted leading-tight truncate">{o.sub}</span>
