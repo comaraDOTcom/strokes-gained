@@ -48,6 +48,11 @@ export type Overrides = {
   set?: Record<string, Partial<Pick<DirectoryCourse, 'name' | 'county' | 'holes' | 'website' | 'lat' | 'lng'>>>;
   /** Courses OSM doesn't have. Keys must start with `manual:`. */
   add?: DirectoryCourse[];
+  /**
+   * old key -> current key, for a course retired by hand (typically a `manual:` entry once OSM maps
+   * the club), so a player's tick on the old key still counts. Remove the `add` in the same edit.
+   */
+  alias?: Record<string, string>;
 };
 
 export const COUNTIES = [
@@ -402,6 +407,11 @@ export function mergeWithPrevious(
   const carried: DirectoryCourse[] = [];
   for (const p of previous) {
     if (keys.has(p.key) || overrides.exclude?.[p.key] || filtered.has(p.key)) continue;
+    const pinned = overrides.alias?.[p.key];
+    if (pinned && keys.has(pinned)) {
+      aliases[p.key] = pinned;
+      continue;
+    }
     // Re-keyed in OSM (the same club, re-drawn with a new id): point the old key at the new one, so a
     // tick on the old key still counts, instead of keeping a stale copy of the same course.
     const successor = next.find((c) => sameClub(c.name, p.name) && metresBetween(c, p) < 3000);

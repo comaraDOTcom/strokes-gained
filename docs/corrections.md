@@ -13,6 +13,11 @@ listed, the fix is to push it down a level, not to add another line. Maintained 
 | 2026-09-26 | Only one schema/migration change at a time; `schema.ts` and `drizzle/` are lead-only | 4 | `.claude/skills/brigade/references/stations.md` | 1d6adc9 | Two parallel `db:generate` runs would collide on the migration number |
 | 2026-09-26 | Skills cite paths and commands that must exist; drift fails the gate | 2 | `ci-local.sh skills` | (this commit) | Rigour for updating skills with code |
 | 2026-09-26 | Commit the skills before spawning cooks: a worktree branches from HEAD, so an uncommitted `.claude/skills/` is missing inside it | 4 | `/brigade` "Mise en place" step 1 | (this commit) | First cook had to call `ci-local.sh` by absolute path |
+| 2026-09-25 | Northern Irish county is Derry, never Londonderry | 1 | `COUNTIES` and `countyInName` in `src/lib/directory/build.ts`; the 32-county check in `data-quality.test.ts` | 43f81f0 | "derry not londonderry" |
+| 2026-09-25 | A club named after a county is in that county, whatever boundary its outline sits in | 1 + 2 | `countyInName` in `buildDirectory`; `data-quality.test.ts` "places a club named after a county in that county" | 43f81f0, (this commit) | "Waterford GC is in Kilkenny, that's not correct" |
+| 2026-09-25 | The map's default basemap needs no API key | 1 | `TILES` default in `src/app/profile/course-map.tsx` (OSM), keyed providers only via `NEXT_PUBLIC_MAP_TILE_URL` | 43f81f0 | CARTO tiles showing "API KEY REQUIRED" in production |
+| 2026-09-26 | Before hand-adding a course, search `ireland.json` by website and position; OSM often has it under a bare course name | 2 | `data-quality.test.ts` "no hand-added course sitting on top of one OSM already maps"; `overrides.json` `alias` to retire one | (this commit) | Lahinch was a manual pin and two OSM courses at once |
+| 2026-09-26 | From a cloud session, release by running the Release workflow on `main`, not by pushing a tag (tag pushes are cut off by the session proxy) | 3 | `CLAUDE.md` Conventions | (this commit) | 0.0.36 release |
 
 ## Open: corrections found but not yet landed
 

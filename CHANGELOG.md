@@ -6,6 +6,19 @@ entry here, then either push an annotated tag `vX.Y.Z` or run the Release workfl
 Either way the workflow publishes the GitHub release from this file and refuses if the version or
 the entry is missing. While the app is pre-1.0 every release bumps the patch number (0.0.1, 0.0.2, …).
 
+## 0.0.38 — 2026-09-26
+
+### Course list: Lahinch is its two courses, not a hand-placed pin
+- Lahinch appeared three times on the Played map: a pin added by hand, plus OpenStreetMap's own
+  outlines of its two courses under the bare names "Old Course" and "Castle Course" (as 9 holes
+  each). It's now **Lahinch Golf Club – Old Course** and **Lahinch Golf Club – Castle Course**, 18
+  holes each, on their real outlines. Anyone who ticked the old pin keeps it, now on the Old Course.
+- `overrides.json` can now retire a hand-added course with `alias` (old key → current key), so
+  ticks on it carry over.
+- New checks on the committed course list: a club named after a county must be in that county
+  (the Waterford Golf Club mistake), no hand-added course may sit on one OpenStreetMap already
+  maps, and every alias must point at a course that exists.
+
 ## 0.0.37 — 2026-09-26
 
 ### Under the hood: how Claude works on this app, and what it's now allowed to trust

@@ -46,5 +46,8 @@ model). A subagent reports it under "Noticed"; the lead files it. Chat is not a 
 - UI uses the semantic classes in `src/app/globals.css`, not raw Tailwind palette colours.
 - A shipped feature or fix gets a `CHANGELOG.md` entry and a `package.json` version bump, once
   per release, by whoever integrates, not per subagent.
+- Release after the PR merges by running the Release workflow on `main` (Actions, or the GitHub
+  MCP `run_workflow` on `release.yml` with a `title`); a cloud session's proxy cuts off tag pushes.
+  The workflow refuses a tag whose commit's `package.json` version doesn't match.
 - Never commit `.env*`, `benchmarks-raw/`, or a real connection string.
 - Scratch and intermediate files go in `archive/` (git-ignored), never the working tree root.

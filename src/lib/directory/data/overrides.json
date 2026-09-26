@@ -12,18 +12,18 @@
     },
     "osm:way/85612311": {
       "county": "Kildare"
+    },
+    "osm:way/233132474": {
+      "name": "Lahinch Golf Club – Old Course",
+      "holes": 18
+    },
+    "osm:way/233133679": {
+      "name": "Lahinch Golf Club – Castle Course",
+      "holes": 18
     }
   },
-  "add": [
-    {
-      "key": "manual:lahinch",
-      "name": "Lahinch Golf Club",
-      "county": "Clare",
-      "country": "IE",
-      "lat": 52.938,
-      "lng": -9.346,
-      "holes": 36,
-      "website": "https://www.lahinchgolf.com/"
-    }
-  ]
+  "add": [],
+  "alias": {
+    "manual:lahinch": "osm:way/233132474"
+  }
 }

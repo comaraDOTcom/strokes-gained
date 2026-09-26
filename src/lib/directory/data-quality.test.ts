@@ -8,10 +8,11 @@
  * things worse, it fails too. Tracked in GitHub issue #38.
  */
 import { describe, expect, it } from 'vitest';
-import { COUNTIES, type DirectoryCourse } from './build';
+import { COUNTIES, countyInName, metresBetween, type DirectoryCourse } from './build';
 import ireland from './data/ireland.json';
 
 const courses = ireland.courses as DirectoryCourse[];
+const aliases = ireland.aliases as Record<string, string>;
 
 /**
  * Names that are not a golf course and should be excluded in overrides.json (or by NOT_A_COURSE).
@@ -90,6 +91,30 @@ describe('course directory data (data/ireland.json)', () => {
   it('still lacks exactly the known missing clubs (fix: overrides.json add, then remove it here)', () => {
     for (const name of KNOWN_MISSING) {
       expect(has(name), `${name} is now present: remove it from KNOWN_MISSING`).toBe(false);
+    }
+  });
+
+  it('places a club named after a county in that county (Waterford GC was shown in Kilkenny)', () => {
+    const wrong = courses
+      .map((c) => ({ c, named: countyInName(c.name) }))
+      .filter(({ c, named }) => named !== null && named !== c.county)
+      .map(({ c, named }) => `${c.name}: named ${named}, placed in ${c.county}`);
+    expect(wrong).toEqual([]);
+  });
+
+  it('has no hand-added course sitting on top of one OSM already maps (Lahinch was both)', () => {
+    const osm = courses.filter((c) => c.key.startsWith('osm:') && !c.stale);
+    const overlaps = courses
+      .filter((c) => c.key.startsWith('manual:'))
+      .flatMap((m) => osm.filter((o) => metresBetween(m, o) < 1500).map((o) => `${m.key} is ${Math.round(metresBetween(m, o))} m from ${o.key} ${o.name}`));
+    expect(overlaps, 'retire the manual entry: remove its "add", point overrides.json "alias" at the OSM key').toEqual([]);
+  });
+
+  it('points every alias at a course that exists, so a tick on an old key still counts', () => {
+    const keys = new Set(courses.map((c) => c.key));
+    for (const [from, to] of Object.entries(aliases)) {
+      expect(keys.has(to), `alias ${from} -> ${to}: target missing`).toBe(true);
+      expect(keys.has(from), `alias ${from} is also a live key`).toBe(false);
     }
   });
 

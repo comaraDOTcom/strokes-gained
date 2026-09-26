@@ -320,7 +320,8 @@ automatically.
     wins; distinct `ref`s) — trusted only when it's a whole number of nines;
   - websites only if http(s);
   - `data/overrides.json`: `exclude` (key → reason), `set` (key → corrected fields), `add`
-    (courses OSM lacks; keys `manual:<slug>`).
+    (courses OSM lacks; keys `manual:<slug>`), `alias` (old key → current key, to retire an `add`
+    once OSM has the club without losing ticks on it).
 - **Stable keys:** `osm:<type>/<id>` / `manual:<slug>`, stored in `played_courses`. A key that
   disappears from OSM is carried over flagged `stale` (`mergeWithPrevious`) rather than breaking
   anyone's list; only an explicit `exclude` removes it.
@@ -348,7 +349,11 @@ automatically.
   ("& Sports", "Estate") merge names; par-3 courses are excluded like pitch & putt; a tiny outline
   named "… Golf Club" is the clubhouse standing in for the course, so it's kept; features with no
   name fall back to `official_name`/`operator`, and the rest are listed so an override can name one.
-  Courses OSM doesn't tag at all (Lahinch) go in `overrides.json` `add`.
+  Courses OSM doesn't have go in `overrides.json` `add`, but search `ireland.json` by website
+  and position first: OSM often maps a club only as its courses under bare names. Lahinch was added
+  by hand while OSM had it as "Old Course" and "Castle Course"; it's now those two, renamed, with
+  `alias` `manual:lahinch` → the Old Course. `data-quality.test.ts` fails on a `manual:` entry
+  within 1.5 km of an OSM course.
 - **Re-keyed courses become aliases:** a previous key that's gone but has a same-club successor
   within 3 km is written to `ireland.json` `aliases` (`old -> new`, chains followed), not kept as a
   stale copy. `resolveKey` / `directoryCourse` / `keysFor` apply them at runtime, so ticks, course

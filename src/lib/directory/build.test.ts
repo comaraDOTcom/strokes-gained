@@ -268,6 +268,23 @@ describe('mergeWithPrevious', () => {
     expect(aliases).toEqual({ 'osm:node/7': 'osm:way/9', 'osm:relation/1': 'osm:way/9' });
   });
 
+  it('aliases a retired key to the course named in overrides.json alias, and keeps it on later refreshes', () => {
+    const prev = [c('osm:way/1', 'Lahinch Golf Club – Old Course'), c('manual:lahinch', 'Lahinch Golf Club')];
+    const overrides = { alias: { 'manual:lahinch': 'osm:way/1' } };
+    const first = mergeWithPrevious([c('osm:way/1', 'Lahinch Golf Club – Old Course')], prev, overrides);
+    expect(first.courses.map((x) => x.key)).toEqual(['osm:way/1']);
+    expect(first.carried).toEqual([]);
+    expect(first.aliases).toEqual({ 'manual:lahinch': 'osm:way/1' });
+    const second = mergeWithPrevious(first.courses, first.courses, overrides, new Set(), first.aliases);
+    expect(second.aliases).toEqual({ 'manual:lahinch': 'osm:way/1' });
+  });
+
+  it('carries a key over as stale when its override alias points at a course this fetch lacks', () => {
+    const { carried, aliases } = mergeWithPrevious([c('osm:way/2', 'B')], [c('manual:x', 'X')], { alias: { 'manual:x': 'osm:way/1' } });
+    expect(carried.map((x) => x.key)).toEqual(['manual:x']);
+    expect(aliases).toEqual({});
+  });
+
   it('keeps a known hole count when a later fetch has none, but takes a new count', () => {
     const prev = [{ ...c('osm:way/1', 'A'), holes: 18 }, { ...c('osm:way/2', 'B'), holes: 9 }];
     const { courses } = mergeWithPrevious([c('osm:way/1', 'A'), { ...c('osm:way/2', 'B'), holes: 18 }], prev);
